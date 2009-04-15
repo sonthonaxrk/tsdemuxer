@@ -1,3 +1,11 @@
+/*
+
+Copyright (C) 2009 Anton Burdinuk
+
+clark15b@gmail.com
+
+*/
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <map>
@@ -12,6 +20,7 @@
 // TODO: write mkvtoolnix options file (?)
 // TODO: Windows build
 // TODO: fps*2 for interlaced ES (?)
+// TODO: read AVCHD playlist and date/time (for chapters)
 
 /*
 # timecode format v2
@@ -61,6 +70,14 @@ namespace tsmux
 	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),dts(0),first_pts(0),last_pts(0),frame_rate(0),fp(0) {}
     };
 
+    struct channel_data
+    {
+	u_int64_t beg;
+        u_int64_t end;
+        
+        channel_data(void):beg(0),end(0) {}
+    };
+
     inline u_int16_t ntohs(u_int16_t v) { return ((v<<8)&0xff00)|((v>>8)&0x00ff); }
 
     u_int64_t decode_pts(const unsigned char* p);
@@ -69,6 +86,7 @@ namespace tsmux
     const char* output_dir	= ".";
     bool hdmv_mode		= false;
     bool parse_only		= false;
+    bool interlace_mode		= false;
     int channel			= -1;
 
     int demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,stream>& pids);
@@ -477,11 +495,20 @@ namespace muxer
 
 int main(int argc,char** argv)
 {
-    fprintf(stderr,"tsDemux - free AVCHD/Blu-Ray HDMV demultiplexer\nCopyright (C) 2009 Anton Burdinuk\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    fprintf(stderr,"tsdemux AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
-	fprintf(stderr,"USAGE: ./tsdemux [-o output_dir] [-i input_dir] [-c channel] [-h] [-p] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n\n");
+	fprintf(stderr,"USAGE: ./tsdemux [-o directory] [-d directory] [-c channel] [-h] [-i] [-p] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n");
+	fprintf(stderr,"-o redirect output to another directory (default: '.')\n");
+	fprintf(stderr,"-d demux all files from directory\n");
+	fprintf(stderr,"-c demux one channel streams only (default: all streams from all channels)\n");
+	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
+	fprintf(stderr,"-i force interlace mode for video stream (fps*2)\n");
+	fprintf(stderr,"-p parse only, do not demux to video and audio files\n");
+	fprintf(stderr,"\ninput files can be *.m2ts, *.mts, *.ts or '-' for STDIN input\n");
+	fprintf(stderr,"output to *.bin, *.m2v, *.264, *.vc1, *.ac3, *.m2a, *.pcm and *.tmc files\n");
+	fprintf(stderr,"\n");
 	return 0;
     }
 
@@ -492,7 +519,7 @@ int main(int argc,char** argv)
 
     int opt;
 
-    while((opt=getopt(argc,argv,"o:hpc:i:"))>=0)
+    while((opt=getopt(argc,argv,"o:hipc:d:"))>=0)
 	switch(opt)
 	{
 	case 'o':
@@ -501,13 +528,16 @@ int main(int argc,char** argv)
 	case 'h':
 	    hdmv_mode=true;
 	    break;
+	case 'i':
+	    interlace_mode=true;
+	    break;
 	case 'p':
 	    parse_only=true;
 	    break;
 	case 'c':
 	    channel=atoi(optarg);
 	    break;
-	case 'i':
+	case 'd':
 	    input_dir=optarg;
 	    break;
 	}
@@ -623,23 +653,24 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 
 
     // find low first and last pts
-
-    u_int64_t pts_base=0;
-    u_int64_t pts_end=0;
+    
+    std::map<u_int16_t,channel_data> chan;
     
     for(std::map<u_int16_t,tsmux::stream>::iterator i=pids.begin();i!=pids.end();++i)
     {
 	tsmux::stream& s=i->second;
 
+	channel_data& ch=chan[s.programm];
+
 	if(s.stream_id && s.first_pts && s.last_pts)
 	{
-	    if(!pts_base || pts_base>s.first_pts)
-		pts_base=s.first_pts;
+	    if(!ch.beg || ch.beg>s.first_pts)
+		ch.beg=s.first_pts;
 	
-	    u_int64_t tmp=s.last_pts+s.frame_rate;
+	    u_int64_t end=s.last_pts+s.frame_rate;
 	
-	    if(!pts_end || pts_end>tmp)
-		pts_end=tmp;
+	    if(!ch.end || ch.end>end)
+		ch.end=end;
 	}
     }
 
@@ -649,21 +680,23 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
     {
 	tsmux::stream& s=i->second;
 
+	channel_data& ch=chan[s.programm];
+
 	if(s.stream_id && s.first_pts && s.last_pts && s.frame_rate)
 	{
-	    double delay=s.first_pts-pts_base;
+	    double delay=s.first_pts-ch.beg;
 	    delay/=90.;
 
-	    u_int64_t t=s.last_pts+s.frame_rate;
+	    u_int64_t end=s.last_pts+s.frame_rate;
 
-	    double len=t-s.first_pts-pts_base;
+	    double len=end-s.first_pts-ch.beg;
 	    len/=90.;   
 
 	    fprintf(stderr,"%s: channel %i, stream 0x%.2x, length %.2fms",name,s.programm,s.stream_id,len);
 	    
 	    
-	    if(t>pts_end)
-		fprintf(stderr," (+%.2fms)",(double)(t-pts_end)/90.);
+	    if(end>ch.end)
+		fprintf(stderr," (+%.2fms)",(double)(end-ch.end)/90.);
 	
 	    if(delay)
 		fprintf(stderr,", delay %.2fms",delay);
