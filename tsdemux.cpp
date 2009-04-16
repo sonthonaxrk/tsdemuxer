@@ -15,34 +15,12 @@ clark15b@gmail.com
 #include <stdlib.h>
 
 // TODO: read all files from directory
-// TODO: write timecodes file (format v2) for mkvtoolnix
-// TODO: write chapter file for mkvtoolnix
+// TODO: test chapter file, bugs in VldeoLAN when playback MKV
 // TODO: write mkvtoolnix options file (?)
 // TODO: Windows build (O_BINARY stdin)
-// TODO: fps*2 for interlaced ES (?)
+// TODO: interlace_mode from h.264 ES
 // TODO: read AVCHD playlist and date/time (for chapters)
 
-/*
-# timecode format v2
-0
-33
-67
-
-# timecode format v2
-0
-32
-64
-96
-128
-160
-
-CHAPTER01=00:00:00.000
-CHAPTER01NAME=Intro
-CHAPTER02=00:02:30.000
-CHAPTER02NAME=Baby prepares to rock
-CHAPTER03=00:02:42.300
-CHAPTER03NAME=Baby rocks the house
-*/
 
 namespace tsmux
 {
@@ -69,9 +47,10 @@ namespace tsmux
 
 	FILE* fp;				// ES output file
 	FILE* tmc_fp;				// timecodes output file
+	double start_timecode;			// start timecode value for tmc file (ms)
 	
 	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),content_type(0),
-	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0) {}
+	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0),start_timecode(0) {}
     };
 
     struct channel_data
@@ -83,19 +62,12 @@ namespace tsmux
         channel_data(void):beg(0),end(0),max(0) {}
     };
 
-    inline u_int16_t ntohs(u_int16_t v) { return ((v<<8)&0xff00)|((v>>8)&0x00ff); }
-
-    u_int64_t decode_pts(const unsigned char* p);
-
-
     const char* output_dir	= ".";
     bool hdmv_mode		= false;
     bool parse_only		= false;
     bool interlace_mode		= false;
-    int channel			= -1;
-
-    int demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,stream>& pids);
-
+    int channel			= 1;		// -1 for all
+    FILE* chapters_fp		= 0;
 
     namespace stream_type
     {
@@ -118,11 +90,17 @@ namespace tsmux
 	};
     }
 
+    inline u_int16_t ntohs(u_int16_t v) { return ((v<<8)&0xff00)|((v>>8)&0x00ff); }
+
+    u_int64_t decode_pts(const unsigned char* p);
     
     const char* get_stream_type_name(u_int8_t type_id,int* type);
     int get_stream_type(u_int8_t type_id);
     const char* get_file_ext_by_stream_type(u_int8_t type_id);
 
+    int demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,stream>& pids);
+    const char* timecode_to_time(double timecode);
+    int calc_timecodes(channel_data& ch,stream& s);
     int demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,int chapter);
 }
 
@@ -236,7 +214,6 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 	if(!pid)
 	{
 	    // PAT table
-
 	    if(payload_unit_start_indicator)
 	    {
 		if(len<1)
@@ -303,7 +280,6 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		if(s.type==0xff)
 		{
 		    // PMT table
-
 		    if(payload_unit_start_indicator)
 		    {
 			if(len<1)
@@ -375,7 +351,6 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		}else
 		{
 		    // PES (Packetized Elementary Stream)
-
 		    if(payload_unit_start_indicator)
 		    {
 			// PES header
@@ -499,7 +474,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    	/* fprintf(s.fp,"pid=%i, programm=%i, id=%i, type=0x%x, len=%i, stream=0x%x, dts=%i (%i)\n",pid,s.programm,s.id,s.type,len,s.stream_id,(unsigned int)s.dts,s.frame_rate); */
 
 				if(!fwrite(ptr,len,1,s.fp))
-				    fprintf(stderr,"elementary stream %x write error\n",s.stream_id);
+				    fprintf(stderr,"** elementary stream 0x%x write error\n",s.stream_id);
 			    }
 			}
 		    }		    
@@ -527,9 +502,9 @@ int main(int argc,char** argv)
 	fprintf(stderr,"USAGE: ./tsdemux [-o directory] [-d directory] [-c channel] [-h] [-i] [-p] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n");
 	fprintf(stderr,"-o redirect output to another directory (default: '.')\n");
 	fprintf(stderr,"-d demux all files from directory\n");
-	fprintf(stderr,"-c demux one channel streams only (default: all streams from all channels)\n");
+	fprintf(stderr,"-c demux one channel streams only (default: 1)\n");
 	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
-	fprintf(stderr,"-i force interlace mode for video stream (fps*2)\n");
+	fprintf(stderr,"-i interlace mode for video stream (fps*2)\n");
 	fprintf(stderr,"-p parse only, do not demux to video and audio files\n");
 	fprintf(stderr,"\ninput files can be *.m2ts, *.mts, *.ts or '-' for STDIN input\n");
 	fprintf(stderr,"output to *.bin, *.m2v, *.264, *.vc1, *.ac3, *.m2a, *.pcm and *.tmc files\n");
@@ -573,6 +548,14 @@ int main(int argc,char** argv)
     std::map<u_int16_t,tsmux::stream> pids;
     
     int chapter=0;
+    
+    if(!parse_only && channel!=-1)
+    {
+	char path[512];
+	sprintf(path,"%s/chapters.txt",output_dir);
+	
+	chapters_fp=fopen(path,"w");
+    }
     
     while(optind<argc)
     {
@@ -647,7 +630,8 @@ int main(int argc,char** argv)
 	}
     }
 
-
+    if(chapters_fp)
+	fclose(chapters_fp);
     
     return 0;
 }
@@ -667,20 +651,19 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	
 	if(length!=l)
 	{
-	    fprintf(stderr,"%s: incompleted TS packet\n",name);
+	    fprintf(stderr,"** %s: incompleted TS packet\n",name);
 	    break;
 	}
 
 	if(tsmux::demux_packet((unsigned char*)tmp,l,pids))
 	{
-	    fprintf(stderr,"%s: invalid packet\n",name);
+	    fprintf(stderr,"** %s: invalid packet\n",name);
 	    break;
 	}
     }
 
 
-    // find first, last and max pts
-    
+    // find first, last, max pts... any fixups
     std::map<u_int16_t,channel_data> chan;
     
     for(std::map<u_int16_t,tsmux::stream>::iterator i=pids.begin();i!=pids.end();++i)
@@ -688,13 +671,23 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	tsmux::stream& s=i->second;
 
 	channel_data& ch=chan[s.programm];
-
+	
 	if(s.stream_id && s.first_pts && s.last_pts)
 	{
+	
 	    if(!ch.beg || ch.beg>s.first_pts)
 		ch.beg=s.first_pts;
 	
 	    u_int64_t end=s.last_pts+s.frame_rate;
+
+	    // fix last_pts if variable fps in chapter or it is join of many files (pts/dts start many times)
+	    u_int64_t t=s.first_pts+s.frame_num*s.frame_rate;
+	    if(t>end)
+	    {
+		fprintf(stderr,"** bad last PTS in stream 0x%x, use first PTS and current frame rate for fix it\n",s.stream_id);
+		end=t;
+		s.last_pts=t-s.frame_rate;
+	    }
 	
 	    if(!ch.end || ch.end>end)
 		ch.end=end;
@@ -703,9 +696,9 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 		ch.max=end;
 	}
     }
+    
 
     // show info    
-
     for(std::map<u_int16_t,tsmux::stream>::iterator i=pids.begin();i!=pids.end();++i)
     {
 	tsmux::stream& s=i->second;
@@ -714,17 +707,15 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 
 	if(s.stream_id && s.first_pts && s.last_pts && s.frame_rate)
 	{
+	    u_int64_t last_pts=s.last_pts+s.frame_rate;
+
 	    double delay=((double)(s.first_pts-ch.beg))/90.;
+	    double len=((double)(last_pts-s.first_pts))/90.;
 
-	    u_int64_t end=s.last_pts+s.frame_rate;
-
-	    double len=((double)(end-s.first_pts))/90.;
-
-	    fprintf(stderr,"%s: channel %i, stream 0x%.2x, length %.2fms",name,s.programm,s.stream_id,len);
+	    fprintf(stderr,"%s: channel %i, stream 0x%.2x ('%s'), length %.2fms",name,s.programm,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)),len);
 	    
-	    
-	    if(end>ch.end)
-		fprintf(stderr," (+%.2fms)",(double)(end-ch.end)/90.);
+	    if(last_pts>ch.end)
+		fprintf(stderr," (+%.2fms)",(double)(last_pts-ch.end)/90.);
 	
 	    if(delay)
 		fprintf(stderr,", delay %.2fms",delay);
@@ -733,17 +724,14 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 
 	    fflush(stderr);
 	    
+	    // add chapter
+	    if(chapters_fp && s.programm==channel && s.id==1)
+		fprintf(chapters_fp,"CHAPTER%.2i=%s\nCHAPTER%.2iNAME=Chapter %.2i\n",chapter,timecode_to_time(s.start_timecode),
+		    chapter,chapter);
+
 	    // write timecodes
-	    
 	    if(s.tmc_fp)
-	    {
-		double t=0;
-		
-		for(u_int64_t i=0;i<s.frame_num;i++)
-		    fprintf(s.tmc_fp,"%.2f\n",(double)s.frame_rate*(double)i/90.);
-	        
-//	        fprintf(s.tmc_fp,"%.2f\n",((double)s.last_pts-(double)ch.beg)/.90);
-	    }
+		calc_timecodes(ch,s);
 	}
 
 	s.first_pts=0;
@@ -754,3 +742,67 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 
     return 0;
 }
+
+int tsmux::calc_timecodes(tsmux::channel_data& ch,tsmux::stream& s)
+{
+    FILE* fp=s.tmc_fp;
+    
+    // calc total chapter length
+    u_int64_t total_len=ch.max-ch.beg;
+
+    // align chapter length for fit to ms
+    if(total_len%90)
+    {
+	total_len=(total_len/90)*90+90;
+
+	fprintf(stderr,"** align stream 0x%x length to %.2fms\n",s.stream_id,(double)total_len/90.);	
+    }
+    
+    u_int64_t n=s.first_pts-ch.beg;
+    
+    u_int64_t frame_num=s.frame_num;
+    u_int32_t frame_rate1=s.frame_rate;
+    u_int32_t frame_rate2=s.frame_rate;
+
+    if(s.content_type==stream_type::video && interlace_mode)
+    {
+	frame_num*=2;
+	frame_rate1=s.frame_rate/2;
+	frame_rate2=s.frame_rate-frame_rate1;
+    }
+    
+    for(u_int64_t frame=0;frame<frame_num;frame++)
+    {
+	fprintf(s.tmc_fp,"%.2f\n",(double)n/90.+s.start_timecode);
+    
+	if(interlace_mode)
+	    n+=(frame+1)%2?frame_rate1:frame_rate2;
+	else
+	    n+=frame_rate1;
+    }
+
+    s.start_timecode+=total_len/90.;
+
+    return 0;
+}
+
+const char* tsmux::timecode_to_time(double timecode)
+{
+    static char buf[128];
+    
+    u_int64_t t=timecode;
+    
+    int msec=t%1000;
+    t/=1000;
+
+    int sec=t%60;
+    t/=60;
+
+    int min=t%60;
+    t/=60;
+
+    sprintf(buf,"%.2i:%.2i:%.2i.%.3i",(int)t,min,sec,msec);
+    
+    return buf;
+}
+
