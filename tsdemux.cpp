@@ -18,7 +18,7 @@ clark15b@gmail.com
 // TODO: write timecodes file (format v2) for mkvtoolnix
 // TODO: write chapter file for mkvtoolnix
 // TODO: write mkvtoolnix options file (?)
-// TODO: Windows build
+// TODO: Windows build (O_BINARY stdin)
 // TODO: fps*2 for interlaced ES (?)
 // TODO: read AVCHD playlist and date/time (for chapters)
 
@@ -60,22 +60,27 @@ namespace tsmux
 						// 0x80			- LPCM  audio
 
 	u_int8_t stream_id;			// MPEG stream id
-	u_int64_t dts;				// MPEG stream DTS (presentation time for audio, decode time for video)
+	int content_type;			// 1 - audio, 2 - video
+	u_int64_t dts;				// current MPEG stream DTS (presentation time for audio, decode time for video)
 	u_int64_t first_pts;
 	u_int64_t last_pts;
-	u_int32_t frame_rate;			// time for show frame in ticks (90 ticks = 1 ms, 90000/frame_rate=fps)
+	u_int32_t frame_rate;			// current time for show frame in ticks (90 ticks = 1 ms, 90000/frame_rate=fps)
+	u_int64_t frame_num;			// frame counter
 
 	FILE* fp;				// ES output file
+	FILE* tmc_fp;				// timecodes output file
 	
-	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),dts(0),first_pts(0),last_pts(0),frame_rate(0),fp(0) {}
+	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),content_type(0),
+	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0) {}
     };
 
     struct channel_data
     {
 	u_int64_t beg;
         u_int64_t end;
+        u_int64_t max;
         
-        channel_data(void):beg(0),end(0) {}
+        channel_data(void):beg(0),end(0),max(0) {}
     };
 
     inline u_int16_t ntohs(u_int16_t v) { return ((v<<8)&0xff00)|((v>>8)&0x00ff); }
@@ -359,6 +364,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    ss.programm=s.programm;
 			    ss.type=type;
 			    ss.id=++s.id;
+			    get_stream_type_name(type,&ss.content_type);
 			}
 		    }
 		    
@@ -419,10 +425,10 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 				    if(pts>s.last_pts)
 					s.last_pts=pts;
 
-				    if(!s.first_pts)
+				    if(!s.first_pts && s.frame_num==(s.content_type==stream_type::video?1:0))
 					s.first_pts=pts;
-				    
-				    /* fprintf(stderr,"%.2x: PTS=%i\n",stream_id,(unsigned int)s.dts); */
+
+				    /* fprintf(stderr,"%.2x: PTS=%i (%i)\n",stream_id,(unsigned int)s.dts,s.content_type); */
 				}
 				break;
 			    case 0xc0:		// PTS,DTS
@@ -439,15 +445,21 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 				    if(pts>s.last_pts)
 					s.last_pts=pts;
 
-				    /* fprintf(stderr,"%.2x: PTS=%i\n",stream_id,(unsigned int)s.dts); */
+				    if(!s.first_pts && s.frame_num==(s.content_type==stream_type::video?1:0))
+					s.first_pts=dts;
+
+				    /* fprintf(stderr,"%.2x: PTS=%i (%i)\n",stream_id,(unsigned int)s.dts,s.content_type); */
 				}
 				break;
 			    }
 			    
 			    ptr+=hlen;
-			    len-=hlen;			    
+			    len-=hlen;
 			
 			    s.stream_id=stream_id;
+			    
+			    s.frame_num++;
+
 			}else
 			    s.stream_id=0;
 			    
@@ -467,6 +479,19 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    
 				if(!s.fp)
 				    perror(tmp);
+				
+				char* p=strrchr(tmp,'.');
+				if(p)
+				{
+				    strcpy(p+1,"tmc");
+
+				    s.tmc_fp=fopen(tmp,"w");
+
+				    if(!s.tmc_fp)
+					perror(tmp);
+				    else
+					fprintf(s.tmc_fp,"# timecode format v2\n");
+				}
 			    }
 			
 			    if(s.fp)
@@ -474,7 +499,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    	/* fprintf(s.fp,"pid=%i, programm=%i, id=%i, type=0x%x, len=%i, stream=0x%x, dts=%i (%i)\n",pid,s.programm,s.id,s.type,len,s.stream_id,(unsigned int)s.dts,s.frame_rate); */
 
 				if(!fwrite(ptr,len,1,s.fp))
-				    fprintf(stderr,"elementary stream write error\n");
+				    fprintf(stderr,"elementary stream %x write error\n",s.stream_id);
 			    }
 			}
 		    }		    
@@ -617,6 +642,8 @@ int main(int argc,char** argv)
 	    
 	    if(s.fp)
 		fclose(s.fp);
+	    if(s.tmc_fp)
+		fclose(s.tmc_fp);
 	}
     }
 
@@ -652,7 +679,7 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
     }
 
 
-    // find low first and last pts
+    // find first, last and max pts
     
     std::map<u_int16_t,channel_data> chan;
     
@@ -671,6 +698,9 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	
 	    if(!ch.end || ch.end>end)
 		ch.end=end;
+
+	    if(!ch.max || ch.max<end)
+		ch.max=end;
 	}
     }
 
@@ -684,13 +714,11 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 
 	if(s.stream_id && s.first_pts && s.last_pts && s.frame_rate)
 	{
-	    double delay=s.first_pts-ch.beg;
-	    delay/=90.;
+	    double delay=((double)(s.first_pts-ch.beg))/90.;
 
 	    u_int64_t end=s.last_pts+s.frame_rate;
 
-	    double len=end-s.first_pts-ch.beg;
-	    len/=90.;   
+	    double len=((double)(end-s.first_pts))/90.;
 
 	    fprintf(stderr,"%s: channel %i, stream 0x%.2x, length %.2fms",name,s.programm,s.stream_id,len);
 	    
@@ -700,15 +728,27 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	
 	    if(delay)
 		fprintf(stderr,", delay %.2fms",delay);
-	    
-	    
+
 	    fprintf(stderr,"\n");
 
 	    fflush(stderr);
+	    
+	    // write timecodes
+	    
+	    if(s.tmc_fp)
+	    {
+		double t=0;
+		
+		for(u_int64_t i=0;i<s.frame_num;i++)
+		    fprintf(s.tmc_fp,"%.2f\n",(double)s.frame_rate*(double)i/90.);
+	        
+//	        fprintf(s.tmc_fp,"%.2f\n",((double)s.last_pts-(double)ch.beg)/.90);
+	    }
 	}
 
 	s.first_pts=0;
 	s.last_pts=0;
+	s.frame_num=0;
     }
     
 
