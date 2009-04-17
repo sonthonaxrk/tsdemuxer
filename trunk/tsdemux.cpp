@@ -47,7 +47,7 @@ namespace tsmux
 
 	FILE* fp;				// ES output file
 	FILE* tmc_fp;				// timecodes output file
-	double start_timecode;			// start timecode value for tmc file (ms)
+	u_int64_t start_timecode;		// start timecode value for tmc file (ms)
 	
 	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),content_type(0),
 	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0),start_timecode(0) {}
@@ -99,7 +99,7 @@ namespace tsmux
     const char* get_file_ext_by_stream_type(u_int8_t type_id);
 
     int demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,stream>& pids);
-    const char* timecode_to_time(double timecode);
+    const char* timecode_to_time(u_int64_t timecode);
     int calc_timecodes(channel_data& ch,stream& s);
     int demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,int chapter);
 }
@@ -502,7 +502,7 @@ int main(int argc,char** argv)
 	fprintf(stderr,"USAGE: ./tsdemux [-o directory] [-d directory] [-c channel] [-h] [-i] [-p] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n");
 	fprintf(stderr,"-o redirect output to another directory (default: '.')\n");
 	fprintf(stderr,"-d demux all files from directory\n");
-	fprintf(stderr,"-c demux one channel streams only (default: 1)\n");
+	fprintf(stderr,"-c channel number for demux or 'all' (default: 1)\n");
 	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
 	fprintf(stderr,"-i interlace mode for video stream (fps*2)\n");
 	fprintf(stderr,"-p parse only, do not demux to video and audio files\n");
@@ -535,7 +535,10 @@ int main(int argc,char** argv)
 	    parse_only=true;
 	    break;
 	case 'c':
-	    channel=atoi(optarg);
+	    if(!strcasecmp(optarg,"all"))
+		channel=-1;
+	    else
+		channel=atoi(optarg);
 	    break;
 	case 'd':
 	    input_dir=optarg;
@@ -552,9 +555,17 @@ int main(int argc,char** argv)
     if(!parse_only && channel!=-1)
     {
 	char path[512];
-	sprintf(path,"%s/chapters.txt",output_dir);
+	sprintf(path,"%s/chapters.xml",output_dir);
 	
 	chapters_fp=fopen(path,"w");
+	
+	if(chapters_fp)
+	{
+	    fprintf(chapters_fp,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n");
+	    fprintf(chapters_fp,"<!-- <!DOCTYPE Tags SYSTEM \"matroskatags.dtd\"> -->\n\n");
+	    fprintf(chapters_fp,"<Chapters>\n");
+	    fprintf(chapters_fp,"  <EditionEntry>\n");
+	}
     }
     
     while(optind<argc)
@@ -631,7 +642,11 @@ int main(int argc,char** argv)
     }
 
     if(chapters_fp)
+    {
+        fprintf(chapters_fp,"  </EditionEntry>\n");
+        fprintf(chapters_fp,"</Chapters>\n");
 	fclose(chapters_fp);
+    }
     
     return 0;
 }
@@ -726,8 +741,14 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	    
 	    // add chapter
 	    if(chapters_fp && s.programm==channel && s.id==1)
-		fprintf(chapters_fp,"CHAPTER%.2i=%s\nCHAPTER%.2iNAME=Chapter %.2i\n",chapter,timecode_to_time(s.start_timecode),
-		    chapter,chapter);
+	    {
+		fprintf(chapters_fp,"    <ChapterAtom>\n");
+        	fprintf(chapters_fp,"      <ChapterTimeStart>%s</ChapterTimeStart>\n",timecode_to_time(s.start_timecode));
+		fprintf(chapters_fp,"      <ChapterDisplay>\n");
+            	fprintf(chapters_fp,"        <ChapterString>Chapter %i</ChapterString>\n",chapter);
+                fprintf(chapters_fp,"      </ChapterDisplay>\n");
+        	fprintf(chapters_fp,"    </ChapterAtom>\n");
+            }                                                
 
 	    // write timecodes
 	    if(s.tmc_fp)
@@ -742,6 +763,25 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 
     return 0;
 }
+
+const char* tsmux::timecode_to_time(u_int64_t timecode)
+{
+    static char buf[128];
+    
+    int msec=timecode%1000;
+    timecode/=1000;
+
+    int sec=timecode%60;
+    timecode/=60;
+
+    int min=timecode%60;
+    timecode/=60;
+
+    sprintf(buf,"%.2i:%.2i:%.2i.%.3i",(int)timecode,min,sec,msec);
+    
+    return buf;
+}
+
 
 int tsmux::calc_timecodes(tsmux::channel_data& ch,tsmux::stream& s)
 {
@@ -758,51 +798,31 @@ int tsmux::calc_timecodes(tsmux::channel_data& ch,tsmux::stream& s)
 	fprintf(stderr,"** align stream 0x%x length to %.2fms\n",s.stream_id,(double)total_len/90.);	
     }
     
-    u_int64_t n=s.first_pts-ch.beg;
+    u_int64_t pos=s.first_pts-ch.beg;
+    u_int64_t pos_ms=pos/90;
     
     u_int64_t frame_num=s.frame_num;
-    u_int32_t frame_rate1=s.frame_rate;
-    u_int32_t frame_rate2=s.frame_rate;
+    u_int32_t frame_rate_top=s.frame_rate;
+    u_int32_t frame_rate_bottom=s.frame_rate;
 
     if(s.content_type==stream_type::video && interlace_mode)
     {
 	frame_num*=2;
-	frame_rate1=s.frame_rate/2;
-	frame_rate2=s.frame_rate-frame_rate1;
+	frame_rate_top=s.frame_rate/2;
+	frame_rate_bottom=s.frame_rate-frame_rate_top;
     }
     
-    for(u_int64_t frame=0;frame<frame_num;frame++)
+    for(u_int64_t i=0;i<frame_num;i++)
     {
-	fprintf(s.tmc_fp,"%.2f\n",(double)n/90.+s.start_timecode);
+	fprintf(s.tmc_fp,"%lli\n",pos_ms+s.start_timecode);
     
-	if(interlace_mode)
-	    n+=(frame+1)%2?frame_rate1:frame_rate2;
-	else
-	    n+=frame_rate1;
+	pos+=(i+1)%2?frame_rate_top:frame_rate_bottom;
+	
+	pos_ms=pos/90;
     }
 
     s.start_timecode+=total_len/90.;
 
     return 0;
-}
-
-const char* tsmux::timecode_to_time(double timecode)
-{
-    static char buf[128];
-    
-    u_int64_t t=timecode;
-    
-    int msec=t%1000;
-    t/=1000;
-
-    int sec=t%60;
-    t/=60;
-
-    int min=t%60;
-    t/=60;
-
-    sprintf(buf,"%.2i:%.2i:%.2i.%.3i",(int)t,min,sec,msec);
-    
-    return buf;
 }
 
