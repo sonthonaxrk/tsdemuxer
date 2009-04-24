@@ -18,12 +18,12 @@ clark15b@gmail.com
 #include <dirent.h>
 
 // TODO: Windows build (O_BINARY stdin)
-// TODO: interlace_mode from h.264 ES
 // TODO: read AVCHD playlist and date/time (for chapters)
+// TODO: GUI
 
 namespace tsmux
 {
-    enum { max_path_len=512 };
+    enum { max_path_len=512, max_fast_parse_frames=4 };
 
     struct stream
     {
@@ -53,8 +53,13 @@ namespace tsmux
 	std::string filename;
 	std::string tmc_filename;
 	
+	u_int32_t nal_ctx;
+	u_int64_t nal_frame_num;		// JVT NAL (h.264) frame counter
+
+	
 	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),content_type(0),
-	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0),start_timecode(0) {}
+	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0),start_timecode(0),
+		nal_ctx(0),nal_frame_num(0) {}
     };
 
     struct channel_data
@@ -436,10 +441,10 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    len-=hlen;
 			
 			    s.stream_id=stream_id;
-			    
+
 			    s.frame_num++;
 
-			    if(fast_parse && s.content_type==stream_type::video && s.frame_num>4)
+			    if(fast_parse && s.content_type==stream_type::video && s.frame_num>max_fast_parse_frames)
 				fast_parse_done=true;
 
 			}else
@@ -484,6 +489,18 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			
 			    if(s.fp)
 			    {
+				if(s.type==0x1b)				// JVT NAL (h.264)
+				{
+				    for(int i=0;i<len;i++)
+			    	    {
+					s.nal_ctx=(s.nal_ctx<<8)+ptr[i];
+
+			    		if((s.nal_ctx&0xffffff1f)==0x00000109)	// NAL access unit
+					    s.nal_frame_num++;
+				    }
+				                
+				}
+			    
 				if(!fwrite(ptr,len,1,s.fp))
 				    fprintf(stderr,"** elementary stream 0x%x write error\n",s.stream_id);
 			    }
@@ -510,7 +527,7 @@ int main(int argc,char** argv)
 	fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
 	fprintf(stderr,"-c channel number for demux (default: 1, 'any' for all channels)\n");
 	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
-	fprintf(stderr,"-i interlace mode for video stream (fps*2)\n");
+	fprintf(stderr,"-i force interlace mode for video stream (fps*2)\n");
 	fprintf(stderr,"-p parse only, do not demux to video and audio files\n");
 	fprintf(stderr,"-f fast parse\n");
 	fprintf(stderr,"-m write mkvmerge options file to STDOUT\n");
@@ -873,6 +890,8 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	s.first_pts=0;
 	s.last_pts=0;
 	s.frame_num=0;
+	s.nal_ctx=0;
+	s.nal_frame_num=0;
 	s.dts=0;
     }
     
@@ -921,7 +940,16 @@ int tsmux::calc_timecodes(tsmux::channel_data& ch,tsmux::stream& s)
     u_int32_t frame_rate_top=s.frame_rate;
     u_int32_t frame_rate_bottom=s.frame_rate;
 
-    if(s.content_type==stream_type::video && interlace_mode)
+
+    bool interlace=interlace_mode;
+    
+    if(s.type==0x1b)
+    {
+	if(s.nal_frame_num/2==s.frame_num)
+	    interlace=true;
+    }
+
+    if(s.content_type==stream_type::video && interlace)
     {
 	frame_num*=2;
 	frame_rate_top=s.frame_rate/2;
