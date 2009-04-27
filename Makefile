@@ -1,3 +1,2 @@
 all:
-	g++ -o tsdemux tsdemux.cpp
-#	g++ -o nal nal.cpp
+	g++ -o tsdemux tsdemux.cpp mpls.cpp
