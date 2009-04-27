@@ -6,6 +6,10 @@ clark15b@gmail.com
 
 */
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <map>
@@ -13,17 +17,37 @@ clark15b@gmail.com
 #include <list>
 #include <memory.h>
 #include <stdio.h>
-#include <getopt.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <dirent.h>
+#include <getopt.h>
+#else
+#include <io.h>
+#include <fcntl.h>
+#include "getopt.h"
+#endif
 #include "mpls.h"
 
-// TODO: Windows build (O_BINARY stdin)
+#ifdef _WIN32
+typedef unsigned char u_int8_t;
+typedef unsigned short u_int16_t;
+typedef unsigned long u_int32_t;
+typedef unsigned long long u_int64_t;
+#endif
+
 // TODO: GUI
 
 namespace tsmux
 {
-    enum { max_path_len=512, max_fast_parse_frames=4 };
+    enum
+    {
+#ifndef _WIN32
+	max_path_len=512,
+#else
+	max_path_len=_MAX_PATH,
+#endif
+	max_fast_parse_frames=4
+    };
 
     struct stream
     {
@@ -66,9 +90,9 @@ namespace tsmux
     {
 	u_int64_t beg;
         u_int64_t end;
-        u_int64_t max;
+        u_int64_t maximum;
         
-        channel_data(void):beg(0),end(0),max(0) {}
+        channel_data(void):beg(0),end(0),maximum(0) {}
     };
     
     const char* output_dir	= ".";
@@ -102,6 +126,12 @@ namespace tsmux
 
     inline u_int16_t ntohs(u_int16_t v) { return ((v<<8)&0xff00)|((v>>8)&0x00ff); }
 
+#ifdef _WIN32
+    inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpi(s1,s2); }
+#endif
+
+    int scan_dir(const char* path,std::list<std::string>& l);
+
     u_int64_t decode_pts(const unsigned char* p);
     
     const char* get_stream_type_name(u_int8_t type_id,int* type);
@@ -117,6 +147,61 @@ namespace tsmux
 	int chapter);
 }
 
+#ifdef _WIN32
+int tsmux::scan_dir(const char* path,std::list<std::string>& l)
+{
+    _finddata_t fileinfo;
+
+    intptr_t dir=_findfirst((std::string(path)+"\\*.*").c_str(),&fileinfo);
+	
+    if(!dir)
+	perror(path);
+    else
+    {
+	while(!_findnext(dir,&fileinfo))
+	    if(!(fileinfo.attrib&_A_SUBDIR) && *fileinfo.name!='.')
+	    {
+		char p[max_path_len];
+
+		int n=sprintf(p,"%s\\%s",path,fileinfo.name);
+			    
+		l.push_back(std::string(p,n));
+	    }
+    }	    
+	
+    _findclose(dir);
+
+    return l.size();
+}
+#else
+int tsmux::scan_dir(const char* path,std::list<std::string>& l)
+{
+    DIR* dir=opendir(path);
+    
+    if(!dir)
+	perror(path);
+    else
+    {
+	dirent* d;
+
+	while((d=readdir(dir)))
+	{
+    	    if(*d->d_name!='.')
+	    {
+		char p[max_path_len];
+
+		int n=sprintf(p,"%s/%s",path,d->d_name);
+
+		l.push_back(std::string(p,n));
+	    }
+	}
+
+	closedir(dir);
+    }
+
+    return l.size();
+}
+#endif
 
 const char* tsmux::get_stream_type_name(u_int8_t type_id,int* type)
 {
@@ -461,7 +546,13 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    {
 				char tmp[max_path_len];
 			    
-				int n=sprintf(tmp,"%s/channel_%.2x_stream_%.2x.%s",output_dir,s.programm,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)));
+				int n=sprintf(tmp,
+#ifndef _WIN32
+				    "%s/channel_%.2x_stream_%.2x.%s",
+#else
+				    "%s\\channel_%.2x_stream_%.2x.%s",
+#endif
+				    output_dir,s.programm,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)));
 
 				s.fp=fopen(tmp,"wb");
 			    
@@ -519,11 +610,11 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 
 int main(int argc,char** argv)
 {
-    fprintf(stderr,"tsdemux AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    fprintf(stderr,"tsdemux 1.00 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
-	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n");
+	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] [file1.(ts|m2ts) ... fileN.(ts|m2ts)]\n");
 	fprintf(stderr,"-o redirect output to another directory (default: './')\n");
 	fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
 	fprintf(stderr,"-l parse AVCHD/Blu-Ray playlist files from directory (*.mpl,*.mpls)\n");
@@ -540,6 +631,9 @@ int main(int argc,char** argv)
 	return 0;
     }
 
+#ifdef _WIN32
+    _setmode(0,_O_BINARY);
+#endif
 
     using namespace tsmux;
     
@@ -586,28 +680,7 @@ int main(int argc,char** argv)
 	    {
 		std::list<std::string> l;
 
-		DIR* dir=opendir(optarg);
-	
-		if(!dir)
-		    perror(optarg);
-		else
-		{
-		    dirent* d;
-	    
-		    while((d=readdir(dir)))
-		    {
-			if(*d->d_name!='.')
-			{
-			    char path[max_path_len];
-
-			    int n=sprintf(path,"%s/%s",optarg,d->d_name);
-			    
-			    l.push_back(std::string(path,n));
-			}
-		    }	    
-	
-		    closedir(dir);
-		}
+		tsmux::scan_dir(optarg,l);
 		
 		l.sort();
 		
@@ -637,39 +710,33 @@ int main(int argc,char** argv)
     {
 	if(*mpls_dir)
 	{
-	    DIR* dir=opendir(mpls_dir);
-	
-	    if(!dir)
-		perror(mpls_dir);
-	    else
-	    {
-		dirent* d;
-	    
-		while((d=readdir(dir)))
-		{
-		    if(*d->d_name!='.')
-		    {
-			char* pp=strrchr(d->d_name,'.');
-			
-			if(pp && (!strcasecmp(pp+1,"mpl") || !strcasecmp(pp+1,"mpls")))
-			{
-			    char path[max_path_len];
+	    std::list<std::string> l;
 
-			    int n=sprintf(path,"%s/%s",mpls_dir,d->d_name);
+	    tsmux::scan_dir(mpls_dir,l);
+
+	    for(std::list<std::string>::iterator i=l.begin();i!=l.end();++i)
+	    {
+		const char* name=i->c_str();
+
+		const char* pp=strrchr(name,'.');
 			
-			    if(mpls_parse(path,chap_info))
-				fprintf(stderr,"** %s: invalid file format\n",path);
-			}
-		    }
-		}	    
-	
-		closedir(dir);
+		if(pp && (!strcasecmp(pp+1,"mpl") || !strcasecmp(pp+1,"mpls")))
+		{
+		    if(mpls_parse(name,chap_info))
+			fprintf(stderr,"** %s: invalid file format\n",name);
+		}
 	    }
 	}
 
 	char path[tsmux::max_path_len];
 
-	int n=sprintf(path,"%s/chapters.xml",output_dir);
+	int n=sprintf(path,
+#ifndef _WIN32
+	    "%s/chapters.xml",
+#else
+	    "%s\\chapters.xml",
+#endif
+	    output_dir);
 	
 	chapters_fp=fopen(path,"w");
 	
@@ -865,8 +932,8 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 		if(!ch.end || ch.end>end)
 		    ch.end=end;
 
-		if(!ch.max || ch.max<end)
-		    ch.max=end;
+		if(!ch.maximum || ch.maximum<end)
+		    ch.maximum=end;
 	    }
 	}
     }
@@ -980,7 +1047,7 @@ int tsmux::calc_timecodes(tsmux::channel_data& ch,tsmux::stream& s)
     FILE* fp=s.tmc_fp;
     
     // calc total chapter length
-    u_int64_t total_len=ch.max-ch.beg;
+    u_int64_t total_len=ch.maximum-ch.beg;
 
     // align chapter length for fit to ms
     if(total_len%90)

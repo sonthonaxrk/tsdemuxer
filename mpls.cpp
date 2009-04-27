@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <memory>
 #include <vector>
@@ -106,18 +108,3 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
     
     return 0;
 }
-
-
-/*
-int main(void)
-{
-    std::map<int,std::string> dst;
-    
-    if(!mpls_parse("00000.mpl",dst))
-	for(std::map<int,std::string>::iterator i=dst.begin();i!=dst.end();++i)
-	    printf("%.5i: %s\n",i->first,i->second.c_str());
-
-    
-    return 0;
-}
-*/
