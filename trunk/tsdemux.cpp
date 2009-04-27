@@ -16,9 +16,9 @@ clark15b@gmail.com
 #include <getopt.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include "mpls.h"
 
 // TODO: Windows build (O_BINARY stdin)
-// TODO: read AVCHD playlist and date/time (for chapters)
 // TODO: GUI
 
 namespace tsmux
@@ -112,8 +112,9 @@ namespace tsmux
     int calc_timecodes(channel_data& ch,stream& s);
 
     int demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,stream>& pids,bool& fast_parse_done);
-    int demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,int chapter);
-    int demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,int chapter);
+    int demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,int chapter);
+    int demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,
+	int chapter);
 }
 
 
@@ -522,15 +523,16 @@ int main(int argc,char** argv)
 
     if(argc<2)
     {
-	fprintf(stderr,"USAGE: ./tsdemux [-o directory] [-d directory] [-c channel] [-h] [-i] [-p] [-m] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n");
+	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] file1.(ts|m2ts) ... fileN.(ts|m2ts)\n");
 	fprintf(stderr,"-o redirect output to another directory (default: './')\n");
 	fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
+	fprintf(stderr,"-l parse AVCHD/Blu-Ray playlist files from directory (*.mpl,*.mpls)\n");
 	fprintf(stderr,"-c channel number for demux (default: 1, 'any' for all channels)\n");
 	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
 	fprintf(stderr,"-i force interlace mode for video stream (fps*2)\n");
 	fprintf(stderr,"-p parse only, do not demux to video and audio files\n");
 	fprintf(stderr,"-f fast parse\n");
-	fprintf(stderr,"-m write mkvmerge options file to STDOUT\n");
+	fprintf(stderr,"-m show mkvmerge command example\n");
 	fprintf(stderr,"\ninput files can be *.m2ts, *.mts, *.ts or '-' for STDIN input\n");
 	fprintf(stderr,"output elementary streams to *.bin, *.m2v, *.264, *.vc1, *.ac3, *.m2a and *.pcm files\n");
 	fprintf(stderr,"*.tmc and chapters.xml for mkvtoolnix\n");
@@ -546,12 +548,17 @@ int main(int argc,char** argv)
     int opt;
     
     std::list<std::string> playlist;
+    
+    const char* mpls_dir="";
 
-    while((opt=getopt(argc,argv,"o:hipc:d:fm"))>=0)
+    while((opt=getopt(argc,argv,"o:hipc:d:fml:"))>=0)
 	switch(opt)
 	{
 	case 'o':
 	    output_dir=optarg;
+	    break;
+	case 'l':
+	    mpls_dir=optarg;
 	    break;
 	case 'h':
 	    hdmv_mode=true;
@@ -620,6 +627,7 @@ int main(int argc,char** argv)
     int stdin_number=0;
 
     std::map<u_int16_t,tsmux::stream> pids;
+    std::map<int,std::string> chap_info;
     
     int chapter=0;
     
@@ -627,6 +635,38 @@ int main(int argc,char** argv)
     
     if(!parse_only && channel!=-1)
     {
+	if(*mpls_dir)
+	{
+	    DIR* dir=opendir(mpls_dir);
+	
+	    if(!dir)
+		perror(mpls_dir);
+	    else
+	    {
+		dirent* d;
+	    
+		while((d=readdir(dir)))
+		{
+		    if(*d->d_name!='.')
+		    {
+			char* pp=strrchr(d->d_name,'.');
+			
+			if(pp && (!strcasecmp(pp+1,"mpl") || !strcasecmp(pp+1,"mpls")))
+			{
+			    char path[max_path_len];
+
+			    int n=sprintf(path,"%s/%s",mpls_dir,d->d_name);
+			
+			    if(mpls_parse(path,chap_info))
+				fprintf(stderr,"** %s: invalid file format\n",path);
+			}
+		    }
+		}	    
+	
+		closedir(dir);
+	    }
+	}
+
 	char path[tsmux::max_path_len];
 
 	int n=sprintf(path,"%s/chapters.xml",output_dir);
@@ -653,12 +693,12 @@ int main(int argc,char** argv)
 	{
 	    if(!stdin_number)
 	    {
-		demux_file("stdin",stdin,pids,++chapter);
+		demux_file("stdin",stdin,pids,chap_info,++chapter);
 		
 		stdin_number++;
 	    }
 	}else
-	    tsmux::demux_file(s.c_str(),pids,++chapter);
+	    tsmux::demux_file(s.c_str(),pids,chap_info,++chapter);
     }    
     
 
@@ -702,11 +742,10 @@ int main(int argc,char** argv)
 
     if(!parse_only && mkvmerge_opts)
     {
-	fprintf(stdout,"# begin mkvmerge options file\n");
-	fprintf(stdout,"# mkvmerge -o output.mkv @options\n");
+	fprintf(stdout,"\n# mkvmerge -o output.mkv ");
 
 	if(chap_file.length())
-	    fprintf(stdout,"--chapters\n%s\n",chap_file.c_str());
+	    fprintf(stdout,"--chapters %s ",chap_file.c_str());
 
 	for(std::map<u_int16_t,tsmux::stream>::iterator i=pids.begin();i!=pids.end();++i)
 	{
@@ -715,13 +754,13 @@ int main(int argc,char** argv)
 	    if(s.filename.length())
 	    {
 		if(s.tmc_filename.length())
-		    fprintf(stdout,"--timecodes\n0:%s\n",s.tmc_filename.c_str());
-		fprintf(stdout,"%s\n",s.filename.c_str());
+		    fprintf(stdout,"--timecodes 0:%s ",s.tmc_filename.c_str());
+		fprintf(stdout,"%s ",s.filename.c_str());
 	    }
 	}
 
 
-	fprintf(stdout,"# end mkvmerge options file\n");
+	fprintf(stdout,"\n");
     }
 
 
@@ -729,7 +768,8 @@ int main(int argc,char** argv)
     return 0;
 }
 
-int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,int chapter)
+int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,
+    int chapter)
 {
     bool hdmv_mode_tmp=hdmv_mode;
 	
@@ -754,7 +794,7 @@ int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,i
 	perror(name);
     else
     {	    
-	demux_file(name,fp,pids,chapter);
+	demux_file(name,fp,pids,chap_info,chapter);
 
 	fclose(fp);
     }
@@ -764,7 +804,8 @@ int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,i
     return 0;
 }
 
-int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,int chapter)
+int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,
+    int chapter)
 {
     size_t l=hdmv_mode?192:188;
     
@@ -862,20 +903,36 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 		// add chapter
 		if(chapters_fp && s.programm==channel && s.id==1)
 		{
-#ifdef _WIN32
-		    const char* p=strrchr(name,'\\');
-#else
-		    const char* p=strrchr(name,'/');
-#endif
-		    if(p)
-			p++;
-		    else
-			p=name;
+		    int ll=strlen(name);
+		    
+		    while(ll>0)
+		    {
+			if(name[ll-1]=='/' || name[ll-1]=='\\')
+			    break;
+			ll--;
+		    }
+		    
+		    const char* p=name+ll;
+
+		    int cn=0;
+		
+		    const char* pp=strchr(p,'.');
+		    if(pp)
+		    {
+                	for(int i=0;i<pp-p;i++)
+                	    cn=cn*10+(p[i]-48);		                                
+		    }
+		    
+		    std::string& c=chap_info[cn];
+		    
 
 		    fprintf(chapters_fp,"    <ChapterAtom>\n");
     		    fprintf(chapters_fp,"      <ChapterTimeStart>%s</ChapterTimeStart>\n",timecode_to_time(s.start_timecode));
 		    fprintf(chapters_fp,"      <ChapterDisplay>\n");
-	    	    fprintf(chapters_fp,"        <ChapterString>%s</ChapterString>\n",p);
+		    if(c.length())
+	    		fprintf(chapters_fp,"        <ChapterString>%s</ChapterString>\n",c.c_str());
+	    	    else
+	    		fprintf(chapters_fp,"        <ChapterString>%s</ChapterString>\n",p);
 //    		    fprintf(chapters_fp,"        <ChapterString>Chapter %i</ChapterString>\n",chapter);
             	    fprintf(chapters_fp,"      </ChapterDisplay>\n");
         	    fprintf(chapters_fp,"    </ChapterAtom>\n");
