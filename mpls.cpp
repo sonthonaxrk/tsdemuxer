@@ -47,21 +47,25 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
     
     fclose(fp);
     
-    if(memcmp(ptr,"MPLS0100",8))
+    if(memcmp(ptr,"MPLS0",5))
 	return -1;
 
     std::vector<int> chapters;
     chapters.reserve(512);
-
-    int num=(((int)ptr[64])<<8)+ptr[65];
-
+    
+    unsigned char* end_ptr=ptr+len;
+    
     unsigned char* pp=ptr+68;
     
-    if(pp+num*82>ptr+len)
+    if(pp>end_ptr)
 	return -1;
+
+    int num=(((int)ptr[64])<<8)+ptr[65];
     
     for(int i=0;i<num;i++)
     {
+	int chunk_len=pp[0]*10+pp[1]+2;
+	
 	int chapter=0;
 	
 	for(int j=2;j<7;j++)
@@ -69,30 +73,38 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
 	
 	chapters.push_back(chapter);
 
-	pp+=82;
+	pp+=chunk_len;
+	
+	if(pp>end_ptr)
+	    return -1;
     }
-    
-    if(pp+6>ptr+len)
+
+
+    if(pp+6>end_ptr)
 	return -1;
-    
+
     num=(((int)pp[4])<<8)+pp[5];
     pp+=6;
-    
-    if(pp+num*14>ptr+len)
+
+
+    if(pp+num*14>end_ptr)
 	return -1;
 
     for(int i=0;i<num;i++)
 	pp+=14;
 
+    if(pp>=end_ptr)
+	return 0;
+
     pp+=352;    
 
-    if(pp+2>ptr+len)
+    if(pp+2>end_ptr)
 	return -1;
 
     num=(((int)pp[0])<<8)+pp[1];
     pp+=2;
 
-    if(pp+num*66>ptr+len)
+    if(pp+num*66>end_ptr)
 	return -1;
 
     for(int i=0;i<num;i++)

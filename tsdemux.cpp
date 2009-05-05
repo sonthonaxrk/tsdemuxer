@@ -273,19 +273,19 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 	return -1;
     
     if(ptr[0]!=0x47)				// invalid packet sync byte
-	return -1;
+	return -2;
 
     u_int16_t pid=ntohs(*((u_int16_t*)(ptr+1)));
     
     if(pid&0x8000)				// transport error
-	return -1;
+	return -3;
 
     bool payload_unit_start_indicator=pid&0x4000;
 
     u_int8_t flags=ptr[3];
     
     if(flags&0xc0)				// scrambled
-	return -1;
+	return -4;
 
     bool adaptation_field_exist=flags&0x20;
 
@@ -303,7 +303,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 	    int l=(*ptr)+1;
 	    
 	    if(l>len)
-		return -1;
+		return -5;
 	
 	    ptr+=l;				// skip adaptation field
 	    len-=l;
@@ -316,7 +316,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 	    if(payload_unit_start_indicator)
 	    {
 		if(len<1)
-		    return -1;
+		    return -6;
 
 		ptr+=1;				// skip pointer field
 		len-=1;
@@ -327,27 +327,27 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		return 0;
 
 	    if(len<8)
-		return -1;
+		return -7;
 	
 	
 	    u_int16_t l=ntohs(*((u_int16_t*)(ptr+1)));
 	    
 	    if(l&0xb000!=0xb000)
-		return -1;
+		return -8;
 	
 	    l&=0x0fff;
 	    
 	    len-=3;
 	    
 	    if(l>len)
-		return -1;
+		return -9;
 	
 	    len-=5;
 	    ptr+=8;
 	    l-=5+4;
 	    
 	    if(l%4)
-		return -1;
+		return -10;
 	    
 	    int n=l/4;
 
@@ -358,7 +358,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		u_int16_t pid=ntohs(*((u_int16_t*)(ptr+2)));
 		
 		if(pid&0xe000!=0xe000)
-		    return -1;
+		    return -11;
 		
 		pid&=0x1fff;
 	    
@@ -382,7 +382,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		    if(payload_unit_start_indicator)
 		    {
 			if(len<1)
-			    return -1;
+			    return -12;
 
 			ptr+=1;			// skip pointer field
 			len-=1;
@@ -392,19 +392,19 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			return 0;
 
 		    if(len<12)
-			return -1;
+			return -13;
 		    
 		    u_int16_t l=ntohs(*((u_int16_t*)(ptr+1)));
 		    
 		    if(l&0x3000!=0x3000)
-			return -1;
+			return -14;
 
 		    l=(l&0x0fff)+3;
 		    
 		    u_int16_t n=(ntohs(*((u_int16_t*)(ptr+10)))&0x0fff)+12;
 
 		    if(len<l || n>l)
-			return -1;
+			return -15;
 		
 		    ptr+=n;
 		    len-=n;
@@ -414,20 +414,20 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		    while(l)
 		    {
 			if(l<5)
-			    return -1;
+			    return -16;
 		    
 			u_int8_t type=*ptr;
 			u_int16_t pid=ntohs(*((u_int16_t*)(ptr+1)));
 			
 			if(pid&0xe000!=0xe000)
-			    return -1;
+			    return -17;
 			
 			pid&=0x1fff;
 			
 			u_int16_t ll=(ntohs(*((u_int16_t*)(ptr+3)))&0x0fff)+5;
 			
 			if(ll>l)
-			    return -1;
+			    return -18;
 			
 			ptr+=ll;
 			l-=ll;			
@@ -444,7 +444,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 		    }
 		    
 		    if(l>0)
-			return -1;
+			return -19;
 		    
 
 		}else
@@ -455,12 +455,12 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			// PES header
 			
 			if(len<6)
-			    return -1;
+			    return -20;
 
 			static const unsigned char start_code_prefix[]={0x00,0x00,0x01};
 		    
 			if(memcmp(ptr,start_code_prefix,sizeof(start_code_prefix)))
-			    return -1;
+			    return -21;
 			
 			u_int8_t stream_id=ptr[3];
 			u_int16_t l=ntohs(*((u_int16_t*)(ptr+4)));
@@ -473,13 +473,13 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    // PES header extension
 			
 			    if(len<3)
-				return -1;
+				return -22;
 			
 			    u_int8_t bitmap=ptr[1];
 			    u_int8_t hlen=ptr[2]+3;
 			
 			    if(len<hlen)
-				return -1;
+				return -23;
 			
 			    if(l>0)
 				l-=hlen;
@@ -548,11 +548,11 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 			    
 				int n=sprintf(tmp,
 #ifndef _WIN32
-				    "%s/channel_%.2x_stream_%.2x.%s",
+				    "%s/channel_%.2x_track_%.2x_stream_%.2x.%s",
 #else
-				    "%s\\channel_%.2x_stream_%.2x.%s",
+				    "%s\\channel_%.2x_track_%.2x_stream_%.2x.%s",
 #endif
-				    output_dir,s.programm,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)));
+				    output_dir,s.programm,s.id,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)));
 
 				s.fp=fopen(tmp,"wb");
 			    
@@ -893,9 +893,10 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	    break;
 	}
 
-	if(tsmux::demux_packet((unsigned char*)tmp,l,pids,fast_parse_done))
+	int n;
+	if((n=tsmux::demux_packet((unsigned char*)tmp,l,pids,fast_parse_done)))
 	{
-	    fprintf(stderr,"** %s: invalid packet\n",name);
+	    fprintf(stderr,"** %s: invalid packet (%i)\n",name,n);
 	    break;
 	}
     }
