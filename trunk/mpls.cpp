@@ -64,7 +64,7 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
     
     for(int i=0;i<num;i++)
     {
-	int chunk_len=pp[0]*10+pp[1]+2;
+	int chunk_len=(((int)pp[0])<<8)+pp[1]+2;
 	
 	int chapter=0;
 	
