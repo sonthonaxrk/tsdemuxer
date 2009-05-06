@@ -10,7 +10,25 @@
 #include <vector>
 
 
-// Canon HF100 test only!
+inline u_int32_t mpls_get_ui32(unsigned char* p)
+{
+    u_int32_t rc=((u_int32_t)p[0])<<24;
+    rc+=((u_int32_t)p[1])<<16;
+    rc+=((u_int32_t)p[2])<<8;
+    rc+=p[3];
+    
+    return rc;
+}
+
+inline u_int16_t mpls_get_ui16(unsigned char* p)
+{
+    u_int32_t rc=((u_int32_t)p[0])<<8;
+    rc+=p[1];
+        
+    return rc;
+}
+
+
 
 int mpls_parse(const char* filename,std::map<int,std::string>& dst)
 {
@@ -52,71 +70,91 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
 
     std::vector<int> chapters;
     chapters.reserve(512);
+
+    u_int32_t playlist_offset=mpls_get_ui32(ptr+8);
+    u_int32_t playlist_mark_offset=mpls_get_ui32(ptr+12);
+    u_int32_t playlist_ext_offset=mpls_get_ui32(ptr+16);
     
-    unsigned char* end_ptr=ptr+len;
-    
-    unsigned char* pp=ptr+68;
-    
-    if(pp>end_ptr)
+    if(playlist_offset>len || playlist_mark_offset>len || playlist_ext_offset>len)
 	return -1;
 
-    int num=(((int)ptr[64])<<8)+ptr[65];
-    
-    for(int i=0;i<num;i++)
+    if(playlist_offset)
     {
-	int chunk_len=(((int)pp[0])<<8)+pp[1]+2;
+	unsigned char* p=ptr+playlist_offset;
+
+	u_int32_t l=mpls_get_ui32(p);
+	p+=4;
 	
-	int chapter=0;
+	unsigned char* p2=p+l;
+
+	p+=2;					// reserved
 	
-	for(int j=2;j<7;j++)
-	    chapter=chapter*10+(pp[j]-48);
+
+	u_int16_t n=mpls_get_ui16(p);
+	p+=4;
 	
-	chapters.push_back(chapter);
+	for(u_int16_t i=0;i<n;i++)
+	{
+	    if(p>p2)
+		return -1;
 
-	pp+=chunk_len;
+	    u_int16_t item_len=mpls_get_ui16(p);
+	    p+=2;
+
+	    int clip=0;
 	
-	if(pp>end_ptr)
-	    return -1;
-    }
+	    for(int j=0;j<5;j++)
+		clip=clip*10+(p[j]-48);
+	
+	    chapters.push_back(clip);
+	    
+	    p+=item_len;	    
+	}
+    }    
 
-
-    if(pp+6>end_ptr)
-	return -1;
-
-    num=(((int)pp[4])<<8)+pp[5];
-    pp+=6;
-
-
-    if(pp+num*14>end_ptr)
-	return -1;
-
-    for(int i=0;i<num;i++)
-	pp+=14;
-
-    if(pp>=end_ptr)
-	return 0;
-
-    pp+=352;    
-
-    if(pp+2>end_ptr)
-	return -1;
-
-    num=(((int)pp[0])<<8)+pp[1];
-    pp+=2;
-
-    if(pp+num*66>end_ptr)
-	return -1;
-
-    for(int i=0;i<num;i++)
+    if(playlist_mark_offset)
     {
-	char tmp[64];
-    
-	sprintf(tmp,"20%.2x-%.2x-%.2x %.2x:%.2x:%.2x",pp[12],pp[13],pp[14],pp[15],pp[16],pp[17]);
+	// skip section
+    }    
+
+    if(playlist_ext_offset)
+    {
+	unsigned char* p=ptr+playlist_ext_offset;
+
+	u_int32_t l=mpls_get_ui32(p);
+	p+=4;
+
+	unsigned char* p2=p+l;
 	
-	dst[chapters[i]]=tmp;
-	
-	pp+=66;
-    }
+	if(p+4<=p2 && !memcmp(p+20,"PLEX",4))
+	{
+	    p+=348;
+	    
+	    if(p+2<=p2)
+	    {
+		u_int16_t n=mpls_get_ui16(p);
+		p+=2;
+		
+		for(u_int16_t i=0;i<n;i++)
+		{
+		    if(p+66>p2)
+			break;
+		
+		    if(!memcmp(p+44,"CA",2))
+		    {
+			char tmp[64];
     
+			sprintf(tmp,"20%.2x-%.2x-%.2x %.2x:%.2x:%.2x",p[12],p[13],p[14],p[15],p[16],p[17]);
+	
+			dst[chapters[i]]=tmp;
+		    }		
+
+		    p+=66;
+		}
+	    }
+	}
+	
+    }    
+
     return 0;
 }
