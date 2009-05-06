@@ -46,7 +46,9 @@ namespace tsmux
 #else
 	max_path_len=_MAX_PATH,
 #endif
-	max_fast_parse_frames=4
+	max_fast_parse_frames=4,
+	
+	max_table_len=512
     };
 
     struct stream
@@ -95,6 +97,22 @@ namespace tsmux
         channel_data(void):beg(0),end(0),maximum(0) {}
     };
     
+    struct table
+    {
+	unsigned char* ptr;
+	int len;
+	int offset;
+	
+	table(void):ptr(new unsigned char[max_table_len]),len(0),offset(0) {}
+	~table(void)
+	{
+	    if(ptr)
+		delete[] ptr;
+	}
+	
+	void reset(int l) { len=l; offset=0; }
+    };
+    
     const char* output_dir	= ".";
     bool hdmv_mode		= false;
     bool parse_only		= false;
@@ -102,6 +120,9 @@ namespace tsmux
     bool interlace_mode		= false;
     int channel			= 1;		// -1 for all
     FILE* chapters_fp		= 0;
+    int verb			= 0;
+    
+    table pmt;
     
     namespace stream_type
     {
@@ -386,24 +407,54 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 
 			ptr+=1;			// skip pointer field
 			len-=1;
+			
+			if(*ptr!=0x02)		// is not PMT
+			    return 0;
+
+			if(len<12)
+			    return -13;
+		    
+			u_int16_t l=ntohs(*((u_int16_t*)(ptr+1)));
+		    
+			if(l&0x3000!=0x3000)
+			    return -14;
+
+			l=(l&0x0fff)+3;
+			
+			if(l>max_table_len)
+			    return -141;
+		    
+			pmt.reset(l);
+			
+			u_int16_t ll=len>l?l:len;
+			
+			memcpy(pmt.ptr,ptr,ll);
+			pmt.offset+=ll;
+			
+			if(pmt.offset<pmt.len)
+			    return 0;		// wait next part
+		    }else
+		    {
+			if(!pmt.offset)
+			    return -142;
+
+			u_int16_t l=pmt.len-pmt.offset;
+
+			u_int16_t ll=len>l?l:len;
+
+			memcpy(pmt.ptr+pmt.offset,ptr,ll);
+			pmt.offset+=ll;
+			
+			if(pmt.offset<pmt.len)
+			    return 0;		// wait next part
 		    }
 
-		    if(*ptr!=0x02)		// is not PMT
-			return 0;
+		    ptr=pmt.ptr;
+		    u_int16_t l=pmt.len;
 
-		    if(len<12)
-			return -13;
-		    
-		    u_int16_t l=ntohs(*((u_int16_t*)(ptr+1)));
-		    
-		    if(l&0x3000!=0x3000)
-			return -14;
-
-		    l=(l&0x0fff)+3;
-		    
 		    u_int16_t n=(ntohs(*((u_int16_t*)(ptr+10)))&0x0fff)+12;
 
-		    if(len<l || n>l)
+		    if(n>l)
 			return -15;
 		
 		    ptr+=n;
@@ -594,7 +645,7 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 				}
 			    
 				if(!fwrite(ptr,len,1,s.fp))
-				    fprintf(stderr,"** elementary stream 0x%x write error\n",s.stream_id);
+				    fprintf(stderr,"** elementary stream 0x%x (%i/%i) write error\n",s.stream_id,s.programm,s.id);
 			    }
 			}
 		    }		    
@@ -610,15 +661,16 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 
 int main(int argc,char** argv)
 {
-    fprintf(stderr,"tsdemux 1.00 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    fprintf(stderr,"tsdemux 1.01 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
-	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] [file1.(ts|m2ts) ... fileN.(ts|m2ts)]\n");
+	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] [-v] [file1.(ts|m2ts) ... fileN.(ts|m2ts)]\n");
 	fprintf(stderr,"-o redirect output to another directory (default: './')\n");
 	fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
 	fprintf(stderr,"-l parse AVCHD/Blu-Ray playlist files from directory (*.mpl,*.mpls)\n");
 	fprintf(stderr,"-c channel number for demux (default: 1, 'any' for all channels)\n");
+	fprintf(stderr,"-v turn on verbose output\n");
 	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
 	fprintf(stderr,"-i force interlace mode for video stream (fps*2)\n");
 	fprintf(stderr,"-p parse only, do not demux to video and audio files\n");
@@ -645,7 +697,7 @@ int main(int argc,char** argv)
     
     const char* mpls_dir="";
 
-    while((opt=getopt(argc,argv,"o:hipc:d:fml:"))>=0)
+    while((opt=getopt(argc,argv,"o:hipc:d:fml:v"))>=0)
 	switch(opt)
 	{
 	case 'o':
@@ -686,6 +738,9 @@ int main(int argc,char** argv)
 		
 		playlist.merge(l);
 	    }
+	    break;
+	case 'v':
+	    verb=1;
 	    break;
 	}
 
@@ -785,10 +840,10 @@ int main(int argc,char** argv)
 	    switch(stream_type)
 	    {
 	    case tsmux::stream_type::video:
-		fprintf(stderr,"channel %i, stream 0x%x, type 0x%x (%s, fps=%.2f)\n",s.programm,s.stream_id,s.type,type_name,90000./s.frame_rate);
+		fprintf(stderr,"channel %i, track %i, stream 0x%x, type 0x%x (%s, fps=%.2f)\n",s.programm,s.id,s.stream_id,s.type,type_name,90000./s.frame_rate);
 		break;
-	    case tsmux::stream_type::audio:
-		fprintf(stderr,"channel %i, stream 0x%x, type 0x%x (%s)\n",s.programm,s.stream_id,s.type,type_name);
+	    default:
+		fprintf(stderr,"channel %i, track %i, stream 0x%x, type 0x%x (%s)\n",s.programm,s.id,s.stream_id,s.type,type_name);
 		break;
 	    }
 	    
@@ -925,7 +980,8 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 		u_int64_t t=s.first_pts+s.frame_num*s.frame_rate;
 		if(t>end)
 		{
-		    fprintf(stderr,"** bad last PTS in stream 0x%x, use first PTS and current frame rate for fix it\n",s.stream_id);
+		    if(verb)
+			fprintf(stderr,"** bad last PTS in stream 0x%x (%i/%i), use first PTS and current frame rate for fix it\n",s.stream_id,s.programm,s.id);
 		    end=t;
 		    s.last_pts=t-s.frame_rate;
 		}
@@ -956,7 +1012,7 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 	        double delay=((double)(s.first_pts-ch.beg))/90.;
 		double len=((double)(last_pts-s.first_pts))/90.;
 
-		fprintf(stderr,"%s: channel %i, stream 0x%.2x ('%s'), length %.2fms",name,s.programm,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)),len);
+		fprintf(stderr,"%s: channel %i, track %i, stream 0x%.2x, type \"%s\", length %.2fms",name,s.programm,s.id,s.stream_id,get_file_ext_by_stream_type(get_stream_type(s.type)),len);
 	    
 		if(last_pts>ch.end)
 		    fprintf(stderr," (+%.2fms)",(double)(last_pts-ch.end)/90.);
@@ -1055,7 +1111,8 @@ int tsmux::calc_timecodes(tsmux::channel_data& ch,tsmux::stream& s)
     {
 	total_len=(total_len/90)*90+90;
 
-	fprintf(stderr,"** align stream 0x%x length to %.2fms\n",s.stream_id,(double)total_len/90.);	
+	if(verb)
+	    fprintf(stderr,"** align stream 0x%x (%i/%i) length to %.2fms\n",s.stream_id,s.programm,s.id,(double)total_len/90.);
     }
     
     u_int64_t pos=s.first_pts-ch.beg;
