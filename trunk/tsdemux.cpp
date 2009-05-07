@@ -200,7 +200,7 @@ int tsmux::scan_dir(const char* path,std::list<std::string>& l)
 
     intptr_t dir=_findfirst((std::string(path)+"\\*.*").c_str(),&fileinfo);
 
-    if(!dir)
+    if(dir==-1)
 	perror(path);
     else
     {
