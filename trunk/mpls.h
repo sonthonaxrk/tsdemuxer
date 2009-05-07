@@ -3,7 +3,8 @@
 
 #include <map>
 #include <string>
+#include <list>
 
-int mpls_parse(const char* filename,std::map<int,std::string>& dst);
+int mpls_parse(const char* filename,std::list<int>& playlist,std::map<int,std::string>& datetime,int verb);
 
 #endif
