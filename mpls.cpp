@@ -10,6 +10,14 @@
 #include <vector>
 
 
+#ifdef _WIN32
+typedef unsigned char u_int8_t;
+typedef unsigned short u_int16_t;
+typedef unsigned long u_int32_t;
+typedef unsigned long long u_int64_t;
+#endif
+
+
 inline u_int32_t mpls_get_ui32(unsigned char* p)
 {
     u_int32_t rc=((u_int32_t)p[0])<<24;
