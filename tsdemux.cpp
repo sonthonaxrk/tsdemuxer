@@ -42,107 +42,105 @@ namespace tsmux
     enum
     {
 #ifndef _WIN32
-	max_path_len=512,
+    max_path_len=512,
 #else
-	max_path_len=_MAX_PATH,
+    max_path_len=_MAX_PATH,
 #endif
-	max_fast_parse_frames=4,
-	
-	max_table_len=512
+    max_fast_parse_frames=4,
+    max_table_len=512
     };
 
     struct stream
     {
-	u_int16_t programm;			// programm number (1,2 ...)
-	u_int8_t  id;				// stream number in programm
-	u_int8_t  type;				// 0xff			- not ES
-						// 0x01,0x02		- MPEG2 video
-						// 0x80			- MPEG2 video (for TS only, not M2TS)
-						// 0x1b			- H.264 video
-						// 0xea			- VC-1  video
-						// 0x81,0x06		- AC3   audio
-						// 0x03,0x04		- MPEG2 audio
-						// 0x80			- LPCM  audio
+        u_int16_t programm;                     // programm number (1,2 ...)
+        u_int8_t  id;                           // stream number in programm
+        u_int8_t  type;                         // 0xff                 - not ES
+                                                // 0x01,0x02            - MPEG2 video
+                                                // 0x80                 - MPEG2 video (for TS only, not M2TS)
+                                                // 0x1b                 - H.264 video
+                                                // 0xea                 - VC-1  video
+                                                // 0x81,0x06            - AC3   audio
+                                                // 0x03,0x04            - MPEG2 audio
+                                                // 0x80                 - LPCM  audio
 
-	u_int8_t stream_id;			// MPEG stream id
-	int content_type;			// 1 - audio, 2 - video
-	u_int64_t dts;				// current MPEG stream DTS (presentation time for audio, decode time for video)
-	u_int64_t first_pts;
-	u_int64_t last_pts;
-	u_int32_t frame_rate;			// current time for show frame in ticks (90 ticks = 1 ms, 90000/frame_rate=fps)
-	u_int64_t frame_num;			// frame counter
+        u_int8_t stream_id;                     // MPEG stream id
+        int content_type;                       // 1 - audio, 2 - video
+        u_int64_t dts;                          // current MPEG stream DTS (presentation time for audio, decode time for video)
+        u_int64_t first_pts;
+        u_int64_t last_pts;
+        u_int32_t frame_rate;                   // current time for show frame in ticks (90 ticks = 1 ms, 90000/frame_rate=fps)
+        u_int64_t frame_num;                    // frame counter
 
-	FILE* fp;				// ES output file
-	FILE* tmc_fp;				// timecodes output file
-	u_int64_t start_timecode;		// start timecode value for tmc file (ms)
-	
-	std::string filename;
-	std::string tmc_filename;
-	
-	u_int32_t nal_ctx;
-	u_int64_t nal_frame_num;		// JVT NAL (h.264) frame counter
+        FILE* fp;                               // ES output file
+        FILE* tmc_fp;                           // timecodes output file
+        u_int64_t start_timecode;               // start timecode value for tmc file (ms)
 
-	
-	stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),content_type(0),
-	    dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0),start_timecode(0),
-		nal_ctx(0),nal_frame_num(0) {}
+        std::string filename;
+        std::string tmc_filename;
+
+        u_int32_t nal_ctx;
+        u_int64_t nal_frame_num;                // JVT NAL (h.264) frame counter
+
+        stream(void):programm(0xffff),id(0),type(0xff),stream_id(0),content_type(0),
+            dts(0),first_pts(0),last_pts(0),frame_rate(0),frame_num(0),fp(0),tmc_fp(0),start_timecode(0),
+                nal_ctx(0),nal_frame_num(0) {}
     };
 
     struct channel_data
     {
-	u_int64_t beg;
+        u_int64_t beg;
         u_int64_t end;
         u_int64_t maximum;
-        
+
         channel_data(void):beg(0),end(0),maximum(0) {}
     };
-    
+
     struct table
     {
-	unsigned char* ptr;
-	int len;
-	int offset;
-	
-	table(void):ptr(new unsigned char[max_table_len]),len(0),offset(0) {}
-	~table(void)
-	{
-	    if(ptr)
-		delete[] ptr;
-	}
-	
-	void reset(int l) { len=l; offset=0; }
+        unsigned char* ptr;
+        int len;
+        int offset;
+
+        table(void):ptr(new unsigned char[max_table_len]),len(0),offset(0) {}
+        ~table(void)
+        {
+            if(ptr)
+                delete[] ptr;
+        }
+
+        void reset(int l) { len=l; offset=0; }
     };
-    
-    const char* output_dir	= ".";
-    bool hdmv_mode		= false;
-    bool parse_only		= false;
-    bool fast_parse		= false;
-    bool interlace_mode		= false;
-    int channel			= 1;		// -1 for all
-    FILE* chapters_fp		= 0;
-    int verb			= 0;
-    
+
+    const char* output_dir      = ".";
+    bool hdmv_mode              = false;
+    bool parse_only             = false;
+    bool fast_parse             = false;
+    bool interlace_mode         = false;
+    int channel                 = 1;            // -1 for all
+    FILE* chapters_fp           = 0;
+    int verb                    = 0;
+
     table pmt;
-    
+
     namespace stream_type
     {
-	enum
-	{
-	    unknown		= 0,
-	    audio		= 1,
-	    video		= 2
-	};
-	
-	enum
-	{
-	    data		= 0,
-	    mpeg2_video		= 1,
-	    h264_video		= 2,
-	    vc1_video		= 3,
-	    ac3_audio		= 4,
-	    mpeg2_audio		= 5,
-	    lpcm_audio		= 6
-	};
+        enum
+        {
+            unknown             = 0,
+            audio               = 1,
+            video               = 2
+        };
+
+        enum
+        {
+            data                = 0,
+            mpeg2_video         = 1,
+            h264_video          = 2,
+            vc1_video           = 3,
+            ac3_audio           = 4,
+            mpeg2_audio         = 5,
+            lpcm_audio          = 6
+        };
     }
 
     inline u_int16_t ntohs(u_int16_t v) { return ((v<<8)&0xff00)|((v>>8)&0x00ff); }
@@ -152,9 +150,10 @@ namespace tsmux
 #endif
 
     int scan_dir(const char* path,std::list<std::string>& l);
+    int get_clip_number_by_filename(const std::string& s);
 
     u_int64_t decode_pts(const unsigned char* p);
-    
+
     const char* get_stream_type_name(u_int8_t type_id,int* type);
     int get_stream_type(u_int8_t type_id);
     const char* get_file_ext_by_stream_type(u_int8_t type_id);
@@ -163,9 +162,35 @@ namespace tsmux
     int calc_timecodes(channel_data& ch,stream& s);
 
     int demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,stream>& pids,bool& fast_parse_done);
-    int demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,int chapter);
-    int demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,
-	int chapter);
+    int demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& datetime,int chapter);
+    int demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& datetime,
+        int chapter);
+}
+
+int tsmux::get_clip_number_by_filename(const std::string& s)
+{
+    int ll=s.length();
+    const char* p=s.c_str();
+
+    while(ll>0)
+    {
+        if(p[ll-1]=='/' || p[ll-1]=='\\')
+            break;
+        ll--;
+    }
+
+    p+=ll;
+
+    int cn=0;
+
+    const char* pp=strchr(p,'.');
+
+    if(pp)
+    {
+        for(int i=0;i<pp-p;i++)
+            cn=cn*10+(p[i]-48);
+    }
+    return cn;
 }
 
 #ifdef _WIN32
@@ -174,7 +199,7 @@ int tsmux::scan_dir(const char* path,std::list<std::string>& l)
     _finddata_t fileinfo;
 
     intptr_t dir=_findfirst((std::string(path)+"\\*.*").c_str(),&fileinfo);
-	
+
     if(!dir)
 	perror(path);
     else
@@ -661,14 +686,14 @@ int tsmux::demux_packet(const unsigned char* ptr,int len,std::map<u_int16_t,tsmu
 
 int main(int argc,char** argv)
 {
-    fprintf(stderr,"tsdemux 1.01 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    fprintf(stderr,"tsdemux 1.02 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
-	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] [-v] [file1.(ts|m2ts) ... fileN.(ts|m2ts)]\n");
+	fprintf(stderr,"USAGE: ./tsdemux [-o dst_dir] [-d src_dir] [-l playlist_dir] [-c channel] [-h] [-i] [-p] [-m] [-v] [srcfile1.(ts|m2ts) ... srcfileN.(ts|m2ts)]\n");
 	fprintf(stderr,"-o redirect output to another directory (default: './')\n");
-	fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
-	fprintf(stderr,"-l parse AVCHD/Blu-Ray playlist files from directory (*.mpl,*.mpls)\n");
+	fprintf(stderr,"-l use AVCHD/Blu-Ray playlist file (*.mpl,*.mpls)\n");
+	fprintf(stderr,"-d demux all (if not used '-l' switch) mts/m2ts/ts files from directory\n");
 	fprintf(stderr,"-c channel number for demux (default: 1, 'any' for all channels)\n");
 	fprintf(stderr,"-v turn on verbose output\n");
 	fprintf(stderr,"-h force HDMV mode for STDIN input (192 byte packets)\n");
@@ -688,14 +713,17 @@ int main(int argc,char** argv)
 #endif
 
     using namespace tsmux;
-    
+
     bool mkvmerge_opts=false;
-    
+
     int opt;
-    
-    std::list<std::string> playlist;
-    
-    const char* mpls_dir="";
+
+    std::list<std::string>              playlist;               // playlist
+    std::list<std::string>              cliplist;               // raw M2TS/TS clip files list
+    std::map<int,std::string>           datetime;               // AVCHD clip date/time
+    std::list<int>                      mpls;                   // list of clip id from mpls files
+
+    std::map<u_int16_t,tsmux::stream>   pids;
 
     while((opt=getopt(argc,argv,"o:hipc:d:fml:v"))>=0)
 	switch(opt)
@@ -704,7 +732,8 @@ int main(int argc,char** argv)
 	    output_dir=optarg;
 	    break;
 	case 'l':
-	    mpls_dir=optarg;
+	    if(mpls_parse(optarg,mpls,datetime,verb))
+		fprintf(stderr,"** %s: invalid playlist file format\n",optarg);
 	    break;
 	case 'h':
 	    hdmv_mode=true;
@@ -734,9 +763,9 @@ int main(int argc,char** argv)
 
 		tsmux::scan_dir(optarg,l);
 		
-		l.sort();
+                l.sort();
 		
-		playlist.merge(l);
+		cliplist.merge(l);
 	    }
 	    break;
 	case 'v':
@@ -747,15 +776,33 @@ int main(int argc,char** argv)
 
     while(optind<argc)
     {
-	playlist.push_back(argv[optind]);
+	cliplist.push_back(argv[optind]);
 	optind++;
     }
+
+    if(mpls.size())
+    {
+        std::map<int,std::string> clips;
+
+        for(std::list<std::string>::iterator i=cliplist.begin();i!=cliplist.end();++i)
+        {
+            std::string& s=*i;
+
+            clips[get_clip_number_by_filename(s)]=s;
+        }
+
+        for(std::list<int>::iterator i=mpls.begin();i!=mpls.end();++i)
+        {
+            std::string& s=clips[*i];
+            if(s.length())
+                playlist.push_back(s);
+        }
+    }else
+        playlist=cliplist;
 
 
     int stdin_number=0;
 
-    std::map<u_int16_t,tsmux::stream> pids;
-    std::map<int,std::string> chap_info;
     
     int chapter=0;
     
@@ -763,26 +810,6 @@ int main(int argc,char** argv)
     
     if(!parse_only && channel!=-1)
     {
-	if(*mpls_dir)
-	{
-	    std::list<std::string> l;
-
-	    tsmux::scan_dir(mpls_dir,l);
-
-	    for(std::list<std::string>::iterator i=l.begin();i!=l.end();++i)
-	    {
-		const char* name=i->c_str();
-
-		const char* pp=strrchr(name,'.');
-			
-		if(pp && (!strcasecmp(pp+1,"mpl") || !strcasecmp(pp+1,"mpls")))
-		{
-		    if(mpls_parse(name,chap_info))
-			fprintf(stderr,"** %s: invalid file format\n",name);
-		}
-	    }
-	}
-
 	char path[tsmux::max_path_len];
 
 	int n=sprintf(path,
@@ -815,12 +842,12 @@ int main(int argc,char** argv)
 	{
 	    if(!stdin_number)
 	    {
-		demux_file("stdin",stdin,pids,chap_info,++chapter);
+		demux_file("stdin",stdin,pids,datetime,++chapter);
 		
 		stdin_number++;
 	    }
 	}else
-	    tsmux::demux_file(s.c_str(),pids,chap_info,++chapter);
+	    tsmux::demux_file(s.c_str(),pids,datetime,++chapter);
     }    
     
 
@@ -829,6 +856,7 @@ int main(int argc,char** argv)
 
     for(std::map<u_int16_t,tsmux::stream>::iterator i=pids.begin();i!=pids.end();++i)
     {
+        u_int16_t pid=i->first;
 	tsmux::stream& s=i->second;
 
 	if(s.stream_id)
@@ -840,10 +868,10 @@ int main(int argc,char** argv)
 	    switch(stream_type)
 	    {
 	    case tsmux::stream_type::video:
-		fprintf(stderr,"channel %i, track %i, stream 0x%x, type 0x%x (%s, fps=%.2f)\n",s.programm,s.id,s.stream_id,s.type,type_name,90000./s.frame_rate);
+		fprintf(stderr,"pid 0x%x, channel %i, track %i, stream 0x%x, type 0x%x (%s, fps=%.2f)\n",pid,s.programm,s.id,s.stream_id,s.type,type_name,90000./s.frame_rate);
 		break;
 	    default:
-		fprintf(stderr,"channel %i, track %i, stream 0x%x, type 0x%x (%s)\n",s.programm,s.id,s.stream_id,s.type,type_name);
+		fprintf(stderr,"pid 0x%x, channel %i, track %i, stream 0x%x, type 0x%x (%s)\n",pid,s.programm,s.id,s.stream_id,s.type,type_name);
 		break;
 	    }
 	    
@@ -890,7 +918,7 @@ int main(int argc,char** argv)
     return 0;
 }
 
-int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,
+int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& datetime,
     int chapter)
 {
     bool hdmv_mode_tmp=hdmv_mode;
@@ -909,14 +937,14 @@ int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,s
 	    return -1;
     }else
 	return -1;
-	
+
     FILE* fp=fopen(name,"rb");
-	    
+
     if(!fp)
 	perror(name);
     else
-    {	    
-	demux_file(name,fp,pids,chap_info,chapter);
+    {
+	demux_file(name,fp,pids,datetime,chapter);
 
 	fclose(fp);
     }
@@ -926,7 +954,7 @@ int tsmux::demux_file(const char* name,std::map<u_int16_t,tsmux::stream>& pids,s
     return 0;
 }
 
-int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& chap_info,
+int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream>& pids,std::map<int,std::string>& datetime,
     int chapter)
 {
     size_t l=hdmv_mode?192:188;
@@ -1027,27 +1055,9 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 		// add chapter
 		if(chapters_fp && s.programm==channel && s.id==1)
 		{
-		    int ll=strlen(name);
-		    
-		    while(ll>0)
-		    {
-			if(name[ll-1]=='/' || name[ll-1]=='\\')
-			    break;
-			ll--;
-		    }
-		    
-		    const char* p=name+ll;
+                    int cn=get_clip_number_by_filename(std::string(name));
 
-		    int cn=0;
-		
-		    const char* pp=strchr(p,'.');
-		    if(pp)
-		    {
-                	for(int i=0;i<pp-p;i++)
-                	    cn=cn*10+(p[i]-48);		                                
-		    }
-		    
-		    std::string& c=chap_info[cn];
+		    std::string& c=datetime[cn];
 		    
 
 		    fprintf(chapters_fp,"    <ChapterAtom>\n");
@@ -1056,8 +1066,7 @@ int tsmux::demux_file(const char* name,FILE* fp,std::map<u_int16_t,tsmux::stream
 		    if(c.length())
 	    		fprintf(chapters_fp,"        <ChapterString>%s</ChapterString>\n",c.c_str());
 	    	    else
-	    		fprintf(chapters_fp,"        <ChapterString>%s</ChapterString>\n",p);
-//    		    fprintf(chapters_fp,"        <ChapterString>Chapter %i</ChapterString>\n",chapter);
+                        fprintf(chapters_fp,"        <ChapterString>Clip %i</ChapterString>\n",chapter);
             	    fprintf(chapters_fp,"      </ChapterDisplay>\n");
         	    fprintf(chapters_fp,"    </ChapterAtom>\n");
         	}                                                

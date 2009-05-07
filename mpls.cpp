@@ -30,7 +30,7 @@ inline u_int16_t mpls_get_ui16(unsigned char* p)
 
 
 
-int mpls_parse(const char* filename,std::map<int,std::string>& dst)
+int mpls_parse(const char* filename,std::list<int>& playlist,std::map<int,std::string>& datetime,int verb)
 {
     FILE* fp=fopen(filename,"rb");
     
@@ -107,6 +107,7 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
 		clip=clip*10+(p[j]-48);
 	
 	    chapters.push_back(clip);
+	    playlist.push_back(clip);
 	    
 	    p+=item_len;	    
 	}
@@ -146,7 +147,9 @@ int mpls_parse(const char* filename,std::map<int,std::string>& dst)
     
 			sprintf(tmp,"20%.2x-%.2x-%.2x %.2x:%.2x:%.2x",p[12],p[13],p[14],p[15],p[16],p[17]);
 	
-			dst[chapters[i]]=tmp;
+			datetime[chapters[i]]=tmp;
+			if(verb)
+				fprintf(stderr,"%.5i: %s\n",chapters[i],tmp);
 		    }		
 
 		    p+=66;
