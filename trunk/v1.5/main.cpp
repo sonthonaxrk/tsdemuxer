@@ -21,10 +21,12 @@ int main(int argc,char** argv)
 
     if(argc<2)
     {
-        fprintf(stderr,"USAGE: ./tsdemux [-u] [-p] [-d N] *.ts|*.m2ts ...\n");
+        fprintf(stderr,"USAGE: ./tsdemux [-u] [-p] [-d mode] [-j] [-c channel] *.ts|*.m2ts ...\n");
         fprintf(stderr,"-u demux unknown streams\n");
         fprintf(stderr,"-p parse only\n");
-        fprintf(stderr,"-d dump TS structure to STDOUT (N=1: dump M2TS timecodes, N=2: dump PTS/DTS, N=3: human readable output)\n");
+        fprintf(stderr,"-d dump TS structure to STDOUT (mode=1: dump M2TS timecodes, mode=2: dump PTS/DTS, mode=3: human readable output)\n");
+        fprintf(stderr,"-j join elementary streams\n");
+        fprintf(stderr,"-c channel number for demux\n");
         fprintf(stderr,"\ninput files can be *.m2ts, *.mts or *.ts\n");
         fprintf(stderr,"output elementary streams to *.sup, *.m2v, *.264, *.vc1, *.ac3, *.m2a and *.pcm files\n");
         fprintf(stderr,"\n");
@@ -35,9 +37,11 @@ int main(int argc,char** argv)
     bool parse_only=false;
     int dump=0;
     bool av_only=true;
+    bool join=false;
+    int channel=0;
 
     int opt;
-    while((opt=getopt(argc,argv,"pd:u"))>=0)
+    while((opt=getopt(argc,argv,"pd:ujc:"))>=0)
         switch(opt)
         {
         case 'p':
@@ -48,6 +52,12 @@ int main(int argc,char** argv)
             break;
         case 'u':
             av_only=false;
+            break;
+        case 'j':
+            join=true;
+            break;
+        case 'c':
+            channel=atoi(optarg);
             break;
         }
 
@@ -61,22 +71,45 @@ int main(int argc,char** argv)
 
     time_t beg_time=time(0);
 
-    for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+    if(join)
     {
-        const std::string& s=*i;
-
         ts::demuxer demuxer;
 
-        demuxer.parse_only=dump>0?true:parse_only;
-        demuxer.dump=dump;
-        demuxer.av_only=av_only;
+        for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+        {
+            const std::string& s=*i;
 
-        demuxer.demux_file(s.c_str());
+            demuxer.av_only=av_only;
 
+            demuxer.channel=channel;
+
+            demuxer.demux_file(s.c_str());
+
+            demuxer.gen_timecodes();
+
+            demuxer.reset();
+        }
         demuxer.show();
+    }else
+    {
+        for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+        {
+            const std::string& s=*i;
+
+            ts::demuxer demuxer;
+
+            demuxer.parse_only=dump>0?true:parse_only;
+            demuxer.dump=dump;
+            demuxer.av_only=av_only;
+            demuxer.channel=channel;
+
+            demuxer.demux_file(s.c_str());
+
+            demuxer.show();
+        }
     }
 
-    fprintf(stderr,"\ntime: %li sec\n",beg_time-time(0));
+    fprintf(stderr,"\ntime: %li sec\n",time(0)-beg_time);
 
     return 0;
 }

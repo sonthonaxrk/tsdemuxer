@@ -26,6 +26,13 @@ namespace ts
     void get_prefix_name_by_filename(const std::string& s,std::string& name);
 }
 
+ts::stream::~stream(void)
+{
+    if(timecodes)
+        fclose(timecodes);
+}
+
+
 void ts::get_prefix_name_by_filename(const std::string& s,std::string& name)
 {
     int ll=s.length();
@@ -56,6 +63,8 @@ ts::file::~file(void)
 
 bool ts::file::open(int mode,const char* fmt,...)
 {
+    filename.clear();
+
     char name[512];
 
     va_list ap;
@@ -78,7 +87,10 @@ bool ts::file::open(int mode,const char* fmt,...)
     fd=::open(name,flags,0644);
 
     if(fd!=-1)
+    {
+        filename=name;
         return true;
+    }
 
     return false;
 }
@@ -370,9 +382,12 @@ int ts::demuxer::demux_ts_packet(const char* ptr)
 
                 pid&=0x1fff;
 
-                stream& ss=streams[pid];
-                ss.channel=channel;
-                ss.type=0xff;
+                if(!demuxer::channel || demuxer::channel==channel)
+                {
+                    stream& ss=streams[pid];
+                    ss.channel=channel;
+                    ss.type=0xff;
+                }
             }
         }else
         {
@@ -565,32 +580,37 @@ void ts::demuxer::show(void)
             u_int64_t end=s.last_pts+s.frame_length;
             u_int64_t len=end-s.first_pts;
 
-            fprintf(stderr,"pid=%i (0x%.4x), ch=%i, id=%.i, type=0x%.2x (%s), stream=0x%.2x, fps=%.2f, len=%llums",
-                pid,pid,s.channel,s.id,s.type,get_stream_ext(get_stream_type(s.type)),s.stream_id,
-                    90000./(double)s.frame_length,len/90);
+            fprintf(stderr,"pid=%i (0x%.4x), ch=%i, id=%.i, type=0x%.2x (%s), stream=0x%.2x",
+                pid,pid,s.channel,s.id,s.type,get_stream_ext(get_stream_type(s.type)),s.stream_id);
+
+            if(s.frame_length>0)
+                fprintf(stderr,", fps=%.2f",90000./(double)s.frame_length);
+
+            if(len>0)
+                fprintf(stderr,", len=%llums",len/90);
 
 
-            fprintf(stderr," (%llu",s.frame_num);
-            if(s.nal_frame_num>0)
-                fprintf(stderr,"/%llu",s.nal_frame_num);
-            fprintf(stderr," frames)",s.frame_num);
+            if(s.frame_num>0)
+            {
+                fprintf(stderr," (%llu",s.frame_num);
+                if(s.nal_frame_num>0)
+                    fprintf(stderr,"/%llu",s.nal_frame_num);
+                fprintf(stderr," frames)",s.frame_num);
+            }
 
 
-            fprintf(stderr," : ");
             if(s.first_pts>beg_pts)
             {
                 u_int32_t n=(s.first_pts-beg_pts)/90;
 
-                fprintf(stderr,"=%ums=>",n);
+                fprintf(stderr,", delay=+%ums",n);
             }
-
-            fprintf(stderr,"[@@@@@]");
 
             if(end<end_pts)
             {
                 u_int32_t n=(end_pts-end)/90;
 
-                fprintf(stderr,"<=%ums=",n);
+                fprintf(stderr,", tail=-%ums",n);
             }
 
             fprintf(stderr,"\n");
@@ -654,6 +674,61 @@ int ts::demuxer::demux_file(const char* name)
             return -1;
         }
     }
+
+    return 0;
+}
+
+int ts::demuxer::gen_timecodes(void)
+{
+    u_int64_t beg_pts=0;
+    u_int64_t end_pts=0;
+
+    for(std::map<u_int16_t,stream>::iterator i=streams.begin();i!=streams.end();++i)
+    {
+        u_int16_t pid=i->first;
+        ts::stream& s=i->second;
+
+        if(s.type!=0xff)
+        {
+            if(!s.timecodes && s.file.filename.length())
+            {
+                std::string::size_type n=s.file.filename.find_last_of('.');
+                if(n!=std::string::npos)
+                {
+                    std::string filename=s.file.filename.substr(0,n);
+                    filename+=".tmc";
+                    printf("%s\n",filename.c_str());
+
+                    s.timecodes=fopen(filename.c_str(),"w");
+                }
+            }
+            if(s.timecodes)
+            {
+                if(s.first_pts<beg_pts || !beg_pts)
+                    beg_pts=s.first_pts;
+
+                u_int64_t len=s.last_pts+s.frame_length;
+
+                if(len>end_pts || !end_pts)
+                    end_pts=len;
+            }
+        }
+    }
+
+
+    for(std::map<u_int16_t,stream>::iterator i=streams.begin();i!=streams.end();++i)
+    {
+        u_int16_t pid=i->first;
+        ts::stream& s=i->second;
+
+        if(s.timecodes)
+        {
+            fprintf(s.timecodes,"%llu:%llu\n",s.first_pts-beg_pts+base_pts,s.last_pts-beg_pts+base_pts);
+            fprintf(s.timecodes,"%u,%llu\n",s.frame_length,(s.last_pts+s.frame_length-s.first_pts)/(s.nal_frame_num?s.nal_frame_num:s.frame_num));
+        }
+    }
+
+    base_pts+=end_pts-beg_pts;
 
     return 0;
 }
