@@ -21,6 +21,8 @@
 // 2) TS Continuity counter
 // 3) PES PTS/DTS
 
+// calc AC3 frames from stream
+
 namespace ts
 {
     void get_prefix_name_by_filename(const std::string& s,std::string& name);
@@ -603,7 +605,7 @@ void ts::demuxer::show(void)
             {
                 u_int32_t n=(s.first_pts-beg_pts)/90;
 
-                fprintf(stderr,", delay=+%ums",n);
+                fprintf(stderr,", head=+%ums",n);
             }
 
             if(end<end_pts)
@@ -697,7 +699,6 @@ int ts::demuxer::gen_timecodes(void)
                 {
                     std::string filename=s.file.filename.substr(0,n);
                     filename+=".tmc";
-                    printf("%s\n",filename.c_str());
 
                     s.timecodes=fopen(filename.c_str(),"w");
                 }
@@ -711,6 +712,8 @@ int ts::demuxer::gen_timecodes(void)
 
                 if(len>end_pts || !end_pts)
                     end_pts=len;
+
+                fprintf(s.timecodes,"# timecode format v2\n");
             }
         }
     }
@@ -723,12 +726,34 @@ int ts::demuxer::gen_timecodes(void)
 
         if(s.timecodes)
         {
-            fprintf(s.timecodes,"%llu:%llu\n",s.first_pts-beg_pts+base_pts,s.last_pts-beg_pts+base_pts);
-            fprintf(s.timecodes,"%u,%llu\n",s.frame_length,(s.last_pts+s.frame_length-s.first_pts)/(s.nal_frame_num?s.nal_frame_num:s.frame_num));
+            u_int64_t frame_num=s.nal_frame_num?s.nal_frame_num:s.frame_num;
+
+            write_timecodes(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num);
         }
     }
 
     base_pts+=end_pts-beg_pts;
 
     return 0;
+}
+
+void ts::demuxer::write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num)
+{
+    u_int64_t len=last_pts-first_pts;
+
+    double c=(double)len/(double)frame_num;
+
+    double m=0;
+    u_int32_t n=0;
+
+    for(int i=0;i<frame_num;i++)
+    {
+        fprintf(fp,"%llu\n",(first_pts+n)/90);
+
+        m+=c;
+        n+=c;
+
+        if(m-n>=1)
+            n+=1;
+    }
 }

@@ -164,6 +164,8 @@ namespace ts
 
         // take 188/192 bytes TS/M2TS packet
         int demux_ts_packet(const char* ptr);
+
+        void write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num);
     public:
         demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0) {}
 
