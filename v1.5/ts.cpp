@@ -17,8 +17,16 @@
 #include <time.h>
 #include <list>
 
-// 1) M2TS timecode
-// 2) TS Continuity counter
+// 1) M2TS timecode (0-1073741823)
+/*
+The extra 4-byte header is composed of two fields. The upper 2 bits are the copy_permission_indicator and the lower 30 bits are the arrival_time_stamp. The arrival_time_stamp is equal to the lower 30 bits of the 27 MHz STC at the 0x47 byte of the Transport packet. In a packet that contains a PCR, the PCR will be a few ticks later than the arrival_time_stamp. The exact difference between the arrival_time_stamp and the PCR (and the number of bits between them) indicates the intended fixed bitrate of the variable rate Transport Stream.
+
+The primary function is to allow the variable rate Transport Stream to be converted to a fixed rate stream before decoding (since only fixed rate Transport Streams fit into the T-STD buffering model).
+
+It doesn't really help for random access. 30 bits at 27 MHz only represents 39.77 seconds.
+*/
+
+// 2) TS Continuity counter (0-15..0-15..)
 // 3) PES PTS/DTS
 
 // calc AC3 frames from stream
@@ -93,6 +101,8 @@ bool ts::file::open(int mode,const char* fmt,...)
         filename=name;
         return true;
     }
+
+    fprintf(stderr,"can`t open file %s\n",name);
 
     return false;
 }
@@ -239,10 +249,9 @@ u_int64_t ts::demuxer::decode_pts(const char* ptr)
 int ts::demuxer::demux_ts_packet(const char* ptr)
 {
     u_int32_t timecode=0;
-
     if(hdmv)
     {
-        timecode=to_int32(ptr);
+        timecode=to_int32(ptr)&0x3fffffff;
         ptr+=4;
     }
 
@@ -437,7 +446,12 @@ int ts::demuxer::demux_ts_packet(const char* ptr)
                         ss.id=++s.id;
 
                         if(!parse_only && !ss.file.is_opened())
-                            ss.file.open(file::out,"%strack_%i.%s",prefix.c_str(),pid,get_stream_ext(get_stream_type(ss.type)));
+                        {
+                            if(dst.length())
+                                ss.file.open(file::out,"%s/%strack_%i.%s",dst.c_str(),prefix.c_str(),pid,get_stream_ext(get_stream_type(ss.type)));
+                            else
+                                ss.file.open(file::out,"%strack_%i.%s",prefix.c_str(),pid,get_stream_ext(get_stream_type(ss.type)));
+                        }
                     }
                 }
             }
@@ -527,26 +541,36 @@ int ts::demuxer::demux_ts_packet(const char* ptr)
 
                         if(pts>s.last_pts)
                             s.last_pts=pts;
+
+                        if(!s.first_dts)
+                            s.first_dts=dts;
                     }
                     break;
                 }
+
+                if(pes_output && s.file.is_opened())
+                    s.file.write(s.psi.buf,s.psi.len);
+
                 s.psi.reset();
             }
 
-            int len=end_ptr-ptr;
-
-            if(s.type==0x1b)                                // JVT NAL (h.264)
+            if(s.frame_num)
             {
-                for(int i=0;i<len;i++)
-                {
-                    s.nal_ctx=(s.nal_ctx<<8)+ptr[i];
-                    if((s.nal_ctx&0xffffff1f)==0x00000109)  // NAL access unit
-                        s.nal_frame_num++;
-                }
-            }
+                int len=end_ptr-ptr;
 
-            if(s.file.is_opened())
-                s.file.write(ptr,len);
+                if(s.type==0x1b)                                // JVT NAL (h.264)
+                {
+                    for(int i=0;i<len;i++)
+                    {
+                        s.nal_ctx=(s.nal_ctx<<8)+ptr[i];
+                        if((s.nal_ctx&0xffffff1f)==0x00000109)  // NAL access unit
+                            s.nal_frame_num++;
+                    }
+                }
+
+                if(s.file.is_opened())
+                    s.file.write(ptr,len);
+            }
         }
     }
 

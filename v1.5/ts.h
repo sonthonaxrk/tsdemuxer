@@ -119,6 +119,7 @@ namespace ts
         FILE* timecodes;
 
         u_int64_t dts;                          // current MPEG stream DTS (presentation time for audio, decode time for video)
+        u_int64_t first_dts;
         u_int64_t first_pts;
         u_int64_t last_pts;
         u_int32_t frame_length;                 // frame length in ticks (90 ticks = 1 ms, 90000/frame_length=fps)
@@ -127,7 +128,7 @@ namespace ts
         u_int64_t nal_frame_num;                // JVT NAL (h.264) frame counter
 
         stream(void):channel(0xffff),id(0),type(0xff),stream_id(0),
-            dts(0),first_pts(0),last_pts(0),frame_length(0),frame_num(0),nal_ctx(0),nal_frame_num(0),timecodes(0) {}
+            dts(0),first_dts(0),first_pts(0),last_pts(0),frame_length(0),frame_num(0),nal_ctx(0),nal_frame_num(0),timecodes(0) {}
 
         ~stream(void);
 
@@ -152,7 +153,9 @@ namespace ts
         bool parse_only;                                // no demux
         int dump;                                       // 0 - no dump, 1 - dump M2TS timecodes, 2 - dump PTS/DTS, 3 - dump tracks
         int channel;                                    // channel for demux
-        std::string prefix;                             // output file name prefix
+        int pes_output;                                 // demux to PES
+        std::string prefix;                             // output file name prefix (autodetect)
+        std::string dst;                                // output directory
     protected:
 
         u_int64_t base_pts;
@@ -167,7 +170,7 @@ namespace ts
 
         void write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num);
     public:
-        demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0) {}
+        demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0),pes_output(0) {}
 
         void show(void);
 
