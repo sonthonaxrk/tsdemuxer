@@ -30,6 +30,7 @@ It doesn't really help for random access. 30 bits at 27 MHz only represents 39.7
 // 3) PES PTS/DTS
 
 // calc AC3 frames from stream
+// join TS
 
 namespace ts
 {

@@ -14,6 +14,8 @@
 #include <list>
 #include <getopt.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 namespace ts
 {
@@ -27,6 +29,12 @@ namespace ts
 
         ts_file_info(void):first_dts(0),first_pts(0),last_pts(0) {}
     };
+
+#ifdef _WIN32
+    inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpi(s1,s2); }
+#endif
+
+    int scan_dir(const char* path,std::list<std::string>& l);
 
     bool is_ts_filename(const std::string& s)
     {
@@ -50,20 +58,79 @@ namespace ts
     }
 }
 
+#ifdef _WIN32
+int ts::scan_dir(const char* path,std::list<std::string>& l)
+{
+    _finddata_t fileinfo;
+
+    intptr_t dir=_findfirst((std::string(path)+"\\*.*").c_str(),&fileinfo);
+
+    if(dir==-1)
+        perror(path);
+    else
+    {
+        while(!_findnext(dir,&fileinfo))
+            if(!(fileinfo.attrib&_A_SUBDIR) && *fileinfo.name!='.')
+            {
+                char p[512];
+
+                int n=sprintf(p,"%s\\%s",path,fileinfo.name);
+
+                l.push_back(std::string(p,n));
+            }
+    }
+
+    _findclose(dir);
+
+    return l.size();
+}
+#else
+int ts::scan_dir(const char* path,std::list<std::string>& l)
+{
+    DIR* dir=opendir(path);
+
+    if(!dir)
+        perror(path);
+    else
+    {
+        dirent* d;
+
+        while((d=readdir(dir)))
+        {
+            if(*d->d_name!='.')
+            {
+                char p[512];
+
+                int n=sprintf(p,"%s/%s",path,d->d_name);
+
+                l.push_back(std::string(p,n));
+            }
+        }
+
+        closedir(dir);
+    }
+
+    return l.size();
+}
+#endif
+
+
 int main(int argc,char** argv)
 {
     fprintf(stderr,"tsdemux 1.50 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
-        fprintf(stderr,"USAGE: ./tsdemux [-u] [-p] [-o dst] [-d mode] [-j] [-z] [-c channel] *.ts|*.m2ts ...\n");
+        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-o dst] [-c channel] [-u] [-j] [-z] [-p] [-e mode] *.ts|*.m2ts ...\n");
+        fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
+        fprintf(stderr,"-l use AVCHD/Blu-Ray playlist file (*.mpl,*.mpls)\n");
+        fprintf(stderr,"-o redirect output to another directory or transport stream file\n");
+        fprintf(stderr,"-c channel number for demux\n");
         fprintf(stderr,"-u demux unknown streams\n");
-        fprintf(stderr,"-p parse only\n");
-        fprintf(stderr,"-o redirect output to another directory or file\n");
-        fprintf(stderr,"-d dump TS structure to STDOUT (mode=1: dump M2TS timecodes, mode=2: dump PTS/DTS, mode=3: human readable output)\n");
         fprintf(stderr,"-j join elementary streams\n");
         fprintf(stderr,"-z demux to PES streams (instead of elementary streams)\n");
-        fprintf(stderr,"-c channel number for demux\n");
+        fprintf(stderr,"-p parse only\n");
+        fprintf(stderr,"-e dump TS structure to STDOUT (mode=1: dump M2TS timecodes, mode=2: dump PTS/DTS, mode=3: human readable output)\n");
         fprintf(stderr,"\ninput files can be *.m2ts, *.mts or *.ts\n");
         fprintf(stderr,"output elementary streams to *.sup, *.m2v, *.264, *.vc1, *.ac3, *.m2a and *.pcm files\n");
         fprintf(stderr,"\n");
@@ -79,14 +146,18 @@ int main(int argc,char** argv)
     int pes=0;
     std::string output;
 
+    std::string mpls;                           // MPLS
+
+    std::list<std::string> playlist;            // playlist
+
     int opt;
-    while((opt=getopt(argc,argv,"pd:ujc:zo:"))>=0)
+    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:"))>=0)
         switch(opt)
         {
         case 'p':
             parse_only=true;
             break;
-        case 'd':
+        case 'e':
             dump=atoi(optarg);
             break;
         case 'u':
@@ -104,9 +175,18 @@ int main(int argc,char** argv)
         case 'o':
             output=optarg;
             break;
+        case 'd':
+            {
+                std::list<std::string> l;
+                ts::scan_dir(optarg,l);
+                l.sort();
+                playlist.merge(l);
+            }
+            break;
+        case 'l':
+            mpls=optarg;
+            break;
         }
-
-    std::list<std::string> playlist;             // playlist
 
     while(optind<argc)
     {
