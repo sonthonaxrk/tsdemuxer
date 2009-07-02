@@ -8,14 +8,10 @@
 
 
 #include "ts.h"
-#include <string.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
-#include <list>
+
+// TODO: calc AC3 frames from stream
+// TODO: write chapters.xml
+// TODO: join TS
 
 // 1) M2TS timecode (0-1073741823)
 /*
@@ -29,12 +25,15 @@ It doesn't really help for random access. 30 bits at 27 MHz only represents 39.7
 // 2) TS Continuity counter (0-15..0-15..)
 // 3) PES PTS/DTS
 
-// calc AC3 frames from stream
-// join TS
-
 namespace ts
 {
     void get_prefix_name_by_filename(const std::string& s,std::string& name);
+
+#ifndef _WIN32
+    char os_slash='/';
+#else
+    char os_slash='\\';
+#endif
 }
 
 ts::stream::~stream(void)
@@ -449,7 +448,7 @@ int ts::demuxer::demux_ts_packet(const char* ptr)
                         if(!parse_only && !ss.file.is_opened())
                         {
                             if(dst.length())
-                                ss.file.open(file::out,"%s/%strack_%i.%s",dst.c_str(),prefix.c_str(),pid,get_stream_ext(get_stream_type(ss.type)));
+                                ss.file.open(file::out,"%s%c%strack_%i.%s",dst.c_str(),os_slash,prefix.c_str(),pid,get_stream_ext(get_stream_type(ss.type)));
                             else
                                 ss.file.open(file::out,"%strack_%i.%s",prefix.c_str(),pid,get_stream_ext(get_stream_type(ss.type)));
                         }
@@ -559,14 +558,14 @@ int ts::demuxer::demux_ts_packet(const char* ptr)
             {
                 int len=end_ptr-ptr;
 
-                if(s.type==0x1b)                                // JVT NAL (h.264)
+                switch(s.type)
                 {
-                    for(int i=0;i<len;i++)
-                    {
-                        s.nal_ctx=(s.nal_ctx<<8)+ptr[i];
-                        if((s.nal_ctx&0xffffff1f)==0x00000109)  // NAL access unit
-                            s.nal_frame_num++;
-                    }
+                case 0x1b:                                // JVT NAL (h.264)
+                    s.frame_num_h264.parse(ptr,len);
+                    break;
+                case 0x81:
+                    s.frame_num_ac3.parse(ptr,len);
+                    break;
                 }
 
                 if(s.file.is_opened())
@@ -619,9 +618,11 @@ void ts::demuxer::show(void)
 
             if(s.frame_num>0)
             {
+                u_int64_t esfn=s.get_es_frame_num();
+
                 fprintf(stderr," (%llu",s.frame_num);
-                if(s.nal_frame_num>0)
-                    fprintf(stderr,"/%llu",s.nal_frame_num);
+                if(esfn>0)
+                    fprintf(stderr,"/%llu",esfn);
                 fprintf(stderr," frames)",s.frame_num);
             }
 
@@ -657,7 +658,7 @@ int ts::demuxer::demux_file(const char* name)
 
     if(!file.open(file::in,"%s",name))
     {
-        fprintf(stderr,"%s: can`t open file\n",name);
+        fprintf(stderr,"can`t open file %s\n",name);
         return -1;
     }
 
@@ -678,18 +679,18 @@ int ts::demuxer::demux_file(const char* name)
             if(buf[0]==0x47 && buf[4]!=0x47)
             {
                 buf_len=188;
-                fprintf(stderr,"%s: TS stream detected (packet length=%i)\n",name,buf_len);
+                fprintf(stderr,"TS stream detected in %s (packet length=%i)\n",name,buf_len);
                 hdmv=false;
             }else if(buf[0]!=0x47 && buf[4]==0x47)
             {
                 if(file.read(buf+188,4)!=4)
                     break;
                 buf_len=192;
-                fprintf(stderr,"%s: M2TS stream detected (packet length=%i)\n",name,buf_len);
+                fprintf(stderr,"M2TS stream detected in %s (packet length=%i)\n",name,buf_len);
                 hdmv=true;
             }else
             {
-                fprintf(stderr,"%s: unknown stream type\n",name);
+                fprintf(stderr,"unknown stream type in %s\n",name);
                 return -1;
             }
         }
@@ -751,7 +752,9 @@ int ts::demuxer::gen_timecodes(void)
 
         if(s.timecodes)
         {
-            u_int64_t frame_num=s.nal_frame_num?s.nal_frame_num:s.frame_num;
+            u_int64_t esfn=s.get_es_frame_num();
+
+            u_int64_t frame_num=esfn?esfn:s.frame_num;
 
             write_timecodes(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num);
         }

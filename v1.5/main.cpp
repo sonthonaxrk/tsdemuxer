@@ -8,14 +8,7 @@
 
 
 #include "ts.h"
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <list>
-#include <getopt.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <dirent.h>
+#include "mpls.h"
 
 namespace ts
 {
@@ -35,6 +28,7 @@ namespace ts
 #endif
 
     int scan_dir(const char* path,std::list<std::string>& l);
+    int get_clip_number_by_filename(const std::string& s);
 
     bool is_ts_filename(const std::string& s)
     {
@@ -55,6 +49,16 @@ namespace ts
             return true;
 
         return false;
+    }
+
+    std::string trim_slash(const std::string& s)
+    {
+        const char* p=s.c_str()+s.length();
+
+        while(p>s.c_str() && (p[-1]=='/' || p[-1]=='\\'))
+            p--;
+
+        return s.substr(0,p-s.c_str());
     }
 }
 
@@ -114,6 +118,31 @@ int ts::scan_dir(const char* path,std::list<std::string>& l)
 }
 #endif
 
+int ts::get_clip_number_by_filename(const std::string& s)
+{
+    int ll=s.length();
+    const char* p=s.c_str();
+
+    while(ll>0)
+    {
+        if(p[ll-1]=='/' || p[ll-1]=='\\')
+            break;
+        ll--;
+    }
+
+    p+=ll;
+    int cn=0;
+
+    const char* pp=strchr(p,'.');
+    if(pp)
+    {
+        for(int i=0;i<pp-p;i++)
+            cn=cn*10+(p[i]-48);
+    }
+
+    return cn;
+}
+
 
 int main(int argc,char** argv)
 {
@@ -121,7 +150,7 @@ int main(int argc,char** argv)
 
     if(argc<2)
     {
-        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-o dst] [-c channel] [-u] [-j] [-z] [-p] [-e mode] *.ts|*.m2ts ...\n");
+        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-o dst] [-c channel] [-u] [-j] [-z] [-p] [-e mode] [-v] *.ts|*.m2ts ...\n");
         fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
         fprintf(stderr,"-l use AVCHD/Blu-Ray playlist file (*.mpl,*.mpls)\n");
         fprintf(stderr,"-o redirect output to another directory or transport stream file\n");
@@ -130,7 +159,8 @@ int main(int argc,char** argv)
         fprintf(stderr,"-j join elementary streams\n");
         fprintf(stderr,"-z demux to PES streams (instead of elementary streams)\n");
         fprintf(stderr,"-p parse only\n");
-        fprintf(stderr,"-e dump TS structure to STDOUT (mode=1: dump M2TS timecodes, mode=2: dump PTS/DTS, mode=3: human readable output)\n");
+        fprintf(stderr,"-e dump TS structure to STDOUT (mode=1: dump M2TS timecodes, mode=2: dump PTS/DTS, mode=3: human readable PTS/DTS dump)\n");
+        fprintf(stderr,"-v turn on verbose output\n");
         fprintf(stderr,"\ninput files can be *.m2ts, *.mts or *.ts\n");
         fprintf(stderr,"output elementary streams to *.sup, *.m2v, *.264, *.vc1, *.ac3, *.m2a and *.pcm files\n");
         fprintf(stderr,"\n");
@@ -144,14 +174,16 @@ int main(int argc,char** argv)
     bool join=false;
     int channel=0;
     int pes=0;
+    int verb=0;
     std::string output;
 
-    std::string mpls;                           // MPLS
+    std::string mpls_file;                      // MPLS file
 
     std::list<std::string> playlist;            // playlist
+    std::map<int,std::string> mpls_datetime;    // AVCHD clip date/time
 
     int opt;
-    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:"))>=0)
+    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:v"))>=0)
         switch(opt)
         {
         case 'p':
@@ -173,18 +205,21 @@ int main(int argc,char** argv)
             pes=1;
             break;
         case 'o':
-            output=optarg;
+            output=ts::trim_slash(optarg);
             break;
         case 'd':
             {
                 std::list<std::string> l;
-                ts::scan_dir(optarg,l);
+                ts::scan_dir(ts::trim_slash(optarg).c_str(),l);
                 l.sort();
                 playlist.merge(l);
             }
             break;
         case 'l':
-            mpls=optarg;
+            mpls_file=optarg;
+            break;
+        case 'v':
+            verb=1;
             break;
         }
 
@@ -192,6 +227,35 @@ int main(int argc,char** argv)
     {
         playlist.push_back(argv[optind]);
         optind++;
+    }
+
+    if(mpls_file.length())
+    {
+        std::list<int> mpls;                        // list of clip id from mpls files
+        std::list<std::string> new_playlist;
+
+        if(mpls::parse(mpls_file.c_str(),mpls,mpls_datetime,playlist.size()?verb:1))
+            fprintf(stderr,"%s: invalid playlist file format\n",mpls_file.c_str());
+
+        if(mpls.size())
+        {
+            std::map<int,std::string> clips;
+            for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+            {
+                std::string& s=*i;
+                clips[ts::get_clip_number_by_filename(s)]=s;
+            }
+
+            for(std::list<int>::iterator i=mpls.begin();i!=mpls.end();++i)
+            {
+                std::string& s=clips[*i];
+
+                if(s.length())
+                    new_playlist.push_back(s);
+            }
+
+            playlist.swap(new_playlist);
+        }
     }
 
     time_t beg_time=time(0);
@@ -210,6 +274,7 @@ int main(int argc,char** argv)
                 demuxer.channel=channel;
                 demuxer.pes_output=pes;
                 demuxer.dst=output;
+                demuxer.verb=verb;
 
                 demuxer.demux_file(s.c_str());
 
@@ -232,6 +297,7 @@ int main(int argc,char** argv)
                 demuxer.channel=channel;
                 demuxer.pes_output=pes;
                 demuxer.dst=output;
+                demuxer.verb=verb;
 
                 demuxer.demux_file(s.c_str());
 
