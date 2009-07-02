@@ -39,7 +39,6 @@
 #include <stdarg.h>
 
 
-
 #ifndef _WIN32
 #define O_BINARY 0
 #else
@@ -49,5 +48,12 @@ typedef unsigned long u_int32_t;
 typedef unsigned long long u_int64_t;
 #define O_LARGEFILE 0
 #endif
+
+#ifndef _WIN32
+#define os_slash        '/'
+#else
+#define os_slash        '\\'
+#endif
+
 
 #endif

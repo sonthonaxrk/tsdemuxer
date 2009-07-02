@@ -177,9 +177,10 @@ namespace ts
         std::string dst;                                // output directory
         bool verb;                                       // verbose mode
         bool es_parse;
-    protected:
 
+    public:
         u_int64_t base_pts;
+    protected:
 
         bool validate_type(u_int8_t type);
         u_int64_t decode_pts(const char* ptr);

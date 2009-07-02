@@ -9,7 +9,6 @@
 
 #include "ts.h"
 
-// TODO: write chapters.xml
 // TODO: join TS
 
 // 1) M2TS timecode (0-1073741823)
@@ -27,12 +26,6 @@ It doesn't really help for random access. 30 bits at 27 MHz only represents 39.7
 namespace ts
 {
     void get_prefix_name_by_filename(const std::string& s,std::string& name);
-
-#ifndef _WIN32
-    char os_slash='/';
-#else
-    char os_slash='\\';
-#endif
 }
 
 ts::stream::~stream(void)

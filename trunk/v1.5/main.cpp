@@ -60,6 +60,25 @@ namespace ts
 
         return s.substr(0,p-s.c_str());
     }
+
+    const char* timecode_to_time(u_int32_t timecode)
+    {
+        static char buf[128];
+
+        int msec=timecode%1000;
+        timecode/=1000;
+
+        int sec=timecode%60;
+        timecode/=60;
+
+        int min=timecode%60;
+        timecode/=60;
+
+        sprintf(buf,"%.2i:%.2i:%.2i.%.3i",(int)timecode,min,sec,msec);
+
+        return buf;
+    }
+
 }
 
 #ifdef _WIN32
@@ -101,7 +120,7 @@ int ts::scan_dir(const char* path,std::list<std::string>& l)
 
         while((d=readdir(dir)))
         {
-            if(*d->d_name!='.')
+            if(*d->d_name!='.' && (d->d_type==DT_REG || d->d_type==DT_LNK))
             {
                 char p[512];
 
@@ -264,26 +283,77 @@ int main(int argc,char** argv)
     {
         if(join)
         {
-            ts::demuxer demuxer;
-
-            for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+            if(playlist.size())
             {
-                const std::string& s=*i;
+                std::string chapters_filename=output.length()?(output+os_slash+"chapters.xml"):"chapters.xml";
 
-                demuxer.av_only=av_only;
-                demuxer.channel=channel;
-                demuxer.pes_output=pes;
-                demuxer.dst=output;
-                demuxer.verb=verb;
-                demuxer.es_parse=true;
+                FILE* fp=0;
 
-                demuxer.demux_file(s.c_str());
+                if(channel)
+                {
+                    fp=fopen(chapters_filename.c_str(),"w");
 
-                demuxer.gen_timecodes();
+                    if(!fp)
+                        fprintf(stderr,"can`t create %s\n",chapters_filename.c_str());
+                }
 
-                demuxer.reset();
+                if(fp)
+                {
+                    fprintf(fp,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n");
+                    fprintf(fp,"<!-- <!DOCTYPE Tags SYSTEM \"matroskatags.dtd\"> -->\n\n");
+                    fprintf(fp,"<Chapters>\n");
+                    fprintf(fp,"  <EditionEntry>\n");
+                }
+
+                ts::demuxer demuxer;
+
+                for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+                {
+                    const std::string& s=*i;
+
+                    int clip=ts::get_clip_number_by_filename(s);
+                    const std::string& date=mpls_datetime[clip];
+                    u_int32_t offset=demuxer.base_pts/90;
+
+                    if(verb)
+                        fprintf(stderr,"%.5i: '%s', %u\n",clip,date.c_str(),offset);
+
+                    if(fp)
+                    {
+                        fprintf(fp,"    <ChapterAtom>\n");
+                        fprintf(fp,"      <ChapterTimeStart>%s</ChapterTimeStart>\n",ts::timecode_to_time(offset));
+                        fprintf(fp,"      <ChapterDisplay>\n");
+                        if(date.length())
+                            fprintf(fp,"        <ChapterString>%s</ChapterString>\n",date.c_str());
+                        else
+                            fprintf(fp,"        <ChapterString>%.5i</ChapterString>\n",clip);
+                        fprintf(fp,"      </ChapterDisplay>\n");
+                        fprintf(fp,"    </ChapterAtom>\n");
+                    }
+
+                    demuxer.av_only=av_only;
+                    demuxer.channel=channel;
+                    demuxer.pes_output=pes;
+                    demuxer.dst=output;
+                    demuxer.verb=verb;
+                    demuxer.es_parse=true;
+
+                    demuxer.demux_file(s.c_str());
+
+                    demuxer.gen_timecodes();
+
+                    demuxer.reset();
+                }
+
+                demuxer.show();
+
+                if(fp)
+                {
+                    fprintf(fp,"  </EditionEntry>\n");
+                    fprintf(fp,"</Chapters>\n");
+                    fclose(fp);
+                }
             }
-            demuxer.show();
         }else
         {
             for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
@@ -309,7 +379,7 @@ int main(int argc,char** argv)
     }else
     {
         // join to TS/M2TS file
-
+/*
         std::list<ts::ts_file_info> info;
 
         if(!channel)
@@ -383,6 +453,7 @@ int main(int argc,char** argv)
 
             cur_pts+=nfo.last_pts-first_pts;
         }
+*/
     }
 
     fprintf(stderr,"\ntime: %li sec\n",time(0)-beg_time);
