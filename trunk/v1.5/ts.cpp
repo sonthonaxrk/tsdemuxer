@@ -9,7 +9,6 @@
 
 #include "ts.h"
 
-// TODO: calc AC3 frames from stream
 // TODO: write chapters.xml
 // TODO: join TS
 
@@ -558,14 +557,19 @@ int ts::demuxer::demux_ts_packet(const char* ptr)
             {
                 int len=end_ptr-ptr;
 
-                switch(s.type)
+                if(es_parse)
                 {
-                case 0x1b:                                // JVT NAL (h.264)
-                    s.frame_num_h264.parse(ptr,len);
-                    break;
-                case 0x81:
-                    s.frame_num_ac3.parse(ptr,len);
-                    break;
+                    switch(s.type)
+                    {
+                    case 0x1b:
+                        s.frame_num_h264.parse(ptr,len);
+                        break;
+                    case 0x06:
+                    case 0x81:
+                    case 0x83:
+                        s.frame_num_ac3.parse(ptr,len);
+                        break;
+                    }
                 }
 
                 if(s.file.is_opened())
