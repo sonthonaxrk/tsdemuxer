@@ -275,6 +275,7 @@ int main(int argc,char** argv)
                 demuxer.pes_output=pes;
                 demuxer.dst=output;
                 demuxer.verb=verb;
+                demuxer.es_parse=true;
 
                 demuxer.demux_file(s.c_str());
 
@@ -292,6 +293,7 @@ int main(int argc,char** argv)
                 ts::demuxer demuxer;
 
                 demuxer.parse_only=dump>0?true:parse_only;
+                demuxer.es_parse=demuxer.parse_only;
                 demuxer.dump=dump;
                 demuxer.av_only=av_only;
                 demuxer.channel=channel;

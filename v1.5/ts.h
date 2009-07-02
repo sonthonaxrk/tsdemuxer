@@ -10,6 +10,8 @@
 #define __TS_H
 
 #include "common.h"
+#include "h264.h"
+#include "ac3.h"
 
 namespace ts
 {
@@ -85,33 +87,6 @@ namespace ts
         };
     }
 
-    class counter_h264
-    {
-    private:
-        u_int32_t nal_ctx;
-        u_int64_t nal_frame_num;                // JVT NAL (h.264) frame counter
-    public:
-        counter_h264(void):nal_ctx(0),nal_frame_num(0) {}
-
-        void parse(const char* p,int l)
-        {
-            for(int i=0;i<l;i++)
-            {
-                nal_ctx=(nal_ctx<<8)+((unsigned char*)p)[i];
-                    if((nal_ctx&0xffffff1f)==0x00000109)  // NAL access unit
-                        nal_frame_num++;
-            }
-        }
-
-        u_int64_t get_frame_num(void) const { return nal_frame_num; }
-
-        void reset(void)
-        {
-            nal_ctx=0;
-            nal_frame_num=0;
-        }
-    };
-
     class counter_ac3
     {
     private:
@@ -157,8 +132,8 @@ namespace ts
         u_int32_t frame_length;                 // frame length in ticks (90 ticks = 1 ms, 90000/frame_length=fps)
         u_int64_t frame_num;                    // frame counter
 
-        counter_h264 frame_num_h264;            // JVT NAL (h.264) frame counter
-        counter_ac3  frame_num_ac3;             // A/52B (AC3) frame counter
+        h264::counter frame_num_h264;           // JVT NAL (h.264) frame counter
+        ac3::counter  frame_num_ac3;            // A/52B (AC3) frame counter
 
         stream(void):channel(0xffff),id(0),type(0xff),stream_id(0),
             dts(0),first_dts(0),first_pts(0),last_pts(0),frame_length(0),frame_num(0),timecodes(0) {}
@@ -181,7 +156,7 @@ namespace ts
                 return frame_num_h264.get_frame_num();
 
             if(frame_num_ac3.get_frame_num())
-                return frame_num_h264.get_frame_num();
+                return frame_num_ac3.get_frame_num();
 
             return 0;
         }
@@ -200,7 +175,8 @@ namespace ts
         int pes_output;                                 // demux to PES
         std::string prefix;                             // output file name prefix (autodetect)
         std::string dst;                                // output directory
-        int verb;                                       // verbose mode
+        bool verb;                                       // verbose mode
+        bool es_parse;
     protected:
 
         u_int64_t base_pts;
@@ -215,7 +191,7 @@ namespace ts
 
         void write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num);
     public:
-        demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0),pes_output(0),verb(0) {}
+        demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0),pes_output(0),verb(false),es_parse(false) {}
 
         void show(void);
 
