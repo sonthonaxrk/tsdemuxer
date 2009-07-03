@@ -169,13 +169,14 @@ int main(int argc,char** argv)
 
     if(argc<2)
     {
-        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-o dst] [-c channel] [-u] [-j] [-z] [-p] [-e mode] [-v] *.ts|*.m2ts ...\n");
+        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-o dst] [-c channel] [-u] [-j] [-m] [-z] [-p] [-e mode] [-v] *.ts|*.m2ts ...\n");
         fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
         fprintf(stderr,"-l use AVCHD/Blu-Ray playlist file (*.mpl,*.mpls)\n");
         fprintf(stderr,"-o redirect output to another directory or transport stream file\n");
         fprintf(stderr,"-c channel number for demux\n");
         fprintf(stderr,"-u demux unknown streams\n");
         fprintf(stderr,"-j join elementary streams\n");
+        fprintf(stderr,"-m show mkvmerge command example\n");
         fprintf(stderr,"-z demux to PES streams (instead of elementary streams)\n");
         fprintf(stderr,"-p parse only\n");
         fprintf(stderr,"-e dump TS structure to STDOUT (mode=1: dump M2TS timecodes, mode=2: dump PTS/DTS, mode=3: human readable PTS/DTS dump)\n");
@@ -192,9 +193,10 @@ int main(int argc,char** argv)
     bool av_only=true;
     bool join=false;
     int channel=0;
-    int pes=0;
-    int verb=0;
+    bool pes=false;
+    bool verb=false;
     std::string output;
+    bool mkvmerge_opts=false;
 
     std::string mpls_file;                      // MPLS file
 
@@ -202,7 +204,7 @@ int main(int argc,char** argv)
     std::map<int,std::string> mpls_datetime;    // AVCHD clip date/time
 
     int opt;
-    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:v"))>=0)
+    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:vm"))>=0)
         switch(opt)
         {
         case 'p':
@@ -221,7 +223,7 @@ int main(int argc,char** argv)
             channel=atoi(optarg);
             break;
         case 'z':
-            pes=1;
+            pes=true;
             break;
         case 'o':
             output=ts::trim_slash(optarg);
@@ -238,7 +240,10 @@ int main(int argc,char** argv)
             mpls_file=optarg;
             break;
         case 'v':
-            verb=1;
+            verb=true;
+            break;
+        case 'm':
+            mkvmerge_opts=true;
             break;
         }
 
@@ -307,7 +312,9 @@ int main(int argc,char** argv)
 
                 ts::demuxer demuxer;
 
-                for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i)
+                int cn=1;
+
+                for(std::list<std::string>::iterator i=playlist.begin();i!=playlist.end();++i,cn++)
                 {
                     const std::string& s=*i;
 
@@ -326,7 +333,7 @@ int main(int argc,char** argv)
                         if(date.length())
                             fprintf(fp,"        <ChapterString>%s</ChapterString>\n",date.c_str());
                         else
-                            fprintf(fp,"        <ChapterString>%.5i</ChapterString>\n",clip);
+                            fprintf(fp,"        <ChapterString>Clip %i</ChapterString>\n",cn);
                         fprintf(fp,"      </ChapterDisplay>\n");
                         fprintf(fp,"    </ChapterAtom>\n");
                     }
@@ -346,6 +353,30 @@ int main(int argc,char** argv)
                 }
 
                 demuxer.show();
+
+                if(mkvmerge_opts)
+                {
+                    fprintf(stdout,"\n# mkvmerge -o output.mkv ");
+                    if(fp)
+                        fprintf(stdout,"--chapters %s ",chapters_filename.c_str());
+                    for(std::map<u_int16_t,ts::stream>::iterator i=demuxer.streams.begin();i!=demuxer.streams.end();++i)
+                    {
+                        ts::stream& s=i->second;
+
+                        if(s.file.filename.length())
+                        {
+                            std::string::size_type n=s.file.filename.find_last_of('.');
+                            if(n!=std::string::npos)
+                            {
+                                std::string filename=s.file.filename.substr(0,n);
+                                filename+=".tmc";
+                                fprintf(stdout,"--timecodes 0:%s ",filename.c_str());
+                            }
+                            fprintf(stdout,"%s ",s.file.filename.c_str());
+                        }
+                    }
+                    fprintf(stdout,"\n");
+                }
 
                 if(fp)
                 {
@@ -379,6 +410,7 @@ int main(int argc,char** argv)
     }else
     {
         // join to TS/M2TS file
+        fprintf(stderr,"join to TS/M2TS is not implemented!\n");
 /*
         std::list<ts::ts_file_info> info;
 

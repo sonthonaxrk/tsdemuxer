@@ -614,15 +614,12 @@ void ts::demuxer::show(void)
 
 
             if(s.frame_num>0)
-            {
-                u_int64_t esfn=s.get_es_frame_num();
+                fprintf(stderr,", fn=%llu",s.frame_num);
 
-                fprintf(stderr," (%llu",s.frame_num);
-                if(esfn>0)
-                    fprintf(stderr,"/%llu",esfn);
-                fprintf(stderr," frames)",s.frame_num);
-            }
+            u_int64_t esfn=s.get_es_frame_num();
 
+            if(esfn>0)
+                fprintf(stderr,", esfn=%llu",esfn);
 
             if(s.first_pts>beg_pts)
             {
@@ -724,6 +721,9 @@ int ts::demuxer::gen_timecodes(void)
                     filename+=".tmc";
 
                     s.timecodes=fopen(filename.c_str(),"w");
+
+                    if(s.timecodes)
+                        fprintf(s.timecodes,"# timecode format v2\n");
                 }
             }
             if(s.timecodes)
@@ -735,8 +735,6 @@ int ts::demuxer::gen_timecodes(void)
 
                 if(len>end_pts || !end_pts)
                     end_pts=len;
-
-                fprintf(s.timecodes,"# timecode format v2\n");
             }
         }
     }
@@ -752,7 +750,6 @@ int ts::demuxer::gen_timecodes(void)
             u_int64_t esfn=s.get_es_frame_num();
 
             u_int64_t frame_num=esfn?esfn:s.frame_num;
-
             write_timecodes(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num);
         }
     }
