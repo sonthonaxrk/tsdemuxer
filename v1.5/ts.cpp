@@ -91,6 +91,7 @@ bool ts::file::open(int mode,const char* fmt,...)
     if(fd!=-1)
     {
         filename=name;
+        len=offset=0;
         return true;
     }
 

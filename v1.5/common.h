@@ -19,7 +19,6 @@
 #include <string>
 #include <list>
 #include <memory.h>
-#include <stdio.h>
 #include <stdlib.h>
 #ifndef _WIN32
 #include <dirent.h>
