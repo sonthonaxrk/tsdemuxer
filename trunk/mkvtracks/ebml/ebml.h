@@ -17,7 +17,9 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <stdexcept>
+#include <map>
+#include <string>
 
 #ifndef _WIN32
 #define O_BINARY 0
@@ -30,10 +32,48 @@ typedef unsigned long long      u_int64_t;
 #endif
 
 
+#ifdef _WIN32
+inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpi(s1,s2); }
+#endif
+
 
 namespace ebml
 {
-    void init(void);
+    class exception : public std::exception
+    {
+    protected:
+        std::string _what;
+    public:
+        explicit exception(const std::string& s):_what(s) {}
+        virtual ~exception(void) throw() {}
+        virtual const char* what(void) const throw() {return _what.c_str();}
+    };
+
+
+    class track
+    {
+    public:
+        u_int32_t   id;
+        std::string codec;
+        std::string lang;
+        u_int32_t   timecode;
+
+        track(void):id(0),timecode(-1) {}
+    };
+
+    class doc
+    {
+    public:
+        std::string doc_type;
+        u_int8_t    version;
+        u_int8_t    read_version;
+
+        std::map<u_int32_t,ebml::track> tracks;
+        u_int32_t   blocks;
+
+        doc(void):version(0),read_version(0),blocks(0) {}
+    };
+
 
     class stream_base
     {
@@ -102,6 +142,9 @@ namespace ebml
             return 0;
         }
     };
+
+    void init(void);
+    void parse(ebml::stream_base* s,doc& m) throw(std::exception);
 }
 
 #endif

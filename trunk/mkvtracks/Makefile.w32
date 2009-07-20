@@ -1,0 +1,2 @@
+all:
+	cl -Iebml /EHsc mkvtracks.cpp ebml\ebml.cpp

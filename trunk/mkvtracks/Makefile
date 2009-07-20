@@ -1,2 +1,2 @@
 all:
-	g++ -o mkvtracks mkvtracks.cpp
+	g++ -Iebml -o mkvtracks mkvtracks.cpp ebml/ebml.cpp
