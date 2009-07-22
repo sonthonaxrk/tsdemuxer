@@ -45,6 +45,7 @@ namespace ebml
         semantic[0xe7]          = element_info(t_uint  ,"Timecode",7);
         semantic[0xa0]          = element_info(t_struct,"BlockGroup");
         semantic[0xa1]          = element_info(t_block ,"Block",9);
+        semantic[0xa3]          = element_info(t_block ,"SimpleBlock",9);
     }
 }
 
@@ -89,7 +90,7 @@ int ebml::stream_base::getLen(u_int64_t& len)
 
     u_int8_t p=buf[0];
 
-    while(!(p&0x80))
+    while(!(p&0x80) && l<=sizeof(buf))
         { l++; p<<=1; }
 
     if(!(p&0x80))
