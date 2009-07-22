@@ -1,5 +1,6 @@
 #include "execwindow.h"
 #include "ui_execwindow.h"
+#include <time.h>
 
 execWindow::execWindow(QWidget *parent) :
     QDialog(parent),
@@ -126,6 +127,18 @@ void execWindow::onFinished(int exitcode)
     NextCmd();
 }
 
+void execWindow::unescString(const char* buf,int len,QString& s)
+{
+    std::string ss;
+    ss.reserve(len);
+
+    for(int i=0;i<len;i++)
+        if(buf[i]>31)
+            ss+=buf[i];
+
+    s=QString::fromLocal8Bit(ss.c_str(),ss.length());
+}
+
 void execWindow::onDataReady()
 {
     //0.2% complete
@@ -144,6 +157,7 @@ void execWindow::onDataReady()
             *pp=0;
             n=strlen(buf);
         }
+
         if(!*buf)
             continue;
 
@@ -182,7 +196,10 @@ void execWindow::onDataReady()
 
         if(show)
         {
-            QString s=QString::fromLocal8Bit(buf,n);
+//            QString s=QString::fromLocal8Bit(buf,n);
+            QString s;
+
+            unescString(buf,n,s);
 
             m_ui->plainTextEdit->appendPlainText(s);
             m_ui->plainTextEdit->ensureCursorVisible();

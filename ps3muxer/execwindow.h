@@ -36,7 +36,6 @@ protected:
     virtual void changeEvent(QEvent *e);
     virtual void closeEvent(QCloseEvent* e);
 
-
 private slots:
     void on_pushButton_2_clicked();
     void onStarted();
@@ -52,6 +51,7 @@ private:
     time_t beg_time;
 
     void NextCmd();
+    void unescString(const char* buf,int len,QString& s);
 };
 
 #endif // EXECWINDOW_H
