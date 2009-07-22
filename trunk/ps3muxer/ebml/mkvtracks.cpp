@@ -25,13 +25,13 @@ int main(int argc,char** argv)
         if(strcasecmp(m.doc_type.c_str(),"matroska"))
             throw(ebml::exception("not a matroska"));
 
-        if(m.version!=1 && m.read_version!=1)
-            throw(ebml::exception("unknown matroska version"));
+//        if(m.version!=1 && m.read_version!=1)
+//            throw(ebml::exception("unknown matroska version"));
 
         for(std::map<u_int32_t,ebml::track>::const_iterator i=m.tracks.begin();i!=m.tracks.end();++i)
         {
             const ebml::track& t=i->second;
-            printf("track=%i, codec=%s, lang=%s, delay=%ims\n",t.id,t.codec.c_str(),t.lang.c_str(),t.timecode);
+            printf("track=%i, codec=%s, lang=%s, delay=%ims\n",t.id,t.codec.c_str(),t.lang.c_str(),t.timecode==-1?0:t.timecode);
         }
     }
     catch(const std::exception& e)
