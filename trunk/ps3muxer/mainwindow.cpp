@@ -5,11 +5,18 @@
 #include <QMessageBox>
 #include "execwindow.h"
 #include <stdio.h>
+#include <QStyleFactory>
 
 #ifdef _WIN32
 #define os_slash    '\\'
 #else
 #define os_slash    '/'
+#endif
+
+#ifdef _WIN32
+static const char conf_path[]="ps3muxer_win32.cfg";
+#else
+static const char conf_path[]="ps3muxer.cfg";
 #endif
 
 MainWindow::MainWindow(QWidget *parent)
@@ -22,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableWidget->setSelectionBehavior ( QAbstractItemView::SelectRows );
     ui->tableWidget_2->setSelectionBehavior ( QAbstractItemView::SelectRows );
 
-    FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+"ps3muxer.cfg").toLocal8Bit().data(),"r");
+    FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+conf_path).toLocal8Bit().data(),"r");
     if(fp)
     {
         char tmp[1024];
@@ -76,6 +83,9 @@ MainWindow::MainWindow(QWidget *parent)
         }
         fclose(fp);
     }
+    const std::string& style=cfg["style"];
+    if(style.length())
+        QApplication::setStyle(QStyleFactory::create(style.c_str()));
 }
 
 MainWindow::~MainWindow()
@@ -135,6 +145,10 @@ void MainWindow::addRow(QTableWidget* w,const QStringList& l)
 void MainWindow::on_pushButton_clicked()
 {
     QString path=QFileDialog::getOpenFileName(this,tr("MKV source file"),"","MKV file (*.mkv)");
+
+#ifdef _WIN32
+    path=path.replace('/','\\');
+#endif
 
     if(!path.isEmpty())
     {
@@ -229,6 +243,10 @@ void MainWindow::on_pushButton_3_clicked()
 void MainWindow::on_pushButton_4_clicked()
 {
     QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),"","M2TS file (*.m2ts)");
+
+#ifdef _WIN32
+    path=path.replace('/','\\');
+#endif
 
     if(!path.isEmpty())
     {

@@ -33,7 +33,7 @@ typedef unsigned long long      u_int64_t;
 
 
 #ifdef _WIN32
-inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpi(s1,s2); }
+inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpiA(s1,s2); }
 #endif
 
 
