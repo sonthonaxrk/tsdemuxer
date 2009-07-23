@@ -34,6 +34,7 @@ private:
     std::string source_file_name;
     std::map<std::string,std::string> cfg;
     std::map<std::string,codec> codecs;
+    std::string last_dir;
 
     void initCodec(const std::string& s);
     void parseCmdParams(const QString& s,QStringList& lst);
