@@ -25,8 +25,10 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = 0);
+    MainWindow(QWidget *parent, const QString& cmd);
     ~MainWindow();
+
+    QString src_file_name;
 
 private:
     Ui::MainWindowClass *ui;

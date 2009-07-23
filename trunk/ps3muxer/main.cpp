@@ -1,11 +1,11 @@
 #include <QtGui/QApplication>
 #include <QTranslator>
 #include "mainwindow.h"
-#include <QMessageBox>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
     QString locale=QLocale::system().name();
 
     QTranslator *translator = new QTranslator(&a);
@@ -14,7 +14,14 @@ int main(int argc, char *argv[])
     else
         delete translator;
 
-    MainWindow w;
+    QString cmd;
+    if(QApplication::arguments().size()>1)
+        cmd=QApplication::arguments().last().toLocal8Bit().data();
+
+
+    MainWindow w(0,cmd);
+
+
     w.show();
     return a.exec();
 }
