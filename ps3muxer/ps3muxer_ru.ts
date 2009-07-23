@@ -4,65 +4,66 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="154"/>
+        <location filename="mainwindow.cpp" line="166"/>
         <source>MKV source file</source>
         <translation>Исходный MKV файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="239"/>
+        <location filename="mainwindow.cpp" line="251"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="239"/>
+        <location filename="mainwindow.cpp" line="251"/>
         <source>Open file error: %1</source>
         <translation>Ошибка открытия файла: %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="254"/>
+        <location filename="mainwindow.cpp" line="266"/>
         <source>M2TS target file</source>
         <translation>Финальный M2TS файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="327"/>
+        <location filename="mainwindow.cpp" line="339"/>
         <source>Transcoding audio</source>
         <translation>Кодирование звука</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="327"/>
+        <location filename="mainwindow.cpp" line="339"/>
         <source>You have chosen %1 track, it will be converted, process will occupy approximately 15 minutes, you are assured?</source>
         <translation>Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="342"/>
+        <location filename="mainwindow.cpp" line="354"/>
         <source>Extracting audio track</source>
         <translation>Извлечение звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="343"/>
+        <location filename="mainwindow.cpp" line="355"/>
         <source>Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...</source>
         <translation>Извлечение звуковой дорожки %1 (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="362"/>
+        <location filename="mainwindow.cpp" line="374"/>
         <source>Encoding audio track</source>
         <translation>Кодирование звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="363"/>
+        <location filename="mainwindow.cpp" line="375"/>
         <source>Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...</source>
         <translation>Кодирование звуковой дорожки %1 в AC3 (примерно 10-20 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="409"/>
+        <location filename="mainwindow.cpp" line="421"/>
         <source>Remux M2TS</source>
         <translation>Формирование M2TS файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="410"/>
+        <location filename="mainwindow.cpp" line="422"/>
         <source>Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...
 %1</source>
-        <translation>Формирование MPEG2-TS потока (примерно 5 минут для 8Гб файла)...</translation>
+        <translation>Формирование MPEG2-TS потока (примерно 5 минут для 8Гб файла)...
+%1</translation>
     </message>
 </context>
 <context>

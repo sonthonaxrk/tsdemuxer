@@ -19,7 +19,7 @@ static const char conf_path[]="ps3muxer_win32.cfg";
 static const char conf_path[]="ps3muxer.cfg";
 #endif
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     : QMainWindow(parent), ui(new Ui::MainWindowClass)
 {
     ui->setupUi(this);
@@ -92,7 +92,10 @@ MainWindow::MainWindow(QWidget *parent)
     if(style.length())
         QApplication::setStyle(QStyleFactory::create(style.c_str()));
 
+    src_file_name=cmd;
 
+    if(!src_file_name.isEmpty())
+        on_pushButton_clicked();
 }
 
 MainWindow::~MainWindow()
@@ -151,7 +154,15 @@ void MainWindow::addRow(QTableWidget* w,const QStringList& l)
 
 void MainWindow::on_pushButton_clicked()
 {
-    QString path=QFileDialog::getOpenFileName(this,tr("MKV source file"),last_dir.c_str(),"MKV file (*.mkv)");
+    QString path;
+
+    if(src_file_name.size())
+    {
+        path=src_file_name;
+        src_file_name.clear();
+    }
+    else
+        path=QFileDialog::getOpenFileName(this,tr("MKV source file"),last_dir.c_str(),"MKV file (*.mkv)");
 
 #ifdef _WIN32
     path=path.replace('/','\\');
