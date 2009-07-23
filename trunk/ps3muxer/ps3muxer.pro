@@ -14,3 +14,12 @@ HEADERS += mainwindow.h \
     execwindow.h
 FORMS += mainwindow.ui \
     execwindow.ui
+TRANSLATIONS += ps3muxer_ru.ts
+system(lupdate ps3muxer.pro)
+system(lrelease ps3muxer.pro)
+RESOURCES += ps3muxer.qrc
+
+win32 {
+    RC_FILE = ps3muxer.rc
+    DEFINES += _CRT_SECURE_NO_WARNINGS
+}

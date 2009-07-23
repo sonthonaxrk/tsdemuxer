@@ -29,6 +29,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableWidget->setSelectionBehavior ( QAbstractItemView::SelectRows );
     ui->tableWidget_2->setSelectionBehavior ( QAbstractItemView::SelectRows );
 
+    connect(ui->actionOpen,SIGNAL(triggered()),this,SLOT(on_pushButton_clicked()));
+    connect(ui->actionClear,SIGNAL(triggered()),this,SLOT(on_pushButton_3_clicked()));
+    connect(ui->actionStart_muxing,SIGNAL(triggered()),this,SLOT(on_pushButton_2_clicked()));
+    connect(ui->actionQuit,SIGNAL(triggered()),this,SLOT(close()));
+
     FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+conf_path).toLocal8Bit().data(),"r");
     if(fp)
     {
@@ -86,6 +91,8 @@ MainWindow::MainWindow(QWidget *parent)
     const std::string& style=cfg["style"];
     if(style.length())
         QApplication::setStyle(QStyleFactory::create(style.c_str()));
+
+
 }
 
 MainWindow::~MainWindow()
@@ -144,7 +151,7 @@ void MainWindow::addRow(QTableWidget* w,const QStringList& l)
 
 void MainWindow::on_pushButton_clicked()
 {
-    QString path=QFileDialog::getOpenFileName(this,tr("MKV source file"),"","MKV file (*.mkv)");
+    QString path=QFileDialog::getOpenFileName(this,tr("MKV source file"),last_dir.c_str(),"MKV file (*.mkv)");
 
 #ifdef _WIN32
     path=path.replace('/','\\');
@@ -220,6 +227,8 @@ void MainWindow::on_pushButton_clicked()
                 if(s1.length())
                     s1+=os_slash;
 
+                last_dir=s1;
+
                 ui->lineEdit->setText((s1+s2).c_str());
             }
 
@@ -242,7 +251,7 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),"","M2TS file (*.m2ts)");
+    QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),last_dir.c_str(),"M2TS file (*.m2ts)");
 
 #ifdef _WIN32
     path=path.replace('/','\\');
@@ -294,7 +303,9 @@ void MainWindow::on_pushButton_2_clicked()
 
     std::string split=ui->comboBox->itemData(ui->comboBox->currentIndex()).toString().toLocal8Bit().data();
 
-    const std::string& tmp_path=cfg["tmp_path"];
+    std::string tmp_path=cfg["tmp_path"];
+    if(!tmp_path.length())
+        tmp_path=(QDir::tempPath()+os_slash).toLocal8Bit().data();
 
     bool remove_tmp_files=true;
 
@@ -313,6 +324,10 @@ void MainWindow::on_pushButton_2_clicked()
     {
         // transcode to AC3
 
+        QMessageBox mbox(QMessageBox::Question,tr("Transcoding audio"),tr("You have chosen %1 track, it will be converted, process will occupy approximately 15 minutes, you are assured?").arg(audio_codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
+        if(mbox.exec()==QMessageBox::No)
+            return;
+
         audio_file_name=tmp_path+"track_"+audio_track_id+'.';
         audio_file_name2=tmp_path+"track_"+audio_track_id+"_encoded.ac3";
 
@@ -324,38 +339,30 @@ void MainWindow::on_pushButton_2_clicked()
 
         lst<<"tracks"<<source_file_name.c_str()<<QString("%1:%2").arg(audio_track_id.c_str()).arg(audio_file_name.c_str());
 
-        dlg.batch.push_back(execCmd("Extract audio track",
-            QString("Extract audio track %2 (%1)").arg(audio_codec.c_str()).arg(audio_track_id.c_str()),
+        dlg.batch.push_back(execCmd(tr("Extracting audio track"),
+            tr("Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...").arg(audio_track_id.c_str()),
             cfg["mkvextract"].c_str(),lst));
 
         lst.clear();
 
-        const std::string& ffmpeg=cfg["ffmpeg"];
-        const std::string& eac3to=cfg["eac3to"];
-        const std::string& ffmpeg_args=cfg["ffmpeg_args"];
-        const std::string& eac3to_args=cfg["eac3to_args"];
+        const std::string& encoder_args=cfg["encoder_args"];
 
-        if(eac3to.length())
+        if(encoder_args.length())
+            parseCmdParams(encoder_args.c_str(),lst);
+
+        for(int i=0;i<lst.size();i++)
         {
-            lst<<audio_file_name.c_str()<<audio_file_name2.c_str();
-
-            if(eac3to_args.length())
-                parseCmdParams(eac3to_args.c_str(),lst);
-
-            dlg.batch.push_back(execCmd("Encode audio track",
-                QString("Transcode audio track %1 to A_AC3").arg(audio_track_id.c_str()),
-                eac3to.c_str(),lst));
-        }else
-        {
-            if(ffmpeg_args.length())
-                parseCmdParams(ffmpeg_args.c_str(),lst);
-
-            lst<<"-i"<<audio_file_name.c_str()<<audio_file_name2.c_str();
-
-            dlg.batch.push_back(execCmd("Encode audio track",
-                QString("Transcode audio track %1 to A_AC3").arg(audio_track_id.c_str()),
-                ffmpeg.c_str(),lst));
+            QString& s=lst[i];
+            if(s=="%1")
+                s=audio_file_name.c_str();
+            else if(s=="%2")
+                s=audio_file_name2.c_str();
         }
+
+        dlg.batch.push_back(execCmd(tr("Encoding audio track"),
+            tr("Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...").arg(audio_track_id.c_str()),
+            cfg["encoder"].c_str(),lst));
+
     }
 
     const std::string& meta=tmp_path+cfg["tsmuxer_meta"];
@@ -368,7 +375,10 @@ void MainWindow::on_pushButton_2_clicked()
             opts+=" --split-size="+split;
         opts+="\n";
 
-        opts+=codecs[video_codec].map+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track_id;
+        const std::string& vcc=codecs[video_codec].map;
+        const std::string& acc=codecs[audio_codec].map;
+
+        opts+=(vcc.length()?vcc:video_codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track_id;
         if(video_lang.length())
             opts+=", lang="+video_lang;
         opts+="\n";
@@ -376,7 +386,7 @@ void MainWindow::on_pushButton_2_clicked()
         if(audio_file_name2.length())
             opts+="A_AC3, \""+audio_file_name2+"\"";
         else
-            opts+=codecs[audio_codec].map+", \""+source_file_name+"\", track="+audio_track_id;
+            opts+=(acc.length()?acc:audio_codec)+", \""+source_file_name+"\", track="+audio_track_id;
         if(audio_lang.length())
             opts+=", lang="+audio_lang;
         if(audio_delay)
@@ -396,7 +406,9 @@ void MainWindow::on_pushButton_2_clicked()
         lst<<meta.c_str()<<ui->lineEdit->text();
 
 
-        dlg.batch.push_back(execCmd("Remux MKV to M2TS",opts.c_str(),cfg["tsmuxer"].c_str(),lst));
+        dlg.batch.push_back(execCmd(tr("Remux M2TS"),
+            tr("Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...\n%1").arg(opts.c_str()),
+               cfg["tsmuxer"].c_str(),lst));
 
         dlg.run();
 

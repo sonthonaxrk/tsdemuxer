@@ -16,7 +16,7 @@ execWindow::execWindow(QWidget *parent) :
     connect(m_proc,SIGNAL(readyReadStandardOutput()),this,SLOT(onDataReady()) );
 
 
-    m_ui->plainTextEdit->appendHtml(QString("<font color=gray>Sony PlayStation3 HD Movie Muxer<br>Copyright (C) 2009 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
+    m_ui->plainTextEdit->appendHtml(tr("<font color=gray>Sony PlayStation3 HD Movie Muxer<br>Copyright (C) 2009 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
 }
 
 execWindow::~execWindow()
@@ -66,7 +66,7 @@ void execWindow::NextCmd()
         m_ui->pushButton_2->setEnabled(false);
 
         if(beg_time>0)
-            m_ui->plainTextEdit->appendHtml(QString("<font color=gray>Total time: %1 sec</font>").arg(time(0)-beg_time));
+            m_ui->plainTextEdit->appendHtml(tr("<font color=gray>Total time: %1 sec</font>").arg(time(0)-beg_time));
     }else
     {
         execCmd cmd=batch.front();
@@ -74,7 +74,7 @@ void execWindow::NextCmd()
 
         setWindowTitle(cmd.title);
 
-        m_ui->plainTextEdit->appendHtml(QString("<font color=blue>%1</font>").arg(cmd.desc.replace("\n","<br>")));
+        m_ui->plainTextEdit->appendHtml(tr("<font color=blue>%1</font>").arg(cmd.desc.replace("\n","<br>")));
 
         m_ui->progressBar->setRange(0,0);
         m_ui->progressBar->setValue(0);
@@ -99,7 +99,7 @@ void execWindow::onError(QProcess::ProcessError e)
     m_ui->progressBar->setValue(100);
     m_ui->pushButton->setEnabled(true);
     m_ui->pushButton_2->setEnabled(false);
-    m_ui->plainTextEdit->appendHtml(QString("<font color=red><b>Execute error (%1)</b></font>").arg(e));
+    m_ui->plainTextEdit->appendHtml(tr("<font color=red><b>Execute error (%1)</b></font>").arg(e));
 }
 
 
@@ -111,18 +111,18 @@ void execWindow::onFinished(int exitcode)
     m_ui->pushButton_2->setEnabled(false);
     if(m_proc->exitStatus()==QProcess::CrashExit)
     {
-        m_ui->plainTextEdit->appendHtml(QString("<font color=red><b>Crash</b></font>"));
+        m_ui->plainTextEdit->appendHtml(tr("<font color=red><b>Crash</b></font>"));
         batch.clear();
     }
     else
     {
         if(exitcode)
         {
-            m_ui->plainTextEdit->appendHtml(QString("<font color=red><b>FAIL (%1)</b></font>").arg(exitcode));
+            m_ui->plainTextEdit->appendHtml(tr("<font color=red><b>FAIL (%1)</b></font>").arg(exitcode));
             batch.clear();
         }
         else
-            m_ui->plainTextEdit->appendHtml(QString("<font color=green><b>OK</b></font>"));
+            m_ui->plainTextEdit->appendHtml(tr("<font color=green><b>OK</b></font>"));
     }    
     NextCmd();
 }
