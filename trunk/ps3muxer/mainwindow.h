@@ -15,6 +15,7 @@ class codec
 {
 public:
     std::string name;
+    std::string print_name;
     std::string file_ext;
     std::string map;
     int type;   // 1-video, 2-audio
@@ -38,10 +39,12 @@ private:
     std::map<std::string,codec> codecs;
     std::string last_dir;
 
-    void initCodec(const std::string& s);
+    void initCodec(const std::string& s,const std::string pn);
     void parseCmdParams(const QString& s,QStringList& lst);
 
 private slots:
+    void on_tableWidget_itemSelectionChanged();
+    void on_tableWidget_2_itemSelectionChanged();
     void on_pushButton_4_clicked();
     void on_pushButton_2_clicked();
     void on_pushButton_3_clicked();
