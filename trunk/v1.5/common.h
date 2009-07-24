@@ -45,6 +45,9 @@ typedef unsigned char u_int8_t;
 typedef unsigned short u_int16_t;
 typedef unsigned long u_int32_t;
 typedef unsigned long long u_int64_t;
+#endif
+
+#ifndef O_LARGEFILE
 #define O_LARGEFILE 0
 #endif
 
