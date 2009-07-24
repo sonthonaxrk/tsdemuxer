@@ -25,7 +25,7 @@ class execWindow : public QDialog {
     Q_OBJECT
     Q_DISABLE_COPY(execWindow)
 public:
-    explicit execWindow(QWidget *parent);
+    explicit execWindow(QWidget *parent, const QString& info=QString());
     virtual ~execWindow();
 
     std::list<execCmd> batch;

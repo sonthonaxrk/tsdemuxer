@@ -2,7 +2,7 @@
 #include "ui_execwindow.h"
 #include <time.h>
 
-execWindow::execWindow(QWidget *parent) :
+execWindow::execWindow(QWidget *parent, const QString& info) :
     QDialog(parent),
     m_ui(new Ui::execWindow)
 {
@@ -15,8 +15,10 @@ execWindow::execWindow(QWidget *parent) :
     connect(m_proc,SIGNAL(finished(int,QProcess::ExitStatus)),this,SLOT(onFinished(int)));
     connect(m_proc,SIGNAL(readyReadStandardOutput()),this,SLOT(onDataReady()) );
 
-
-    m_ui->plainTextEdit->appendHtml(tr("<font color=gray>Sony PlayStation3 HD Movie Muxer<br>Copyright (C) 2009 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
+    if(info.isEmpty())
+        m_ui->plainTextEdit->appendHtml(tr("<font color=gray>Sony PlayStation3 HD Movie Muxer<br>Copyright (C) 2009 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
+    else
+        m_ui->plainTextEdit->appendHtml(info);
 }
 
 execWindow::~execWindow()

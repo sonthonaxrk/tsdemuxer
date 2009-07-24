@@ -28,6 +28,7 @@ namespace ts
 #endif
 
     int scan_dir(const char* path,std::list<std::string>& l);
+    void load_playlist(const char* path,std::list<std::string>& l);
     int get_clip_number_by_filename(const std::string& s);
 
     bool is_ts_filename(const std::string& s)
@@ -137,6 +138,41 @@ int ts::scan_dir(const char* path,std::list<std::string>& l)
 }
 #endif
 
+void ts::load_playlist(const char* path,std::list<std::string>& l)
+{
+    FILE* fp=fopen(path,"r");
+
+    char buf[512];
+
+    while(fgets(buf,sizeof(buf),fp))
+    {
+        char* p=buf;
+        while(*p && (*p==' ' || *p=='\t'))
+            p++;
+
+        int len=0;
+
+        char* p2=strpbrk(p,"#;\r\n");
+        if(p2)
+            len=p2-p;
+        else
+            len=strlen(p);
+
+        while(len>0 && (p[len-1]==' ' || p[len-1]=='\t'))
+            len--;
+
+        if(len>0)
+        {
+            l.push_back(std::string());
+
+            std::string& s=l.back();
+
+            s.assign(p,len);
+        }
+    }
+}
+
+
 int ts::get_clip_number_by_filename(const std::string& s)
 {
     int ll=s.length();
@@ -165,13 +201,14 @@ int ts::get_clip_number_by_filename(const std::string& s)
 
 int main(int argc,char** argv)
 {
-    fprintf(stderr,"tsdemux 1.50 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    fprintf(stderr,"tsdemux 1.51 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
-        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-o dst] [-c channel] [-u] [-j] [-m] [-z] [-p] [-e mode] [-v] *.ts|*.m2ts ...\n");
+        fprintf(stderr,"USAGE: ./tsdemux [-d src] [-l mpls] [-s pls] [-o dst] [-c channel] [-u] [-j] [-m] [-z] [-p] [-e mode] [-v] *.ts|*.m2ts ...\n");
         fprintf(stderr,"-d demux all mts/m2ts/ts files from directory\n");
         fprintf(stderr,"-l use AVCHD/Blu-Ray playlist file (*.mpl,*.mpls)\n");
+        fprintf(stderr,"-s playlist text file\n");
         fprintf(stderr,"-o redirect output to another directory or transport stream file\n");
         fprintf(stderr,"-c channel number for demux\n");
         fprintf(stderr,"-u demux unknown streams\n");
@@ -204,7 +241,7 @@ int main(int argc,char** argv)
     std::map<int,std::string> mpls_datetime;    // AVCHD clip date/time
 
     int opt;
-    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:vm"))>=0)
+    while((opt=getopt(argc,argv,"pe:ujc:zo:d:l:vms:"))>=0)
         switch(opt)
         {
         case 'p':
@@ -238,6 +275,13 @@ int main(int argc,char** argv)
             break;
         case 'l':
             mpls_file=optarg;
+            break;
+        case 's':
+            {
+                std::list<std::string> l;
+                ts::load_playlist(optarg,l);
+                playlist.merge(l);
+            }
             break;
         case 'v':
             verb=true;
