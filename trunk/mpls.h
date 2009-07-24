@@ -1,10 +1,11 @@
 #ifndef __MPLS_H
 #define __MPLS_H
 
-#include <map>
-#include <string>
-#include <list>
+#include "common.h"
 
-int mpls_parse(const char* filename,std::list<int>& playlist,std::map<int,std::string>& datetime,int verb);
+namespace mpls
+{
+    int parse(const char* filename,std::list<int>& playlist,std::map<int,std::string>& datetime,int verb);
+}
 
 #endif

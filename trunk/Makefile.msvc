@@ -1,2 +1,2 @@
 all:
-	cl /EHsc tsdemux.cpp mpls.cpp getopt.c
+	cl /EHsc /Fetsdemux.exe main.cpp ts.cpp mpls.cpp getopt.c
