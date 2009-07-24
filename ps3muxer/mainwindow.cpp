@@ -81,7 +81,7 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
                 if(!strncmp(p,"split_",6))
                     ui->comboBox->addItem(p+6,QVariant(p2));
                 else if(!strncmp(p,"codec_",6))
-                    initCodec(p2);
+                    initCodec(p2,p+6);
                 else
                     cfg[p]=p2;
             }
@@ -103,7 +103,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::initCodec(const std::string& s)
+void MainWindow::initCodec(const std::string& s,const std::string pn)
 {
     std::vector<std::string> ss;
     ss.reserve(3);
@@ -129,6 +129,7 @@ void MainWindow::initCodec(const std::string& s)
     cc.name=ss[0];
     cc.map=ss[1].length()?ss[1]:cc.name;
     cc.file_ext=ss[2];
+    cc.print_name=pn;
 
     if(!strncmp(cc.name.c_str(),"V_",2))
         cc.type=1;
@@ -432,5 +433,25 @@ void MainWindow::on_pushButton_2_clicked()
                 remove(audio_file_name2.c_str());
         }
     }
+}
+
+
+void MainWindow::on_tableWidget_itemSelectionChanged()
+{
+    int row=ui->tableWidget->currentRow();
+    if(row==-1)
+        return;
+
+    ui->label_5->setText(QString("[%1]").arg(codecs[ui->tableWidget->item(row,3)->text().toLocal8Bit().data()].print_name.c_str()));
+}
+
+
+void MainWindow::on_tableWidget_2_itemSelectionChanged()
+{
+    int row=ui->tableWidget_2->currentRow();
+    if(row==-1)
+        return;
+
+    ui->label_6->setText(QString("[%1]").arg(codecs[ui->tableWidget_2->item(row,3)->text().toLocal8Bit().data()].print_name.c_str()));
 }
 
