@@ -4,7 +4,7 @@
 #define MyAppName "PS3 Muxer"
 #define MyAppVerName "PS3 Muxer 1.0"
 #define MyAppPublisher "clark15b@doom9"
-#define MyAppURL "http://code.google.com/p/tsdemuxer"
+#define MyAppURL "http://ps3muxer.org"
 #define MyAppExeName "ps3muxer.exe"
 
 [Setup]
