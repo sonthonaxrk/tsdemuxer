@@ -28,7 +28,7 @@ namespace ts
 #endif
 
     int scan_dir(const char* path,std::list<std::string>& l);
-    void load_playlist(const char* path,std::list<std::string>& l);
+    void load_playlist(const char* path,std::list<std::string>& l,std::map<int,std::string>& d);
     int get_clip_number_by_filename(const std::string& s);
 
     bool is_ts_filename(const std::string& s)
@@ -138,7 +138,7 @@ int ts::scan_dir(const char* path,std::list<std::string>& l)
 }
 #endif
 
-void ts::load_playlist(const char* path,std::list<std::string>& l)
+void ts::load_playlist(const char* path,std::list<std::string>& l,std::map<int,std::string>& d)
 {
     FILE* fp=fopen(path,"r");
 
@@ -152,7 +152,7 @@ void ts::load_playlist(const char* path,std::list<std::string>& l)
 
         int len=0;
 
-        char* p2=strpbrk(p,"#;\r\n");
+        char* p2=strpbrk(p,"#\r\n");
         if(p2)
             len=p2-p;
         else
@@ -167,7 +167,15 @@ void ts::load_playlist(const char* path,std::list<std::string>& l)
 
             std::string& s=l.back();
 
-            s.assign(p,len);
+            std::string ss(p,len);
+            std::string::size_type n=ss.find_first_of(';');
+            if(n==std::string::npos)
+                s.swap(ss);
+            else
+            {
+                s=ss.substr(0,n);
+                d[get_clip_number_by_filename(s)]=ss.substr(n+1);
+            }
         }
     }
 }
@@ -224,7 +232,6 @@ int main(int argc,char** argv)
         return 0;
     }
 
-
     bool parse_only=false;
     int dump=0;
     bool av_only=true;
@@ -279,7 +286,7 @@ int main(int argc,char** argv)
         case 's':
             {
                 std::list<std::string> l;
-                ts::load_playlist(optarg,l);
+                ts::load_playlist(optarg,l,mpls_datetime);
                 playlist.merge(l);
             }
             break;

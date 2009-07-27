@@ -79,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
             if(*p && *p2)
             {
                 if(!strncmp(p,"split_",6))
-                    ui->comboBox->addItem(p+6,QVariant(p2));
+                    ui->comboBox->addItem(QString(p+6).replace('_',' '),QVariant(p2));
                 else if(!strncmp(p,"codec_",6))
                     initCodec(p2,p+6);
                 else
