@@ -22,6 +22,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionOpen_File,SIGNAL(triggered()),this,SLOT(on_pushButton_3_clicked()));
     connect(ui->actionClear,SIGNAL(triggered()),this,SLOT(on_pushButton_4_clicked()));
     connect(ui->actionQuit,SIGNAL(triggered()),this,SLOT(close()));
+    connect(ui->actionRun,SIGNAL(triggered()),this,SLOT(on_pushButton_7_clicked()));
+
+    ui->lineEdit->setText(QString("1"));
 }
 
 MainWindow::~MainWindow()
@@ -78,20 +81,15 @@ void MainWindow::on_pushButton_clicked()
 
     if(stream_path.length())
     {
-        std::string s(stream_path+os_slash+"stream");
+        QStringList filters;
+        filters<<"STREAM";
 
-        if(QDir(s.c_str()).exists())
-            stream_path=s;
+        QDir dd(stream_path.c_str());
+        QStringList l=dd.entryList(filters,QDir::Dirs);
+        if(l.size()>0)
+            stream_path=stream_path+os_slash+l[0].toLocal8Bit().data();
         else
-        {
-            s=stream_path+os_slash+"STREAM";
-            if(QDir(s.c_str()).exists())
-                stream_path=s;
-            else
-                stream_path.clear();
-        }
-
-
+            stream_path.clear();
     }
 
     std::list<int> playlist;
@@ -109,18 +107,18 @@ void MainWindow::on_pushButton_clicked()
     {
         char buf[32]; sprintf(buf,"%.5i",*i);
 
-        std::string s=stream_path+os_slash+buf+".";
-
         std::string fn;
 
-        if(QFileInfo((s+"m2ts").c_str()).exists())
-            fn=s+"m2ts";
-        if(QFileInfo((s+"M2TS").c_str()).exists())
-            fn=s+"M2TS";
-        if(QFileInfo((s+"mts").c_str()).exists())
-            fn=s+"mts";
-        if(QFileInfo((s+"MTS").c_str()).exists())
-            fn=s+"MTS";
+        {
+            QDir dd(stream_path.c_str());
+
+            QStringList filters;
+            filters<<QString("%1.mts").arg(buf)<<QString("%1.m2ts").arg(buf);
+
+            QStringList l=dd.entryList(filters,QDir::Files);
+            if(l.size()>0)
+                fn=stream_path+os_slash+l[0].toLocal8Bit().data();
+        }
 
         if(fn.length())
         {
@@ -143,6 +141,7 @@ void MainWindow::on_pushButton_clicked()
         }
     }
 }
+
 
 void MainWindow::on_pushButton_2_clicked()
 {
@@ -174,7 +173,7 @@ void MainWindow::on_pushButton_2_clicked()
 
 void MainWindow::on_pushButton_3_clicked()
 {
-    QStringList files=QFileDialog::getOpenFileNames(this,tr("source files"),last_dir.c_str(),"M2TS/TS files (*.m2ts *.mts *.ts);;M2TS files (*.m2ts *.mts);;TS files (*.ts)");
+    QStringList files=QFileDialog::getOpenFileNames(this,tr("source files"),last_dir.c_str(),"All files (*.m2ts *.mts *.ts);;M2TS files (*.m2ts *.mts);;TS files (*.ts)");
 
     if(files.size()>0)
     {
@@ -229,57 +228,16 @@ void MainWindow::on_pushButton_6_clicked()
         ui->lineEdit_2->setText(path);
 }
 
-void MainWindow::on_checkBox_5_stateChanged(int st)
-{
-    switch(st)
-    {
-    case Qt::Checked:
-        ui->checkBox_2->setCheckState(Qt::Checked);
-        ui->checkBox_2->setEnabled(false);
-        break;
-    case Qt::Unchecked:
-        ui->checkBox_2->setEnabled(true);
-        break;
-    }
-}
-
 void MainWindow::on_checkBox_3_stateChanged(int st)
 {
     switch(st)
     {
     case Qt::Checked:
         ui->checkBox_2->setCheckState(Qt::Unchecked);
-        ui->checkBox_5->setCheckState(Qt::Unchecked);
         ui->checkBox_2->setEnabled(false);
-        ui->checkBox_5->setEnabled(false);
         break;
     case Qt::Unchecked:
         ui->checkBox_2->setEnabled(true);
-        ui->checkBox_5->setEnabled(true);
-        break;
-    }
-}
-
-
-void MainWindow::on_checkBox_4_stateChanged(int st)
-{
-    switch(st)
-    {
-    case Qt::Checked:
-        ui->checkBox->setCheckState(Qt::Unchecked);
-        ui->checkBox_2->setCheckState(Qt::Unchecked);
-        ui->checkBox_3->setCheckState(Qt::Unchecked);
-        ui->checkBox_5->setCheckState(Qt::Unchecked);
-        ui->checkBox->setEnabled(false);
-        ui->checkBox_2->setEnabled(false);
-        ui->checkBox_3->setEnabled(false);
-        ui->checkBox_5->setEnabled(false);
-        break;
-    case Qt::Unchecked:
-        ui->checkBox->setEnabled(true);
-        ui->checkBox_2->setEnabled(true);
-        ui->checkBox_3->setEnabled(true);
-        ui->checkBox_5->setEnabled(true);
         break;
     }
 }
@@ -337,8 +295,12 @@ void MainWindow::on_pushButton_7_clicked()
     for(int i=0;i<ui->tableWidget->rowCount();i++)
     {
         QTableWidgetItem* item=ui->tableWidget->item(i,0);
+        QString desc=ui->tableWidget->item(i,1)->text();
 
-        fprintf(fp,"%s\n",item->data(Qt::UserRole).toString().toLocal8Bit().data());
+        if(desc.isEmpty())
+            fprintf(fp,"%s\n",item->data(Qt::UserRole).toString().toLocal8Bit().data());
+        else
+            fprintf(fp,"%s;%s\n",item->data(Qt::UserRole).toString().toLocal8Bit().data(),desc.toLocal8Bit().data());
     }
 
     fclose(fp);
@@ -347,8 +309,6 @@ void MainWindow::on_pushButton_7_clicked()
     bool demux_all_stream=ui->checkBox->checkState()==Qt::Checked?true:false;
     bool join_stream=ui->checkBox_2->checkState()==Qt::Checked?true:false;
     bool pes_stream=ui->checkBox_3->checkState()==Qt::Checked?true:false;
-    bool parse=ui->checkBox_4->checkState()==Qt::Checked?true:false;
-    bool mkv=ui->checkBox_5->checkState()==Qt::Checked?true:false;
 
     QStringList lst;
 
@@ -363,16 +323,16 @@ void MainWindow::on_pushButton_7_clicked()
         lst<<"-j";
     if(pes_stream)
         lst<<"-z";
-    if(parse)
-        lst<<"-p";
-    if(mkv)
-        lst<<"-m";
+    lst<<"-m";
 
     execWindow dlg(this,tr("<font color=gray>tsDemuxerGUI<br>Copyright (C) 2009 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
 
     dlg.batch.push_back(execCmd(tr("Demuxing"),
             tr("Demuxing..."),
             "./tsdemux",lst));
+
     dlg.run();
+
+    remove(playlist.c_str());
 }
 

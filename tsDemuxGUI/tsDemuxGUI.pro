@@ -21,3 +21,12 @@ HEADERS  += mainwindow.h\
 
 FORMS    += mainwindow.ui\
         execwindow.ui
+
+TRANSLATIONS += tsDemuxGUI_ru.ts
+
+system(lupdate tsDemuxGUI.pro)
+system(lrelease tsDemuxGUI.pro)
+
+win32 {
+    DEFINES += _CRT_SECURE_NO_WARNINGS
+}

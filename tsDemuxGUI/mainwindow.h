@@ -29,8 +29,6 @@ private slots:
     void on_checkBox_3_stateChanged(int );
     void on_pushButton_9_clicked();
     void on_pushButton_8_clicked();
-    void on_checkBox_4_stateChanged(int );
-    void on_checkBox_5_stateChanged(int );
     void on_pushButton_7_clicked();
     void on_pushButton_6_clicked();
     void on_pushButton_4_clicked();
