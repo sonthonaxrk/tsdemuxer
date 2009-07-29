@@ -21,6 +21,18 @@ public:
     int type;   // 1-video, 2-audio
 };
 
+class track_info
+{
+public:
+    std::string track_id;
+    int         delay;
+    std::string lang;
+    std::string codec;
+    std::string filename;
+
+    track_info(void):delay(0) {}
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
