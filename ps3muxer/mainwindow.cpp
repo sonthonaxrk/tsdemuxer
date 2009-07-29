@@ -441,10 +441,13 @@ void MainWindow::on_pushButton_2_clicked()
         opts+="\n";
 
         const std::string& vcc=codecs[video_track.codec].map;
+        const std::string& level=cfg["h264_level"];
 
         opts+=(vcc.length()?vcc:video_track.codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track.track_id;
         if(video_track.lang.length())
             opts+=", lang="+video_track.lang;
+        if(level.length())
+            opts+=", level="+level;
         opts+="\n";
 
 
