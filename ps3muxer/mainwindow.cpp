@@ -302,30 +302,19 @@ void MainWindow::on_pushButton_2_clicked()
     execWindow dlg(this);
 
     int _video=ui->tableWidget->currentRow();
-    int _audio=ui->tableWidget_2->currentRow();
 
-    if(_video==-1 || _audio==-1)
+    if(_video==-1)
         return;
 
-    std::string video_track_id=ui->tableWidget->item(_video,0)->text().toLocal8Bit().data();
-    int         video_delay=atoi(ui->tableWidget->item(_video,1)->text().toLocal8Bit().data());
-    std::string video_lang=ui->tableWidget->item(_video,2)->text().toLocal8Bit().data();
-    std::string video_codec=ui->tableWidget->item(_video,3)->text().toLocal8Bit().data();
-
-    std::string audio_track_id=ui->tableWidget_2->item(_audio,0)->text().toLocal8Bit().data();
-    int         audio_delay=atoi(ui->tableWidget_2->item(_audio,1)->text().toLocal8Bit().data());
-    std::string audio_lang=ui->tableWidget_2->item(_audio,2)->text().toLocal8Bit().data();
-    std::string audio_codec=ui->tableWidget_2->item(_audio,3)->text().toLocal8Bit().data();
-
-    audio_delay=audio_delay-video_delay;
-    video_delay=0;
-
-    std::string split=ui->comboBox->itemData(ui->comboBox->currentIndex()).toString().toLocal8Bit().data();
-
+    // get tmp path
     std::string tmp_path=cfg["tmp_path"];
     if(!tmp_path.length())
         tmp_path=(QDir::tempPath()+os_slash).toLocal8Bit().data();
 
+    // split value
+    std::string split=ui->comboBox->itemData(ui->comboBox->currentIndex()).toString().toLocal8Bit().data();
+
+    // remove tmp files
     bool remove_tmp_files=true;
 
     {
@@ -336,59 +325,107 @@ void MainWindow::on_pushButton_2_clicked()
             remove_tmp_files=true;
     }
 
-    if(native_codecs[codecs[video_codec].print_name]!=1)
+    track_info              video_track;
+    std::list<track_info>   audio_tracks;
+    std::list<std::string>  tmp_files;
+
+    // get video track info
+    video_track.track_id=ui->tableWidget->item(_video,0)->text().toLocal8Bit().data();
+    video_track.delay=atoi(ui->tableWidget->item(_video,1)->text().toLocal8Bit().data());
+    video_track.lang=ui->tableWidget->item(_video,2)->text().toLocal8Bit().data();
+    video_track.codec=ui->tableWidget->item(_video,3)->text().toLocal8Bit().data();
+
+    // get audio tracks info
     {
-        QMessageBox mbox(QMessageBox::Question,tr("Unknown video"),tr("You have chosen %1 video track, PS3 will not show it, you are assured?").arg(video_codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
+        std::map<int,int> _audio_map;
+
+        Q_FOREACH(QTableWidgetItem* _audio_item,ui->tableWidget_2->selectedItems())
+        {
+            int row=_audio_item->row();
+
+            int& n=_audio_map[row];
+
+            if(!n)
+            {
+                audio_tracks.push_back(track_info());
+                track_info& t=audio_tracks.back();
+
+                t.track_id=ui->tableWidget_2->item(row,0)->text().toLocal8Bit().data();
+                t.delay=atoi(ui->tableWidget_2->item(row,1)->text().toLocal8Bit().data());
+                t.lang=ui->tableWidget_2->item(row,2)->text().toLocal8Bit().data();
+                t.codec=ui->tableWidget_2->item(row,3)->text().toLocal8Bit().data();
+
+                t.delay=t.delay-video_track.delay;
+
+                n=1;
+            }
+        }
+    }
+
+    // unknown video track
+    if(native_codecs[codecs[video_track.codec].print_name]!=1)
+    {
+        QMessageBox mbox(QMessageBox::Question,tr("Unknown video"),tr("You have chosen %1 video track, PS3 will not show it, you are assured?").arg(video_track.codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
         if(mbox.exec()==QMessageBox::No)
             return;
     }
 
-    std::string audio_file_name;
-    std::string audio_file_name2;
-
-    const codec& cc=codecs[audio_codec];
-
-    if(native_codecs[cc.print_name]!=1)
+    // prepare audio
+    for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
     {
-        // transcode to AC3
+        track_info& audio_track=*i;
 
-        QMessageBox mbox(QMessageBox::Question,tr("Transcoding audio"),tr("You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?").arg(audio_codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
-        if(mbox.exec()==QMessageBox::No)
-            return;
+        std::string audio_file_name;
+        std::string audio_file_name2;
 
-        audio_file_name=tmp_path+"track_"+audio_track_id+'.';
-        audio_file_name2=tmp_path+"track_"+audio_track_id+"_encoded.ac3";
+        const codec& cc=codecs[audio_track.codec];
 
-        audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
-
-        QStringList lst;
-
-        lst<<"tracks"<<source_file_name.c_str()<<QString("%1:%2").arg(audio_track_id.c_str()).arg(audio_file_name.c_str());
-
-        dlg.batch.push_back(execCmd(tr("Extracting audio track"),
-            tr("Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...").arg(audio_track_id.c_str()),
-            cfg["mkvextract"].c_str(),lst));
-
-        lst.clear();
-
-        const std::string& encoder_args=cfg["encoder_args"];
-
-        if(encoder_args.length())
-            parseCmdParams(encoder_args.c_str(),lst);
-
-        for(int i=0;i<lst.size();i++)
+        if(native_codecs[cc.print_name]!=1)
         {
-            QString& s=lst[i];
-            if(s=="%1")
-                s=audio_file_name.c_str();
-            else if(s=="%2")
-                s=audio_file_name2.c_str();
+            // transcode to AC3
+
+            QMessageBox mbox(QMessageBox::Question,tr("Transcoding audio"),tr("You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?").arg(audio_track.codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
+            if(mbox.exec()==QMessageBox::No)
+                return;
+
+            audio_file_name=tmp_path+"track_"+audio_track.track_id+'.';
+            audio_file_name2=tmp_path+"track_"+audio_track.track_id+"_encoded.ac3";
+
+            audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
+
+            QStringList lst;
+
+            lst<<"tracks"<<source_file_name.c_str()<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(audio_file_name.c_str());
+
+            dlg.batch.push_back(execCmd(tr("Extracting audio track"),
+                tr("Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
+                cfg["mkvextract"].c_str(),lst));
+
+            lst.clear();
+
+            const std::string& encoder_args=cfg["encoder_args"];
+
+            if(encoder_args.length())
+                parseCmdParams(encoder_args.c_str(),lst);
+
+            for(int i=0;i<lst.size();i++)
+            {
+                QString& s=lst[i];
+                if(s=="%1")
+                    s=audio_file_name.c_str();
+                else if(s=="%2")
+                    s=audio_file_name2.c_str();
+            }
+
+            dlg.batch.push_back(execCmd(tr("Encoding audio track"),
+                tr("Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
+                cfg["encoder"].c_str(),lst));
+
+            tmp_files.push_back(audio_file_name);
+            tmp_files.push_back(audio_file_name2);
+
+            audio_track.filename=audio_file_name2;
         }
-
-        dlg.batch.push_back(execCmd(tr("Encoding audio track"),
-            tr("Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...").arg(audio_track_id.c_str()),
-            cfg["encoder"].c_str(),lst));
-
     }
 
     const std::string& meta=tmp_path+cfg["tsmuxer_meta"];
@@ -396,31 +433,40 @@ void MainWindow::on_pushButton_2_clicked()
     FILE* fp=fopen(meta.c_str(),"w");
     if(fp)
     {
+        tmp_files.push_back(meta);
+
         std::string opts="MUXOPT --no-pcr-on-video-pid --new-audio-pes --vbr --vbv-len=500";
         if(split.length())
             opts+=" --split-size="+split;
         opts+="\n";
 
-        const std::string& vcc=codecs[video_codec].map;
-        const std::string& acc=codecs[audio_codec].map;
+        const std::string& vcc=codecs[video_track.codec].map;
 
-        opts+=(vcc.length()?vcc:video_codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track_id;
-        if(video_lang.length())
-            opts+=", lang="+video_lang;
+        opts+=(vcc.length()?vcc:video_track.codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track.track_id;
+        if(video_track.lang.length())
+            opts+=", lang="+video_track.lang;
         opts+="\n";
 
-        if(audio_file_name2.length())
-            opts+="A_AC3, \""+audio_file_name2+"\"";
-        else
-            opts+=(acc.length()?acc:audio_codec)+", \""+source_file_name+"\", track="+audio_track_id;
-        if(audio_lang.length())
-            opts+=", lang="+audio_lang;
-        if(audio_delay)
+
+        for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
         {
-            char t[32]; sprintf(t,", timeshift=%ims",audio_delay);
-            opts+=t;
+            track_info& audio_track=*i;
+
+            const std::string& acc=codecs[audio_track.codec].map;
+
+            if(audio_track.filename.length())
+                opts+="A_AC3, \""+audio_track.filename+"\"";
+            else
+                opts+=(acc.length()?acc:audio_track.codec)+", \""+source_file_name+"\", track="+audio_track.track_id;
+            if(audio_track.lang.length())
+                opts+=", lang="+audio_track.lang;
+            if(audio_track.delay)
+            {
+                char t[32]; sprintf(t,", timeshift=%ims",audio_track.delay);
+                opts+=t;
+            }
+            opts+="\n";
         }
-        opts+="\n";
 
         fprintf(fp,"%s",opts.c_str());
 
@@ -438,14 +484,9 @@ void MainWindow::on_pushButton_2_clicked()
 
         dlg.run();
 
-        if(remove_tmp_files)
-        {
-            remove(meta.c_str());
-            if(audio_file_name.length())
-                remove(audio_file_name.c_str());
-            if(audio_file_name2.length())
-                remove(audio_file_name2.c_str());
-        }
+            if(remove_tmp_files)
+                for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
+                    remove(i->c_str());
     }
 }
 
