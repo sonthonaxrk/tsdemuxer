@@ -37,6 +37,7 @@ private:
     std::string source_file_name;
     std::map<std::string,std::string> cfg;
     std::map<std::string,codec> codecs;
+    std::map<std::string,int> native_codecs;
     std::string last_dir;
 
     void initCodec(const std::string& s,const std::string pn);

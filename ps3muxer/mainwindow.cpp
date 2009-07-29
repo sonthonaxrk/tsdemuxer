@@ -88,6 +88,12 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
         }
         fclose(fp);
     }
+
+    QStringList nc=QString(cfg["native_codecs"].c_str()).split(',',QString::SkipEmptyParts);
+    for(int i=0;i<nc.size();i++)
+        native_codecs[nc[i].toLocal8Bit().data()]=1;
+
+
     const std::string& style=cfg["style"];
     if(style.length())
         QApplication::setStyle(QStyleFactory::create(style.c_str()));
@@ -96,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
 
     if(!src_file_name.isEmpty())
         on_pushButton_clicked();
+
 }
 
 MainWindow::~MainWindow()
@@ -329,21 +336,28 @@ void MainWindow::on_pushButton_2_clicked()
             remove_tmp_files=true;
     }
 
+    if(native_codecs[codecs[video_codec].print_name]!=1)
+    {
+        QMessageBox mbox(QMessageBox::Question,tr("Unknown video"),tr("You have chosen %1 video track, PS3 will not show it, you are assured?").arg(video_codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
+        if(mbox.exec()==QMessageBox::No)
+            return;
+    }
+
     std::string audio_file_name;
     std::string audio_file_name2;
 
-    if(strcmp(audio_codec.c_str(),"A_AC3"))
+    const codec& cc=codecs[audio_codec];
+
+    if(native_codecs[cc.print_name]!=1)
     {
         // transcode to AC3
 
-        QMessageBox mbox(QMessageBox::Question,tr("Transcoding audio"),tr("You have chosen %1 track, it will be converted, process will occupy approximately 15 minutes, you are assured?").arg(audio_codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
+        QMessageBox mbox(QMessageBox::Question,tr("Transcoding audio"),tr("You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?").arg(audio_codec.c_str()),QMessageBox::Yes|QMessageBox::No,this);
         if(mbox.exec()==QMessageBox::No)
             return;
 
         audio_file_name=tmp_path+"track_"+audio_track_id+'.';
         audio_file_name2=tmp_path+"track_"+audio_track_id+"_encoded.ac3";
-
-        const codec& cc=codecs[audio_codec];
 
         audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
 
