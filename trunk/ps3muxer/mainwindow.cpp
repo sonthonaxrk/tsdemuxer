@@ -428,7 +428,24 @@ void MainWindow::on_pushButton_2_clicked()
         }
     }
 
-    const std::string& meta=tmp_path+cfg["tsmuxer_meta"];
+    std::string meta;
+
+    {
+        std::string s;
+
+        std::string::size_type n=source_file_name.find_last_of("\\/");
+        if(n!=std::string::npos)
+            s=source_file_name.substr(n+1);
+        else
+            s=source_file_name;
+
+        n=s.find_last_of('.');
+        if(n!=std::string::npos)
+            s=s.substr(0,n);
+
+        meta=tmp_path+s+".meta";
+    }
+
 
     FILE* fp=fopen(meta.c_str(),"w");
     if(fp)
@@ -490,7 +507,8 @@ void MainWindow::on_pushButton_2_clicked()
             if(remove_tmp_files)
                 for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
                     remove(i->c_str());
-    }
+    }else
+        QMessageBox::warning(this,tr("Error"),tr("Unable to create meta file: %1").arg(meta.c_str()));
 }
 
 
