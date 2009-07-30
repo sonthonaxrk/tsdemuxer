@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "PS3 Muxer"
-#define MyAppVerName "PS3 Muxer 1.1"
+#define MyAppVerName "PS3 Muxer 1.2"
 #define MyAppPublisher "clark15b@doom9"
 #define MyAppURL "http://ps3muxer.org"
 #define MyAppExeName "ps3muxer.exe"
@@ -21,10 +21,10 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\PS3Muxer
 DefaultGroupName={#MyAppName}
 AllowNoIcons=true
-LicenseFile=c:\Devil\SRC\mkv\ps3muxer\LICENSE
+LicenseFile=..\ps3muxer\LICENSE
 OutputDir=output
 OutputBaseFilename=ps3muxer_setup
-SetupIconFile=C:\Devil\SRC\mkv\src\icons\film_go.ico
+SetupIconFile=icons\film_go.ico
 Compression=lzma/ultra64
 SolidCompression=true
 InternalCompressLevel=ultra64

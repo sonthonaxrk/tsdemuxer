@@ -84,6 +84,14 @@ void execWindow::NextCmd()
         m_ui->pushButton->setEnabled(false);
         m_ui->pushButton_2->setEnabled(false);
 
+        {
+            QString s=cmd.cmd+" ";
+
+            Q_FOREACH(QString p,cmd.params)
+                s+=p+" ";
+            m_ui->plainTextEdit->appendHtml(QString("<font color=blue>%1</font><br>").arg(s));
+        }
+
         m_proc->start(cmd.cmd,cmd.params);
     }
 }
