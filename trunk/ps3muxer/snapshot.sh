@@ -23,6 +23,7 @@ cp ps3muxer.qrc $DST/
 cp ps3muxer.rc $DST/
 cp ps3muxer_ru.ts $DST/
 cp ps3muxer_win32.cfg $DST/
+cp version.h $DST/
 cp ../LICENSE $DST/
 
 tar c $DST | gzip -c > $DST.tar.gz

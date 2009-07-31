@@ -11,10 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>PlayStation3 M2TS muxer - clark15b@doom9</string>
+   <string>PS3Muxer - clark15b@doom9</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="ps3muxer.qrc">
     <normaloff>:/main_window.png</normaloff>:/main_window.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
@@ -363,6 +363,8 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="ps3muxer.qrc"/>
+ </resources>
  <connections/>
 </ui>
