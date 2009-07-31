@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     connect(ui->actionClear,SIGNAL(triggered()),this,SLOT(on_pushButton_3_clicked()));
     connect(ui->actionStart_muxing,SIGNAL(triggered()),this,SLOT(on_pushButton_2_clicked()));
     connect(ui->actionQuit,SIGNAL(triggered()),this,SLOT(close()));
-    connect(ui->actionAbout,SIGNAL(triggered()),this,SLOT(on_about()));
+    connect(ui->actionAbout,SIGNAL(triggered()),this,SLOT(aboutBox()));
 
     FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+conf_path).toLocal8Bit().data(),"r");
     if(fp)
@@ -543,7 +543,7 @@ void MainWindow::on_tableWidget_2_itemSelectionChanged()
     ui->label_6->setText(QString("[%1]").arg(codecs[ui->tableWidget_2->item(row,3)->text().toLocal8Bit().data()].print_name.c_str()));
 }
 
-void MainWindow::on_about()
+void MainWindow::aboutBox()
 {
     QMessageBox::about(this,tr("About"),QString("<b>%1</b><br><br>Copyright (C) 2009 %2. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>%3</a></font>").arg(MyAppVerName).arg(MyAppPublisher).arg(MyAppURL));
 }
