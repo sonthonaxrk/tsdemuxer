@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "PS3 Muxer"
-#define MyAppVerName "PS3 Muxer 1.2"
+#define MyAppVerName "PS3 Muxer 1.21"
 #define MyAppPublisher "clark15b@doom9"
 #define MyAppURL "http://ps3muxer.org"
 #define MyAppExeName "ps3muxer.exe"

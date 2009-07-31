@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     connect(ui->actionClear,SIGNAL(triggered()),this,SLOT(on_pushButton_3_clicked()));
     connect(ui->actionStart_muxing,SIGNAL(triggered()),this,SLOT(on_pushButton_2_clicked()));
     connect(ui->actionQuit,SIGNAL(triggered()),this,SLOT(close()));
+    connect(ui->actionAbout,SIGNAL(triggered()),this,SLOT(on_about()));
 
     FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+conf_path).toLocal8Bit().data(),"r");
     if(fp)
@@ -325,6 +326,20 @@ void MainWindow::on_pushButton_2_clicked()
             remove_tmp_files=true;
     }
 
+    std::string prefix;
+
+    {
+        std::string::size_type n=source_file_name.find_last_of("\\/");
+        if(n!=std::string::npos)
+            prefix=source_file_name.substr(n+1);
+        else
+            prefix=source_file_name;
+
+        n=prefix.find_last_of('.');
+        if(n!=std::string::npos)
+            prefix=prefix.substr(0,n);
+    }
+
     track_info              video_track;
     std::list<track_info>   audio_tracks;
     std::list<std::string>  tmp_files;
@@ -388,8 +403,8 @@ void MainWindow::on_pushButton_2_clicked()
             if(mbox.exec()==QMessageBox::No)
                 return;
 
-            audio_file_name=tmp_path+"track_"+audio_track.track_id+'.';
-            audio_file_name2=tmp_path+"track_"+audio_track.track_id+"_encoded.ac3";
+            audio_file_name=tmp_path+prefix+"_track_"+audio_track.track_id+'.';
+            audio_file_name2=tmp_path+prefix+"_track_"+audio_track.track_id+"_encoded.ac3";
 
             audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
 
@@ -428,24 +443,7 @@ void MainWindow::on_pushButton_2_clicked()
         }
     }
 
-    std::string meta;
-
-    {
-        std::string s;
-
-        std::string::size_type n=source_file_name.find_last_of("\\/");
-        if(n!=std::string::npos)
-            s=source_file_name.substr(n+1);
-        else
-            s=source_file_name;
-
-        n=s.find_last_of('.');
-        if(n!=std::string::npos)
-            s=s.substr(0,n);
-
-        meta=tmp_path+s+".meta";
-    }
-
+    std::string meta=tmp_path+prefix+".meta";
 
     FILE* fp=fopen(meta.c_str(),"w");
     if(fp)
@@ -531,3 +529,7 @@ void MainWindow::on_tableWidget_2_itemSelectionChanged()
     ui->label_6->setText(QString("[%1]").arg(codecs[ui->tableWidget_2->item(row,3)->text().toLocal8Bit().data()].print_name.c_str()));
 }
 
+void MainWindow::on_about()
+{
+    QMessageBox::about(this,tr("About"),"<b>PS3Muxer 1.21</b><br><br>Copyright (C) 2009 clark15b@doom9. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>http://ps3muxer.org</a></font>");
+}

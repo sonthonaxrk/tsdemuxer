@@ -14,7 +14,7 @@
    <string>PlayStation3 M2TS muxer - clark15b@doom9</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="ps3muxer.qrc">
+   <iconset>
     <normaloff>:/main_window.png</normaloff>:/main_window.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
@@ -321,7 +321,14 @@
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuFIle"/>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -349,10 +356,13 @@
     <string>Quit</string>
    </property>
   </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources>
-  <include location="ps3muxer.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

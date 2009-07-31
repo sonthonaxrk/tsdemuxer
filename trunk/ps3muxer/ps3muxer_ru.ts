@@ -4,82 +4,87 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="173"/>
+        <location filename="mainwindow.cpp" line="174"/>
         <source>MKV source file</source>
         <translation>Исходный MKV файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="258"/>
-        <location filename="mainwindow.cpp" line="511"/>
+        <location filename="mainwindow.cpp" line="259"/>
+        <location filename="mainwindow.cpp" line="509"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="258"/>
+        <location filename="mainwindow.cpp" line="259"/>
         <source>Open file error: %1</source>
         <translation>Ошибка открытия файла: %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="273"/>
+        <location filename="mainwindow.cpp" line="274"/>
         <source>M2TS target file</source>
         <translation>Финальный M2TS файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="368"/>
+        <location filename="mainwindow.cpp" line="383"/>
         <source>Unknown video</source>
         <translation>Неизвестное видео</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="368"/>
+        <location filename="mainwindow.cpp" line="383"/>
         <source>You have chosen %1 video track, PS3 will not show it, you are assured?</source>
         <translation>Вы выбрали %1 видео дорожку, PS3 скорее всего не сможет это показать, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="387"/>
+        <location filename="mainwindow.cpp" line="402"/>
         <source>Transcoding audio</source>
         <translation>Кодирование звука</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="387"/>
+        <location filename="mainwindow.cpp" line="402"/>
         <source>You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?</source>
         <translation>Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="511"/>
+        <location filename="mainwindow.cpp" line="509"/>
         <source>Unable to create meta file: %1</source>
         <translation>Ошибка создания метафайла: %1</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="534"/>
+        <source>About</source>
+        <translation>О программе...</translation>
     </message>
     <message>
         <source>You have chosen %1 track, it will be converted, process will occupy approximately 15 minutes, you are assured?</source>
         <translation type="obsolete">Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="400"/>
+        <location filename="mainwindow.cpp" line="415"/>
         <source>Extracting audio track</source>
         <translation>Извлечение звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="401"/>
+        <location filename="mainwindow.cpp" line="416"/>
         <source>Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...</source>
         <translation>Извлечение звуковой дорожки %1 (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="420"/>
+        <location filename="mainwindow.cpp" line="435"/>
         <source>Encoding audio track</source>
         <translation>Кодирование звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="421"/>
+        <location filename="mainwindow.cpp" line="436"/>
         <source>Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...</source>
         <translation>Кодирование звуковой дорожки %1 в AC3 (примерно 10-20 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="501"/>
+        <location filename="mainwindow.cpp" line="499"/>
         <source>Remux M2TS</source>
         <translation>Формирование M2TS файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="502"/>
+        <location filename="mainwindow.cpp" line="500"/>
         <source>Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...
 %1</source>
         <translation>Формирование MPEG2-TS потока (примерно 5 минут для 8Гб файла)...
@@ -139,13 +144,13 @@
     </message>
     <message>
         <location filename="mainwindow.ui" line="209"/>
-        <location filename="mainwindow.ui" line="328"/>
+        <location filename="mainwindow.ui" line="335"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="216"/>
-        <location filename="mainwindow.ui" line="336"/>
+        <location filename="mainwindow.ui" line="343"/>
         <source>Clear</source>
         <translation>Очистить</translation>
     </message>
@@ -161,7 +166,7 @@
     </message>
     <message>
         <location filename="mainwindow.ui" line="284"/>
-        <location filename="mainwindow.ui" line="341"/>
+        <location filename="mainwindow.ui" line="348"/>
         <source>Start muxing</source>
         <translation>Старт</translation>
     </message>
@@ -171,19 +176,29 @@
         <translation>Файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="331"/>
+        <location filename="mainwindow.ui" line="326"/>
+        <source>Help</source>
+        <translation>Помощь</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="338"/>
         <source>Ctrl+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="344"/>
+        <location filename="mainwindow.ui" line="351"/>
         <source>Ctrl+R</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="349"/>
+        <location filename="mainwindow.ui" line="356"/>
         <source>Quit</source>
         <translation>Выход</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="361"/>
+        <source>About</source>
+        <translation type="unfinished">О программе</translation>
     </message>
 </context>
 <context>
