@@ -6,6 +6,7 @@
 #include "execwindow.h"
 #include <stdio.h>
 #include <QStyleFactory>
+#include "version.h"
 
 #ifdef _WIN32
 #define os_slash    '\\'
@@ -24,6 +25,9 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
 {
     ui->setupUi(this);
     ebml::init();
+
+    this->setWindowTitle(QString("%1 - %2").arg(MyAppVerName).arg(MyAppPublisher));
+
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget_2->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget->setSelectionBehavior ( QAbstractItemView::SelectRows );
@@ -267,6 +271,9 @@ void MainWindow::on_pushButton_3_clicked()
     ui->tableWidget_2->setRowCount(0);
     ui->lineEdit->clear();
     source_file_name.clear();
+    ui->label_5->clear();
+    ui->label_6->clear();
+    ui->comboBox->setCurrentIndex(0);
 }
 
 void MainWindow::on_pushButton_4_clicked()
@@ -300,7 +307,13 @@ void MainWindow::parseCmdParams(const QString& s,QStringList& lst)
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    execWindow dlg(this);
+    startMuxing();
+}
+
+void MainWindow::startMuxing()
+{
+    std::list<execCmd>      batch;
+    std::list<std::string>  tmp_files;
 
     int _video=ui->tableWidget->currentRow();
 
@@ -342,7 +355,6 @@ void MainWindow::on_pushButton_2_clicked()
 
     track_info              video_track;
     std::list<track_info>   audio_tracks;
-    std::list<std::string>  tmp_files;
 
     // get video track info
     video_track.track_id=ui->tableWidget->item(_video,0)->text().toLocal8Bit().data();
@@ -412,7 +424,7 @@ void MainWindow::on_pushButton_2_clicked()
 
             lst<<"tracks"<<source_file_name.c_str()<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(audio_file_name.c_str());
 
-            dlg.batch.push_back(execCmd(tr("Extracting audio track"),
+            batch.push_back(execCmd(tr("Extracting audio track"),
                 tr("Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
                 cfg["mkvextract"].c_str(),lst));
 
@@ -432,7 +444,7 @@ void MainWindow::on_pushButton_2_clicked()
                     s=audio_file_name2.c_str();
             }
 
-            dlg.batch.push_back(execCmd(tr("Encoding audio track"),
+            batch.push_back(execCmd(tr("Encoding audio track"),
                 tr("Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
                 cfg["encoder"].c_str(),lst));
 
@@ -496,15 +508,17 @@ void MainWindow::on_pushButton_2_clicked()
         lst<<meta.c_str()<<ui->lineEdit->text();
 
 
-        dlg.batch.push_back(execCmd(tr("Remux M2TS"),
+        batch.push_back(execCmd(tr("Remux M2TS"),
             tr("Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...\n%1").arg(opts.c_str()),
                cfg["tsmuxer"].c_str(),lst));
 
+        execWindow dlg(this);
+        dlg.batch.swap(batch);
         dlg.run();
 
-            if(remove_tmp_files)
-                for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
-                    remove(i->c_str());
+        if(remove_tmp_files)
+            for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
+                remove(i->c_str());
     }else
         QMessageBox::warning(this,tr("Error"),tr("Unable to create meta file: %1").arg(meta.c_str()));
 }
@@ -531,5 +545,5 @@ void MainWindow::on_tableWidget_2_itemSelectionChanged()
 
 void MainWindow::on_about()
 {
-    QMessageBox::about(this,tr("About"),"<b>PS3Muxer 1.21</b><br><br>Copyright (C) 2009 clark15b@doom9. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>http://ps3muxer.org</a></font>");
+    QMessageBox::about(this,tr("About"),QString("<b>%1</b><br><br>Copyright (C) 2009 %2. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>%3</a></font>").arg(MyAppVerName).arg(MyAppPublisher).arg(MyAppURL));
 }
