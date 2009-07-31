@@ -2,7 +2,7 @@ Package: ps3muxer
 Version: 1.2-ubuntu1
 Section: video
 Architecture: i386
-Depends: libqtgui4, libqtcore4, libstdc++6
+Depends: libqtgui4, libqtcore4, libstdc++6, ffmpeg, mkvtoolnix
 Priority: extra
 Maintainer: clark15b@doom9 <clark15b@gmail.com>
 Homepage: http://ps3muxer.org
