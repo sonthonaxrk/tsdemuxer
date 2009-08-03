@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
     QString cmd;
     if(QApplication::arguments().size()>1)
-        cmd=QApplication::arguments().last().toLocal8Bit().data();
+        cmd=QApplication::arguments().last();
 
 
     MainWindow w(0,cmd);
