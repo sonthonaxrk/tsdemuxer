@@ -253,7 +253,7 @@ void MainWindow::on_pushButton_clicked()
 
                 last_dir=s1;
 
-                ui->lineEdit->setText((s1+s2).c_str());
+                ui->lineEdit->setText(QString::fromLocal8Bit((s1+s2).c_str()));
             }
 
             source_file_name=path.toLocal8Bit().data();
@@ -398,6 +398,9 @@ void MainWindow::startMuxing()
     }
 
     // prepare audio
+
+    int transcode_audio_track_num=0;
+
     for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
     {
         track_info& audio_track=*i;
@@ -420,38 +423,61 @@ void MainWindow::startMuxing()
 
             audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
 
-            QStringList lst;
-
-            lst<<"tracks"<<source_file_name.c_str()<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(audio_file_name.c_str());
-
-            batch.push_back(execCmd(tr("Extracting audio track"),
-                tr("Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
-                cfg["mkvextract"].c_str(),lst));
-
-            lst.clear();
-
-            const std::string& encoder_args=cfg["encoder_args"];
-
-            if(encoder_args.length())
-                parseCmdParams(encoder_args.c_str(),lst);
-
-            for(int i=0;i<lst.size();i++)
-            {
-                QString& s=lst[i];
-                if(s=="%1")
-                    s=audio_file_name.c_str();
-                else if(s=="%2")
-                    s=audio_file_name2.c_str();
-            }
-
-            batch.push_back(execCmd(tr("Encoding audio track"),
-                tr("Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
-                cfg["encoder"].c_str(),lst));
-
             tmp_files.push_back(audio_file_name);
             tmp_files.push_back(audio_file_name2);
 
             audio_track.filename=audio_file_name2;
+            audio_track.filename_temp=audio_file_name;
+
+            transcode_audio_track_num++;
+        }
+    }
+
+    if(transcode_audio_track_num)
+    {
+        QStringList lst;
+
+        lst<<"tracks"<<QString::fromLocal8Bit((source_file_name.c_str()));
+
+        for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
+        {
+            track_info& audio_track=*i;
+
+            if(audio_track.filename.length())
+                lst<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(QString::fromLocal8Bit(audio_track.filename_temp.c_str()));
+        }
+
+        batch.push_back(execCmd(tr("Extracting audio tracks"),
+            tr("Extracting audio tracks (approximately 3-5 min for 8Gb movie)..."),
+            cfg["mkvextract"].c_str(),lst));
+
+
+        for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
+        {
+            track_info& audio_track=*i;
+
+            if(audio_track.filename.length())
+            {
+                lst.clear();
+
+                const std::string& encoder_args=cfg["encoder_args"];
+
+                if(encoder_args.length())
+                    parseCmdParams(encoder_args.c_str(),lst);
+
+                for(int i=0;i<lst.size();i++)
+                {
+                    QString& s=lst[i];
+                    if(s=="%1")
+                        s=QString::fromLocal8Bit(audio_track.filename_temp.c_str());
+                    else if(s=="%2")
+                        s=QString::fromLocal8Bit(audio_track.filename.c_str());
+                }
+
+                batch.push_back(execCmd(tr("Encoding audio track"),
+                    tr("Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...").arg(audio_track.track_id.c_str()),
+                    cfg["encoder"].c_str(),lst));
+            }
         }
     }
 
@@ -505,11 +531,11 @@ void MainWindow::startMuxing()
 
         QStringList lst;
 
-        lst<<meta.c_str()<<ui->lineEdit->text();
+        lst<<QString::fromLocal8Bit(meta.c_str())<<ui->lineEdit->text();
 
 
         batch.push_back(execCmd(tr("Remux M2TS"),
-            tr("Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...\n%1").arg(opts.c_str()),
+            tr("Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...\n%1").arg(QString::fromLocal8Bit(opts.c_str())),
                cfg["tsmuxer"].c_str(),lst));
 
         execWindow dlg(this);

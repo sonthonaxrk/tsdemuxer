@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=PS3Muxer
 Path=/usr/local/ps3muxer
-Exec=/usr/local/ps3muxer/ps3muxer
+Exec=/usr/local/ps3muxer/ps3muxer %f
 Icon=ps3muxer
 Terminal=false
 Type=Application

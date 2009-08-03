@@ -10,7 +10,7 @@
     </message>
     <message>
         <location filename="mainwindow.cpp" line="263"/>
-        <location filename="mainwindow.cpp" line="523"/>
+        <location filename="mainwindow.cpp" line="549"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -35,22 +35,32 @@
         <translation>Вы выбрали %1 видео дорожку, PS3 скорее всего не сможет это показать, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="414"/>
+        <location filename="mainwindow.cpp" line="417"/>
         <source>Transcoding audio</source>
         <translation>Кодирование звука</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="414"/>
+        <location filename="mainwindow.cpp" line="417"/>
         <source>You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?</source>
         <translation>Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="523"/>
+        <location filename="mainwindow.cpp" line="450"/>
+        <source>Extracting audio tracks</source>
+        <translation>Извлечение звуковых дорожек</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="451"/>
+        <source>Extracting audio tracks (approximately 3-5 min for 8Gb movie)...</source>
+        <translation>Извлечение звуковых дорожек (примерно 3-5 минут для 8Гб файла)...</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="549"/>
         <source>Unable to create meta file: %1</source>
         <translation>Ошибка создания метафайла: %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="548"/>
+        <location filename="mainwindow.cpp" line="574"/>
         <source>About</source>
         <translation>О программе...</translation>
     </message>
@@ -59,32 +69,30 @@
         <translation type="obsolete">Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="427"/>
         <source>Extracting audio track</source>
-        <translation>Извлечение звуковой дорожки</translation>
+        <translation type="obsolete">Извлечение звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="428"/>
         <source>Extracting audio track %1 (approximately 3-5 min for 8Gb movie)...</source>
-        <translation>Извлечение звуковой дорожки %1 (примерно 3-5 минут для 8Гб файла)...</translation>
+        <translation type="obsolete">Извлечение звуковой дорожки %1 (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="447"/>
+        <location filename="mainwindow.cpp" line="477"/>
         <source>Encoding audio track</source>
         <translation>Кодирование звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="448"/>
+        <location filename="mainwindow.cpp" line="478"/>
         <source>Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...</source>
         <translation>Кодирование звуковой дорожки %1 в AC3 (примерно 10-20 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="511"/>
+        <location filename="mainwindow.cpp" line="537"/>
         <source>Remux M2TS</source>
         <translation>Формирование M2TS файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="512"/>
+        <location filename="mainwindow.cpp" line="538"/>
         <source>Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...
 %1</source>
         <translation>Формирование MPEG2-TS потока (примерно 5 минут для 8Гб файла)...
@@ -205,39 +213,44 @@
 <context>
     <name>execWindow</name>
     <message>
-        <location filename="execwindow.cpp" line="19"/>
+        <location filename="execwindow.cpp" line="20"/>
         <source>&lt;font color=gray&gt;Sony PlayStation3 HD Movie Muxer&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="71"/>
+        <location filename="execwindow.cpp" line="72"/>
         <source>&lt;font color=gray&gt;Total time: %1 sec&lt;/font&gt;</source>
         <translation>&lt;font color=gray&gt;Полное время: %1 сек&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="79"/>
+        <location filename="execwindow.cpp" line="80"/>
         <source>&lt;font color=blue&gt;%1&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="112"/>
+        <location filename="execwindow.cpp" line="113"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Execute error (%1)&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка времени исполнения (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="124"/>
+        <location filename="execwindow.cpp" line="125"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Crash&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Аварийное завершение процесса&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="131"/>
+        <location filename="execwindow.cpp" line="132"/>
         <source>&lt;font color=red&gt;&lt;b&gt;FAIL (%1)&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="135"/>
+        <location filename="execwindow.cpp" line="136"/>
         <source>&lt;font color=green&gt;&lt;b&gt;OK&lt;/b&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="execwindow.cpp" line="223"/>
+        <source>Abort action?</source>
+        <translation>Отменить действие?</translation>
     </message>
     <message>
         <location filename="execwindow.ui" line="14"/>
@@ -245,6 +258,7 @@
         <translation>Процесс</translation>
     </message>
     <message>
+        <location filename="execwindow.cpp" line="223"/>
         <location filename="execwindow.ui" line="70"/>
         <source>Abort</source>
         <translation>Прервать</translation>

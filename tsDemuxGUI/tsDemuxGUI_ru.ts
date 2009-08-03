@@ -178,39 +178,44 @@
 <context>
     <name>execWindow</name>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="19"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="20"/>
         <source>&lt;font color=gray&gt;Sony PlayStation3 HD Movie Muxer&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="71"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="72"/>
         <source>&lt;font color=gray&gt;Total time: %1 sec&lt;/font&gt;</source>
         <translation>&lt;font color=gray&gt;Полное время: %1 sec&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="79"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="80"/>
         <source>&lt;font color=blue&gt;%1&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="104"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="113"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Execute error (%1)&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка времени исполнения (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="116"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="125"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Crash&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Аварийное завершение программы&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="123"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="132"/>
         <source>&lt;font color=red&gt;&lt;b&gt;FAIL (%1)&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../ps3muxer/execwindow.cpp" line="127"/>
+        <location filename="../ps3muxer/execwindow.cpp" line="136"/>
         <source>&lt;font color=green&gt;&lt;b&gt;OK&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=green&gt;&lt;b&gt;Успех&lt;/b&gt;&lt;/font&gt;</translation>
+    </message>
+    <message>
+        <location filename="../ps3muxer/execwindow.cpp" line="223"/>
+        <source>Abort action?</source>
+        <translation>Отменить действие?</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.ui" line="14"/>
@@ -218,6 +223,7 @@
         <translation>Процесс</translation>
     </message>
     <message>
+        <location filename="../ps3muxer/execwindow.cpp" line="223"/>
         <location filename="../ps3muxer/execwindow.ui" line="70"/>
         <source>Abort</source>
         <translation>Отмена</translation>
