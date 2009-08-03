@@ -29,6 +29,7 @@ public:
     std::string lang;
     std::string codec;
     std::string filename;
+    std::string filename_temp;
 
     track_info(void):delay(0) {}
 };

@@ -1,6 +1,7 @@
 #include "execwindow.h"
 #include "ui_execwindow.h"
 #include <time.h>
+#include <QMessageBox>
 
 execWindow::execWindow(QWidget *parent, const QString& info) :
     QDialog(parent),
@@ -219,6 +220,13 @@ void execWindow::onDataReady()
 
 void execWindow::on_pushButton_2_clicked()
 {
+    QMessageBox mbox(QMessageBox::Question,tr("Abort"),tr("Abort action?"),QMessageBox::Yes|QMessageBox::No,this);
+    if(mbox.exec()==QMessageBox::No)
+    {
+        m_ui->plainTextEdit->ensureCursorVisible();
+        return;
+    }
+
     if(m_proc && m_proc->state()!=QProcess::NotRunning)
         m_proc->kill();
 }
