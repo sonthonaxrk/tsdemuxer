@@ -5,6 +5,8 @@
 #include <QTableWidget>
 #include <string>
 #include <map>
+#include "execwindow.h"
+
 
 namespace Ui
 {
@@ -52,10 +54,14 @@ private:
     std::map<std::string,codec> codecs;
     std::map<std::string,int> native_codecs;
     std::string last_dir;
+    std::string last_dir_dst;
+
+    std::list<execCmd> global_batch;
+    int batch_size;
 
     void initCodec(const std::string& s,const std::string pn);
     void parseCmdParams(const QString& s,QStringList& lst);
-    void startMuxing();
+    void startMuxing(bool delay);
 
 private slots:
     void on_tableWidget_itemSelectionChanged();
@@ -65,6 +71,8 @@ private slots:
     void on_pushButton_3_clicked();
     void on_pushButton_clicked();
     void aboutBox();
+    void addToBatch();
+    void clearBatch();
 };
 
 #endif // MAINWINDOW_H
