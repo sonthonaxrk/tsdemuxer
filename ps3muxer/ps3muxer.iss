@@ -39,6 +39,7 @@ Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription
 Source: ..\ps3muxer\ps3muxer.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\ps3muxer\QtGui4.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\ps3muxer\mkvtracks.exe; DestDir: {app}; Flags: ignoreversion
+Source: ..\ps3muxer\rm.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\ps3muxer\ps3muxer_ru.qm; DestDir: {app}; Flags: ignoreversion
 Source: ..\ps3muxer\ps3muxer_win32.cfg; DestDir: {app}; Flags: ignoreversion
 Source: ..\ps3muxer\QtCore4.dll; DestDir: {app}; Flags: ignoreversion

@@ -599,7 +599,13 @@ void MainWindow::startMuxing(bool delay)
                     if(s.length())
                     {
                         QStringList lst;
-                        lst<<QString::fromLocal8Bit(i->c_str());
+                        QString filename=QString::fromLocal8Bit(i->c_str());
+
+#ifdef _WIN32
+                        filename=filename.replace('/','\\');
+#endif
+
+                        lst<<filename;
                         batch.push_back(execCmd(tr("Remove file"),
                             tr("Remove temp file '%1'...").arg(lst[0]),s.c_str(),lst));
                     }
