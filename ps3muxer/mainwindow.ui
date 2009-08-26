@@ -62,6 +62,9 @@
           <property name="editTriggers">
            <set>QAbstractItemView::DoubleClicked</set>
           </property>
+          <property name="dragDropMode">
+           <enum>QAbstractItemView::NoDragDrop</enum>
+          </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::SingleSelection</enum>
           </property>
@@ -319,6 +322,9 @@
     <addaction name="actionClear"/>
     <addaction name="actionStart_muxing"/>
     <addaction name="separator"/>
+    <addaction name="actionAdd_to_batch"/>
+    <addaction name="actionClear_batch"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -359,6 +365,19 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionAdd_to_batch">
+   <property name="text">
+    <string>Add to batch</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionClear_batch">
+   <property name="text">
+    <string>Clear batch</string>
    </property>
   </action>
  </widget>

@@ -3,7 +3,6 @@
 #include "ebml.h"
 #include <QFileDialog>
 #include <QMessageBox>
-#include "execwindow.h"
 #include <stdio.h>
 #include <QStyleFactory>
 #include "version.h"
@@ -26,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     ui->setupUi(this);
     ebml::init();
 
+    batch_size=0;
+
     this->setWindowTitle(QString("%1 - %2").arg(MyAppVerName).arg(MyAppPublisher));
 
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
@@ -38,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     connect(ui->actionStart_muxing,SIGNAL(triggered()),this,SLOT(on_pushButton_2_clicked()));
     connect(ui->actionQuit,SIGNAL(triggered()),this,SLOT(close()));
     connect(ui->actionAbout,SIGNAL(triggered()),this,SLOT(aboutBox()));
+    connect(ui->actionAdd_to_batch,SIGNAL(triggered()),this,SLOT(addToBatch()));
+    connect(ui->actionClear_batch,SIGNAL(triggered()),this,SLOT(clearBatch()));
 
     FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+conf_path).toLocal8Bit().data(),"r");
     if(fp)
@@ -252,8 +255,10 @@ void MainWindow::on_pushButton_clicked()
                     s1+=os_slash;
 
                 last_dir=s1;
+                if(!last_dir_dst.length())
+                    last_dir_dst=s1;
 
-                ui->lineEdit->setText(QString::fromLocal8Bit((s1+s2).c_str()));
+                ui->lineEdit->setText(QString::fromLocal8Bit((last_dir_dst+s2).c_str()));
             }
 
             source_file_name=path.toLocal8Bit().data();
@@ -273,12 +278,12 @@ void MainWindow::on_pushButton_3_clicked()
     source_file_name.clear();
     ui->label_5->clear();
     ui->label_6->clear();
-    ui->comboBox->setCurrentIndex(0);
+    //ui->comboBox->setCurrentIndex(0);
 }
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),last_dir.c_str(),"M2TS file (*.m2ts)");
+    QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),last_dir_dst.c_str(),"M2TS file (*.m2ts)");
 
 #ifdef _WIN32
     path=path.replace('/','\\');
@@ -287,10 +292,19 @@ void MainWindow::on_pushButton_4_clicked()
     if(!path.isEmpty())
     {
         std::string s=path.toLocal8Bit().data();
+        std::string s1;
 
         std::string::size_type n=s.find_last_of("\\/");
         if(n!=std::string::npos)
-            s=s.substr(n+1);
+        {
+            s1=s.substr(0,n);
+            s=s.substr(n+1);            
+        }
+
+        if(s1.length())
+            s1+=os_slash;
+
+        last_dir_dst=s1;
 
         n=s.find_last_of('.');
         if(n==std::string::npos)
@@ -307,10 +321,39 @@ void MainWindow::parseCmdParams(const QString& s,QStringList& lst)
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    startMuxing();
+    if(!global_batch.size())
+        startMuxing(false);
+    else
+    {
+        addToBatch();
+        QMessageBox mbox(QMessageBox::Question,tr("Batch processing"),tr("%1 tasks will be processed, you are assured?").arg(batch_size),QMessageBox::Yes|QMessageBox::No,this);
+        if(mbox.exec()==QMessageBox::No)
+            return;
+
+        execWindow dlg(this);
+        dlg.batch.swap(global_batch);
+        dlg.run();
+        global_batch.clear();
+        batch_size=0;
+    }
 }
 
-void MainWindow::startMuxing()
+void MainWindow::addToBatch()
+{
+    startMuxing(true);
+    on_pushButton_3_clicked();
+}
+void MainWindow::clearBatch()
+{
+    if(global_batch.size())
+    {
+        global_batch.clear();
+        QMessageBox::warning(this,tr("Done"),tr("The batch is empty"));
+    }
+    batch_size=0;
+}
+
+void MainWindow::startMuxing(bool delay)
 {
     std::list<execCmd>      batch;
     std::list<std::string>  tmp_files;
@@ -538,13 +581,35 @@ void MainWindow::startMuxing()
             tr("Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...\n%1").arg(QString::fromLocal8Bit(opts.c_str())),
                cfg["tsmuxer"].c_str(),lst));
 
-        execWindow dlg(this);
-        dlg.batch.swap(batch);
-        dlg.run();
+        if(!delay)
+        {
+            execWindow dlg(this);
+            dlg.batch.swap(batch);
+            dlg.run();
 
-        if(remove_tmp_files)
-            for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
-                remove(i->c_str());
+            if(remove_tmp_files)
+                for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
+                    remove(i->c_str());
+        }else
+        {
+            if(remove_tmp_files)
+                for(std::list<std::string>::iterator i=tmp_files.begin();i!=tmp_files.end();++i)
+                {
+                    const std::string& s=cfg["rm"];
+                    if(s.length())
+                    {
+                        QStringList lst;
+                        lst<<QString::fromLocal8Bit(i->c_str());
+                        batch.push_back(execCmd(tr("Remove file"),
+                            tr("Remove temp file '%1'...").arg(lst[0]),s.c_str(),lst));
+                    }
+                }
+
+            for(std::list<execCmd>::iterator i=batch.begin();i!=batch.end();++i)
+                global_batch.push_back(*i);
+
+            QMessageBox::warning(this,tr("Done"),tr("The task number %1 is successfully added").arg(++batch_size));
+        }
     }else
         QMessageBox::warning(this,tr("Error"),tr("Unable to create meta file: %1").arg(meta.c_str()));
 }
@@ -568,7 +633,6 @@ void MainWindow::on_tableWidget_2_itemSelectionChanged()
 
     ui->label_6->setText(QString("[%1]").arg(codecs[ui->tableWidget_2->item(row,3)->text().toLocal8Bit().data()].print_name.c_str()));
 }
-
 void MainWindow::aboutBox()
 {
     QMessageBox::about(this,tr("About"),QString("<b>%1</b><br><br>Copyright (C) 2009 %2. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>%3</a></font>").arg(MyAppVerName).arg(MyAppPublisher).arg(MyAppURL));
