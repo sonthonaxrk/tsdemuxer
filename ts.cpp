@@ -701,7 +701,7 @@ int ts::demuxer::demux_file(const char* name)
     return 0;
 }
 
-int ts::demuxer::gen_timecodes(void)
+int ts::demuxer::gen_timecodes(const std::string& datetime)
 {
     u_int64_t beg_pts=0;
     u_int64_t end_pts=0;
@@ -751,16 +751,88 @@ int ts::demuxer::gen_timecodes(void)
             u_int64_t esfn=s.get_es_frame_num();
 
             u_int64_t frame_num=esfn?esfn:s.frame_num;
-            write_timecodes(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num);
+
+#ifdef OLD_TIMECODES
+            write_timecodes(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num,s.frame_length);
+#else
+            switch(get_stream_type(s.type))
+            {
+            case stream_type::ac3_audio:
+            case stream_type::mpeg2_audio:
+            case stream_type::lpcm_audio:
+                write_timecodes2(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num,s.frame_length);
+                break;
+            default:
+                write_timecodes(s.timecodes,base_pts+(s.first_pts-beg_pts),base_pts+(s.last_pts+s.frame_length-beg_pts),frame_num,s.frame_length);
+                break;
+            }
+#endif
         }
     }
 
-    base_pts+=end_pts-beg_pts;
+    if(!subs && datetime.length())
+    {
+        char path[512];
+        sprintf(path,"%s%ctimecodes.srt",dst.c_str(),os_slash);
+
+        subs=fopen(path,"w");
+
+        if(subs)
+            subs_filename=path;
+    }
+
+    u_int64_t length=end_pts-beg_pts;
+
+    if(subs)
+    {
+        u_int32_t cur=base_pts/90;
+
+        u_int32_t num=(length/90)/1000;
+
+        time_t timecode=0;
+
+        tm t;
+        strptime(datetime.c_str(),"%Y-%m-%d %H:%M:%S",&t);
+        timecode=mktime(&t);
+
+        for(u_int32_t i=0;i<num;i++)
+        {
+            std::string start=ts::timecode_to_time(cur);
+
+            if(i<num-1)
+                cur+=1000;
+            else
+                cur=(base_pts+length)/90;
+
+            std::string end=ts::timecode_to_time(cur-1);
+
+            start[8]=',';
+            end[8]=',';
+
+            localtime_r(&timecode,&t);
+
+            char timecode_s[64];
+            strftime(timecode_s,sizeof(timecode_s),"%Y-%m-%d %H:%M:%S",&t);
+
+            fprintf(subs,"%u\n%s --> %s\n%s\n\n",++subs_num,start.c_str(),end.c_str(),timecode_s);
+
+            timecode+=1;
+        }
+    }
+
+
+    base_pts+=length;
+
+#ifndef OLD_TIMECODES
+    // align
+    if(base_pts%90)
+        base_pts=base_pts/90*90+90;
+#endif
 
     return 0;
 }
 
-void ts::demuxer::write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num)
+void ts::demuxer::write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num,u_int32_t frame_len)
 {
     u_int64_t len=last_pts-first_pts;
 
@@ -780,3 +852,27 @@ void ts::demuxer::write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pt
             n+=1;
     }
 }
+
+#ifndef OLD_TIMECODES
+// for audio
+void ts::demuxer::write_timecodes2(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num,u_int32_t frame_len)
+{
+    u_int64_t len=last_pts-first_pts;
+
+    u_int64_t len2=frame_num*frame_len;
+
+    if(len2>len || frame_len%90)
+        write_timecodes(fp,first_pts,last_pts,frame_num,frame_len);
+    else
+    {
+        u_int32_t frame_len_ms=frame_len/90;
+        u_int32_t timecode_ms=base_pts/90;
+
+        for(u_int32_t i=0;i<frame_num;i++)
+        {
+            fprintf(fp,"%u\n",timecode_ms);
+            timecode_ms+=frame_len_ms;
+        }
+    }
+}
+#endif

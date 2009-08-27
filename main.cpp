@@ -209,7 +209,7 @@ int ts::get_clip_number_by_filename(const std::string& s)
 
 int main(int argc,char** argv)
 {
-    fprintf(stderr,"tsdemux 1.51 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    fprintf(stderr,"tsdemux 1.52 AVCHD/Blu-Ray HDMV Transport Stream demultiplexer\n\nCopyright (C) 2009 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
 
     if(argc<2)
     {
@@ -398,7 +398,7 @@ int main(int argc,char** argv)
 
                     demuxer.demux_file(s.c_str());
 
-                    demuxer.gen_timecodes();
+                    demuxer.gen_timecodes(date);
 
                     demuxer.reset();
                 }
@@ -426,6 +426,10 @@ int main(int argc,char** argv)
                             fprintf(stdout,"%s ",s.file.filename.c_str());
                         }
                     }
+
+                    if(demuxer.subs_filename.length())
+                        fprintf(stdout,"%s",demuxer.subs_filename.c_str());
+
                     fprintf(stdout,"\n");
                 }
 
