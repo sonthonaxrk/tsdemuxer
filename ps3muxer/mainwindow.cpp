@@ -283,7 +283,11 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),last_dir_dst.c_str(),"M2TS file (*.m2ts)");
+    QString cur_path=ui->lineEdit->text();
+    if(!cur_path.size())
+        cur_path=last_dir_dst.c_str();
+
+    QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),cur_path,"M2TS file (*.m2ts)");
 
 #ifdef _WIN32
     path=path.replace('/','\\');
