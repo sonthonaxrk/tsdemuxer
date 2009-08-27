@@ -175,12 +175,15 @@ namespace ts
         int pes_output;                                 // demux to PES
         std::string prefix;                             // output file name prefix (autodetect)
         std::string dst;                                // output directory
-        bool verb;                                       // verbose mode
+        bool verb;                                      // verbose mode
         bool es_parse;
 
     public:
         u_int64_t base_pts;
+        std::string subs_filename;
     protected:
+        FILE* subs;
+        u_int32_t subs_num;
 
         bool validate_type(u_int8_t type);
         u_int64_t decode_pts(const char* ptr);
@@ -190,15 +193,19 @@ namespace ts
         // take 188/192 bytes TS/M2TS packet
         int demux_ts_packet(const char* ptr);
 
-        void write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num);
+        void write_timecodes(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num,u_int32_t frame_len);
+#ifndef OLD_TIMECODES
+        void write_timecodes2(FILE* fp,u_int64_t first_pts,u_int64_t last_pts,u_int32_t frame_num,u_int32_t frame_len);
+#endif
     public:
-        demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0),pes_output(0),verb(false),es_parse(false) {}
+        demuxer(void):hdmv(false),av_only(true),parse_only(false),dump(0),channel(0),base_pts(0),pes_output(0),verb(false),es_parse(false),subs(0),subs_num(0) {}
+        ~demuxer(void) { if(subs) fclose(subs); }
 
         void show(void);
 
         int demux_file(const char* name);
 
-        int gen_timecodes(void);
+        int gen_timecodes(const std::string& datetime);
 
         void reset(void)
         {
@@ -206,6 +213,8 @@ namespace ts
                 i->second.reset();
         }
     };
+
+    const char* timecode_to_time(u_int32_t timecode);
 }
 
 
