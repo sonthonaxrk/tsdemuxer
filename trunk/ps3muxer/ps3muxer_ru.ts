@@ -10,7 +10,7 @@
     </message>
     <message>
         <location filename="mainwindow.cpp" line="268"/>
-        <location filename="mainwindow.cpp" line="614"/>
+        <location filename="mainwindow.cpp" line="624"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -20,83 +20,83 @@
         <translation>Ошибка открытия файла: %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="286"/>
+        <location filename="mainwindow.cpp" line="290"/>
         <source>M2TS target file</source>
         <translation>Финальный M2TS файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="329"/>
+        <location filename="mainwindow.cpp" line="333"/>
         <source>Batch processing</source>
         <translation>Пакетная обработка</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="329"/>
+        <location filename="mainwindow.cpp" line="333"/>
         <source>%1 tasks will be processed, you are assured?</source>
         <translation>Пачка из %1 задач будет обработана, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="351"/>
-        <location filename="mainwindow.cpp" line="611"/>
+        <location filename="mainwindow.cpp" line="355"/>
+        <location filename="mainwindow.cpp" line="621"/>
         <source>Done</source>
         <translation>Успех</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="351"/>
+        <location filename="mainwindow.cpp" line="355"/>
         <source>The batch is empty</source>
         <translation>Пачка пуста</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="438"/>
+        <location filename="mainwindow.cpp" line="442"/>
         <source>Unknown video</source>
         <translation>Неизвестное видео</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="438"/>
+        <location filename="mainwindow.cpp" line="442"/>
         <source>You have chosen %1 video track, PS3 will not show it, you are assured?</source>
         <translation>Вы выбрали %1 видео дорожку, PS3 скорее всего не сможет это показать, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="460"/>
+        <location filename="mainwindow.cpp" line="464"/>
         <source>Transcoding audio</source>
         <translation>Кодирование звука</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="460"/>
+        <location filename="mainwindow.cpp" line="464"/>
         <source>You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?</source>
         <translation>Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="493"/>
+        <location filename="mainwindow.cpp" line="497"/>
         <source>Extracting audio tracks</source>
         <translation>Извлечение звуковых дорожек</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="494"/>
+        <location filename="mainwindow.cpp" line="498"/>
         <source>Extracting audio tracks (approximately 3-5 min for 8Gb movie)...</source>
         <translation>Извлечение звуковых дорожек (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="603"/>
+        <location filename="mainwindow.cpp" line="613"/>
         <source>Remove file</source>
         <translation>Удаление файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="604"/>
+        <location filename="mainwindow.cpp" line="614"/>
         <source>Remove temp file &apos;%1&apos;...</source>
         <translation>Удаление временного файла &apos;%1&apos;...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="611"/>
+        <location filename="mainwindow.cpp" line="621"/>
         <source>The task number %1 is successfully added</source>
         <translation>Задача номер %1 успешно добавлена</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="614"/>
+        <location filename="mainwindow.cpp" line="624"/>
         <source>Unable to create meta file: %1</source>
         <translation>Ошибка создания метафайла: %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="638"/>
+        <location filename="mainwindow.cpp" line="648"/>
         <source>About</source>
         <translation>О программе...</translation>
     </message>
@@ -113,22 +113,22 @@
         <translation type="obsolete">Извлечение звуковой дорожки %1 (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="520"/>
+        <location filename="mainwindow.cpp" line="524"/>
         <source>Encoding audio track</source>
         <translation>Кодирование звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="521"/>
+        <location filename="mainwindow.cpp" line="525"/>
         <source>Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...</source>
         <translation>Кодирование звуковой дорожки %1 в AC3 (примерно 10-20 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="580"/>
+        <location filename="mainwindow.cpp" line="584"/>
         <source>Remux M2TS</source>
         <translation>Формирование M2TS файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="581"/>
+        <location filename="mainwindow.cpp" line="585"/>
         <source>Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...
 %1</source>
         <translation>Формирование MPEG2-TS потока (примерно 5 минут для 8Гб файла)...
