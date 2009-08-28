@@ -26,6 +26,9 @@ It doesn't really help for random access. 30 bits at 27 MHz only represents 39.7
 namespace ts
 {
     void get_prefix_name_by_filename(const std::string& s,std::string& name);
+#ifdef _WIN32
+    void my_strptime(const char* s,tm* t);
+#endif
 }
 
 ts::stream::~stream(void)
@@ -701,6 +704,17 @@ int ts::demuxer::demux_file(const char* name)
     return 0;
 }
 
+#ifdef _WIN32
+void ts::my_strptime(const char* s,tm* t)
+{
+    memset((char*)t,0,sizeof(tm));
+    sscanf(s,"%d-%d-%d %d:%d:%d",&t->tm_year,&t->tm_mon,&t->tm_mday,&t->tm_hour,&t->tm_min,&t->tm_sec);
+    t->tm_year-=1900;
+    t->tm_mon-=1;
+    t->tm_isdst=1;
+}
+#endif
+
 int ts::demuxer::gen_timecodes(const std::string& datetime)
 {
     u_int64_t beg_pts=0;
@@ -783,7 +797,7 @@ int ts::demuxer::gen_timecodes(const std::string& datetime)
 
     u_int64_t length=end_pts-beg_pts;
 
-    if(subs)
+    if(subs && datetime.length())
     {
         u_int32_t cur=base_pts/90;
 
@@ -792,7 +806,11 @@ int ts::demuxer::gen_timecodes(const std::string& datetime)
         time_t timecode=0;
 
         tm t;
+#ifdef _WIN32
+        my_strptime(datetime.c_str(),&t);
+#else
         strptime(datetime.c_str(),"%Y-%m-%d %H:%M:%S",&t);
+#endif
         timecode=mktime(&t);
 
         for(u_int32_t i=0;i<num;i++)
@@ -809,7 +827,11 @@ int ts::demuxer::gen_timecodes(const std::string& datetime)
             start[8]=',';
             end[8]=',';
 
+#ifdef _WIN32
+            localtime_s(&t,&timecode);
+#else
             localtime_r(&timecode,&t);
+#endif
 
             char timecode_s[64];
             strftime(timecode_s,sizeof(timecode_s),"%Y-%m-%d %H:%M:%S",&t);
