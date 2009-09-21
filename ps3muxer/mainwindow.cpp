@@ -178,7 +178,7 @@ void MainWindow::on_pushButton_clicked()
         src_file_name.clear();
     }
     else
-        path=QFileDialog::getOpenFileName(this,tr("MKV source file"),last_dir.c_str(),"MKV file (*.mkv)");
+        path=QFileDialog::getOpenFileName(this,tr("MKV source file"),QString::fromLocal8Bit(last_dir.c_str()),"MKV file (*.mkv)");
 
 #ifdef _WIN32
     path=path.replace('/','\\');
@@ -285,7 +285,7 @@ void MainWindow::on_pushButton_4_clicked()
 {
     QString cur_path=ui->lineEdit->text();
     if(!cur_path.size())
-        cur_path=last_dir_dst.c_str();
+        cur_path=QString::fromLocal8Bit(last_dir_dst.c_str());
 
     QString path=QFileDialog::getSaveFileName(this,tr("M2TS target file"),cur_path,"M2TS file (*.m2ts)");
 
@@ -302,7 +302,7 @@ void MainWindow::on_pushButton_4_clicked()
         if(n!=std::string::npos)
         {
             s1=s.substr(0,n);
-            s=s.substr(n+1);            
+            s=s.substr(n+1);
         }
 
         if(s1.length())
