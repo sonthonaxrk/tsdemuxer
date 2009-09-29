@@ -155,6 +155,19 @@ void MainWindow::initCodec(const std::string& s,const std::string pn)
         codecs[cc.name]=cc;
 }
 
+std::string MainWindow::getFPS(int n)
+{
+    switch(n)
+    {
+    case 1: return "23.976";
+    case 2: return "24";
+    case 3: return "25";
+    case 4: return "29.970";
+    case 5: return "30";
+    }
+    return "";
+}
+
 void MainWindow::addRow(QTableWidget* w,const QStringList& l)
 {
     int column=0;
@@ -208,14 +221,20 @@ void MainWindow::on_pushButton_clicked()
                 const ebml::track& t=i->second;
 
                 QStringList lst;
-                lst<<QString("%1").arg(t.id)<<QString("%1").arg(t.timecode==-1?0:t.timecode)<<t.lang.c_str()<<t.codec.c_str();
 
                 const codec& cc=codecs[t.codec];
 
+                lst<<QString("%1").arg(t.id)<<QString("%1").arg(t.timecode==-1?0:t.timecode)<<t.lang.c_str();
+
                 if(cc.type==1)
-                        addRow(ui->tableWidget,lst);
+                    lst<<QString("%1").arg(1000000000./t.duration);
+
+                lst<<t.codec.c_str();
+
+                if(cc.type==1)
+                    addRow(ui->tableWidget,lst);
                 else if(cc.type==2)
-                        addRow(ui->tableWidget_2,lst);
+                    addRow(ui->tableWidget_2,lst);
             }
 
             if(ui->tableWidget->rowCount()>0)
@@ -407,7 +426,7 @@ void MainWindow::startMuxing(bool delay)
     video_track.track_id=ui->tableWidget->item(_video,0)->text().toLocal8Bit().data();
     video_track.delay=atoi(ui->tableWidget->item(_video,1)->text().toLocal8Bit().data());
     video_track.lang=ui->tableWidget->item(_video,2)->text().toLocal8Bit().data();
-    video_track.codec=ui->tableWidget->item(_video,3)->text().toLocal8Bit().data();
+    video_track.codec=ui->tableWidget->item(_video,4)->text().toLocal8Bit().data();
 
     // get audio tracks info
     {
@@ -434,6 +453,13 @@ void MainWindow::startMuxing(bool delay)
                 n=1;
             }
         }
+    }
+
+    if(!audio_tracks.size())
+    {
+        QMessageBox mbox(QMessageBox::Question,tr("No audio"),tr("Audio track is not chosen, you are assured?"),QMessageBox::Yes|QMessageBox::No,this);
+        if(mbox.exec()==QMessageBox::No)
+            return;
     }
 
     // unknown video track
@@ -543,9 +569,13 @@ void MainWindow::startMuxing(bool delay)
         const std::string& vcc=codecs[video_track.codec].map;
         const std::string& level=cfg["h264_level"];
 
+        std::string fps=getFPS(ui->comboBox_2->currentIndex());
+
         opts+=(vcc.length()?vcc:video_track.codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track.track_id;
         if(video_track.lang.length())
             opts+=", lang="+video_track.lang;
+        if(fps.length())
+            opts+=", fps="+fps;
         if(level.length())
             opts+=", level="+level;
         opts+="\n";
@@ -631,7 +661,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     if(row==-1)
         return;
 
-    ui->label_5->setText(QString("[%1]").arg(codecs[ui->tableWidget->item(row,3)->text().toLocal8Bit().data()].print_name.c_str()));
+    ui->label_5->setText(QString("[%1]").arg(codecs[ui->tableWidget->item(row,4)->text().toLocal8Bit().data()].print_name.c_str()));
 }
 
 

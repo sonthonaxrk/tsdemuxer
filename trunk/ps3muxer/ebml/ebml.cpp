@@ -40,6 +40,7 @@ namespace ebml
         semantic[0x86]          = element_info(t_string,"Codec",5);
         semantic[0xd7]          = element_info(t_uint  ,"TrackNumber",6);
         semantic[0x22B59C]      = element_info(t_string,"Language",7);
+        semantic[0x23e383]      = element_info(t_uint  ,"DefaultDuration",10);
 
         semantic[0x1f43b675]    = element_info(t_struct,"Cluster");
         semantic[0xe7]          = element_info(t_uint  ,"Timecode",7);
@@ -188,6 +189,7 @@ void ebml::parse(ebml::stream_base* s,ebml::doc& m) throw(std::exception)
     u_int32_t   track_id=0;
     std::string track_codec;
     std::string track_lang;
+    u_int32_t   track_duration=0;
 
     while(m.blocks<256)
     {
@@ -254,12 +256,13 @@ void ebml::parse(ebml::stream_base* s,ebml::doc& m) throw(std::exception)
 
         switch(info.id)
         {
-        case 1: m.doc_type=string_value; break;
-        case 2: m.version=uint_value; break;
-        case 3: m.read_version=uint_value; break;
-        case 5: track_codec=string_value; break;
-        case 6: track_id=uint_value; break;
-        case 7: track_lang=string_value; break;
+        case 1:  m.doc_type=string_value; break;
+        case 2:  m.version=uint_value; break;
+        case 3:  m.read_version=uint_value; break;
+        case 5:  track_codec=string_value; break;
+        case 6:  track_id=uint_value; break;
+        case 7:  track_lang=string_value; break;
+        case 10: track_duration=uint_value; break;
         }
     }
 
@@ -270,5 +273,6 @@ void ebml::parse(ebml::stream_base* s,ebml::doc& m) throw(std::exception)
         t.id=track_id;
         t.codec=track_codec;
         t.lang=track_lang;
+        t.duration=track_duration;
     }
 }
