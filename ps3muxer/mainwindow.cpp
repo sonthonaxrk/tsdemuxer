@@ -567,7 +567,10 @@ void MainWindow::startMuxing(bool delay)
         opts+="\n";
 
         const std::string& vcc=codecs[video_track.codec].map;
-        const std::string& level=cfg["h264_level"];
+        std::string level=cfg["h264_level"];
+
+        if(ui->checkBox->checkState()==Qt::Checked)
+            level="4.1";
 
         std::string fps=getFPS(ui->comboBox_2->currentIndex());
 
