@@ -59,8 +59,9 @@ namespace ebml
         std::string codec;
         std::string lang;
         u_int32_t   timecode;
+        u_int32_t   duration;
 
-        track(void):id(0),timecode(-1) {}
+        track(void):id(0),timecode(-1),duration(0) {}
     };
 
     class doc

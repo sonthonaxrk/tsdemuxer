@@ -62,6 +62,7 @@ private:
     void initCodec(const std::string& s,const std::string pn);
     void parseCmdParams(const QString& s,QStringList& lst);
     void startMuxing(bool delay);
+    std::string getFPS(int n);
 
 private slots:
     void on_tableWidget_itemSelectionChanged();
