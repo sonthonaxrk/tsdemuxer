@@ -34,7 +34,8 @@ typedef unsigned long long      u_int64_t;
 #define O_LARGEFILE 0
 #endif
 
-#ifdef _WIN32
+//#ifdef _WIN32
+#ifdef _MSC_VER
 inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpiA(s1,s2); }
 #endif
 
