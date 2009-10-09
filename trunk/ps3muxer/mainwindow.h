@@ -21,6 +21,8 @@ public:
     std::string file_ext;
     std::string map;
     int type;   // 1-video, 2-audio
+
+    codec(void):type(0) {}
 };
 
 class track_info
