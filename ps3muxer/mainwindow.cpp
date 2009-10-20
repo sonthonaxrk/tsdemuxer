@@ -90,6 +90,10 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
                     ui->comboBox->addItem(QString(p+6).replace('_',' '),QVariant(p2));
                 else if(!strncmp(p,"codec_",6))
                     initCodec(p2,p+6);
+                else if(!strncmp(p,"fps_",4))
+                    ui->comboBox_2->addItem(QString(p+4).replace('_',' '),QVariant(p2));
+                else if(!strncmp(p,"ab_",3))
+                    ui->comboBox_3->addItem(QString(p+3).replace('_',' '),QVariant(p2));
                 else
                     cfg[p]=p2;
             }
@@ -155,17 +159,12 @@ void MainWindow::initCodec(const std::string& s,const std::string pn)
         codecs[cc.name]=cc;
 }
 
-std::string MainWindow::getFPS(int n)
+std::string MainWindow::getFPS(QComboBox* c)
 {
-    switch(n)
-    {
-    case 1: return "23.976";
-    case 2: return "24";
-    case 3: return "25";
-    case 4: return "29.970";
-    case 5: return "30";
-    }
-    return "";
+    if(c->currentIndex()<1)
+        return "";
+
+    return c->itemData(c->currentIndex()).toString().toLocal8Bit().data();
 }
 
 void MainWindow::addRow(QTableWidget* w,const QStringList& l)
@@ -394,6 +393,10 @@ void MainWindow::startMuxing(bool delay)
     // split value
     std::string split=ui->comboBox->itemData(ui->comboBox->currentIndex()).toString().toLocal8Bit().data();
 
+    // ab value
+    std::string ab=ui->comboBox_3->itemData(ui->comboBox_3->currentIndex()).toString().toLocal8Bit().data();
+
+
     // remove tmp files
     bool remove_tmp_files=true;
 
@@ -545,6 +548,8 @@ void MainWindow::startMuxing(bool delay)
                         s=QString::fromLocal8Bit(audio_track.filename_temp.c_str());
                     else if(s=="%2")
                         s=QString::fromLocal8Bit(audio_track.filename.c_str());
+                    else if(s=="%3")
+                        s=QString::fromLocal8Bit(ab.c_str());
                 }
 
                 batch.push_back(execCmd(tr("Encoding audio track"),
@@ -572,7 +577,7 @@ void MainWindow::startMuxing(bool delay)
         if(ui->checkBox->checkState()==Qt::Checked)
             level="4.1";
 
-        std::string fps=getFPS(ui->comboBox_2->currentIndex());
+        std::string fps=getFPS(ui->comboBox_2);
 
         opts+=(vcc.length()?vcc:video_track.codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track.track_id;
         if(video_track.lang.length())
