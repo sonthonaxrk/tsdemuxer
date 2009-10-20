@@ -264,31 +264,6 @@
                <string>None</string>
               </property>
              </item>
-             <item>
-              <property name="text">
-               <string>23.976</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>24</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>25</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>29.970</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>30</string>
-              </property>
-             </item>
             </widget>
            </item>
            <item>
@@ -298,6 +273,30 @@
              </property>
              <property name="text">
               <string>h.264 level 4.1</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>AC3 bitrate:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_3"/>
+           </item>
+           <item>
+            <widget class="Line" name="line_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
