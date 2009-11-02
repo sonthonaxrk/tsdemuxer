@@ -33,6 +33,7 @@ public:
     int         delay;
     std::string lang;
     std::string codec;
+    std::string ext_filename;
     std::string filename;
     std::string filename_temp;
 
@@ -51,7 +52,7 @@ public:
 
 private:
     Ui::MainWindowClass *ui;
-    void addRow(QTableWidget* w,const QStringList& l);
+    void addRow(QTableWidget* w,const QStringList& l,const std::string& data=std::string());
     std::string source_file_name;
     std::map<std::string,std::string> cfg;
     std::map<std::string,codec> codecs;
@@ -77,6 +78,7 @@ private slots:
     void aboutBox();
     void addToBatch();
     void clearBatch();
+    void addAudio();
 };
 
 #endif // MAINWINDOW_H
