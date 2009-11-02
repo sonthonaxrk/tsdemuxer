@@ -389,6 +389,7 @@
      <string>FIle</string>
     </property>
     <addaction name="actionOpen"/>
+    <addaction name="actionAdd_audio"/>
     <addaction name="actionClear"/>
     <addaction name="actionStart_muxing"/>
     <addaction name="separator"/>
@@ -448,6 +449,11 @@
   <action name="actionClear_batch">
    <property name="text">
     <string>Clear batch</string>
+   </property>
+  </action>
+  <action name="actionAdd_audio">
+   <property name="text">
+    <string>Add audio</string>
    </property>
   </action>
  </widget>

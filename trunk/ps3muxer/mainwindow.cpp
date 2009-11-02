@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     connect(ui->actionAbout,SIGNAL(triggered()),this,SLOT(aboutBox()));
     connect(ui->actionAdd_to_batch,SIGNAL(triggered()),this,SLOT(addToBatch()));
     connect(ui->actionClear_batch,SIGNAL(triggered()),this,SLOT(clearBatch()));
+    connect(ui->actionAdd_audio,SIGNAL(triggered()),this,SLOT(addAudio()));
 
     FILE* fp=fopen((QApplication::applicationDirPath()+os_slash+conf_path).toLocal8Bit().data(),"r");
     if(fp)
@@ -167,7 +168,7 @@ std::string MainWindow::getFPS(QComboBox* c)
     return c->itemData(c->currentIndex()).toString().toLocal8Bit().data();
 }
 
-void MainWindow::addRow(QTableWidget* w,const QStringList& l)
+void MainWindow::addRow(QTableWidget* w,const QStringList& l,const std::string& data)
 {
     int column=0;
     int row=w->rowCount();
@@ -176,6 +177,8 @@ void MainWindow::addRow(QTableWidget* w,const QStringList& l)
     {
 
         QTableWidgetItem* newItem=new QTableWidgetItem(s);
+        if(!column && data.length())
+            newItem->setData(Qt::UserRole,QVariant(QString::fromLocal8Bit(data.c_str())));
         w->setItem(row,column++,newItem);
     }
 }
@@ -285,6 +288,47 @@ void MainWindow::on_pushButton_clicked()
         {
             QMessageBox::warning(this,tr("Error"),tr("Open file error: %1").arg(e.what()));
         }
+    }
+}
+
+void MainWindow::addAudio()
+{
+    QString path=QFileDialog::getOpenFileName(this,tr("audio source file"),QString::fromLocal8Bit(last_dir.c_str()),"audio file (*.ac3 *.mp3 *.aac *.dts *.pcm)");
+
+    if(!path.isEmpty())
+    {
+        std::string p=path.toLocal8Bit().data();
+        std::string ext,c;
+
+        std::string::size_type n=p.find_last_of('.');
+
+        if(n!=std::string::npos)
+            ext=p.substr(n+1);
+
+        for(std::map<std::string,codec>::iterator i=codecs.begin();i!=codecs.end();++i)
+        {
+            if(!strcasecmp(i->second.file_ext.c_str(),ext.c_str()))
+                c=i->second.name;
+        }
+
+        if(!c.length())
+        {
+            QMessageBox mbox(QMessageBox::Warning,tr("Unknown file type"),tr("Unknown file extension '%1'").arg(ext.c_str()),QMessageBox::Ok,this);
+            mbox.exec();
+            return;
+        }
+
+        QStringList lst;
+
+        lst<<QString("%1").arg(-1)<<QString("%1").arg(0)<<"und"<<c.c_str();
+
+        addRow(ui->tableWidget_2,lst,p);
+
+        if(ui->tableWidget_2->rowCount()>0)
+            ui->tableWidget_2->setCurrentCell(ui->tableWidget_2->rowCount()>0?ui->tableWidget_2->rowCount()-1:0,0);
+
+        ui->tableWidget_2->resizeColumnsToContents();
+        ui->tableWidget_2->horizontalHeader()->setStretchLastSection(true);
     }
 }
 
@@ -453,6 +497,11 @@ void MainWindow::startMuxing(bool delay)
 
                 t.delay=t.delay-video_track.delay;
 
+                std::string filename=ui->tableWidget_2->item(row,0)->data(Qt::UserRole).toString().toLocal8Bit().data();
+
+                if(filename.length())
+                    t.ext_filename=filename;
+
                 n=1;
             }
         }
@@ -494,18 +543,49 @@ void MainWindow::startMuxing(bool delay)
             if(mbox.exec()==QMessageBox::No)
                 return;
 
-            audio_file_name=tmp_path+prefix+"_track_"+audio_track.track_id+'.';
-            audio_file_name2=tmp_path+prefix+"_track_"+audio_track.track_id+"_encoded.ac3";
+            if(audio_track.ext_filename.length())
+            {
+                audio_track.filename_temp=audio_track.ext_filename;
 
-            audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
+                std::string s,e;
 
-            tmp_files.push_back(audio_file_name);
-            tmp_files.push_back(audio_file_name2);
+                std::string::size_type n=audio_track.filename_temp.find_last_of("\\/");
 
-            audio_track.filename=audio_file_name2;
-            audio_track.filename_temp=audio_file_name;
+                if(n!=std::string::npos)
+                    s=audio_track.filename_temp.substr(n+1);
+                else
+                    s=audio_track.filename_temp;
+
+                n=s.find_last_of('.');
+                if(n!=std::string::npos)
+                {
+                    e=s.substr(n+1);
+                    s=s.substr(0,n);
+                }
+
+                audio_track.filename=tmp_path+s+"_"+e+"_encoded.ac3";
+
+                tmp_files.push_back(audio_track.filename);
+            }else
+            {
+                audio_file_name=tmp_path+prefix+"_track_"+audio_track.track_id+'.';
+
+                audio_file_name2=tmp_path+prefix+"_track_"+audio_track.track_id+"_encoded.ac3";
+
+                audio_file_name+=cc.file_ext.length()?cc.file_ext:"bin";
+
+                tmp_files.push_back(audio_file_name);
+                tmp_files.push_back(audio_file_name2);
+
+                audio_track.filename=audio_file_name2;
+                audio_track.filename_temp=audio_file_name;
+            }
 
             transcode_audio_track_num++;
+        }else
+        {
+            if(audio_track.ext_filename.length())
+                audio_track.filename=audio_track.ext_filename;
         }
     }
 
@@ -519,20 +599,21 @@ void MainWindow::startMuxing(bool delay)
         {
             track_info& audio_track=*i;
 
-            if(audio_track.filename.length())
+            if(audio_track.filename.length() && !audio_track.ext_filename.length())
                 lst<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(QString::fromLocal8Bit(audio_track.filename_temp.c_str()));
         }
 
-        batch.push_back(execCmd(tr("Extracting audio tracks"),
-            tr("Extracting audio tracks (approximately 3-5 min for 8Gb movie)..."),
-            cfg["mkvextract"].c_str(),lst));
+        if(lst.size()>2)
+            batch.push_back(execCmd(tr("Extracting audio tracks"),
+                tr("Extracting audio tracks (approximately 3-5 min for 8Gb movie)..."),
+                cfg["mkvextract"].c_str(),lst));
 
 
         for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
         {
             track_info& audio_track=*i;
 
-            if(audio_track.filename.length())
+            if(audio_track.filename.length() && audio_track.filename_temp.length())
             {
                 lst.clear();
 
