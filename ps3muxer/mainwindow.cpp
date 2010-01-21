@@ -168,6 +168,17 @@ std::string MainWindow::getFPS(QComboBox* c)
     return c->itemData(c->currentIndex()).toString().toLocal8Bit().data();
 }
 
+void MainWindow::setFPS(QComboBox* c,QString& fps)
+{
+    int n=c->findText(fps);
+
+    if(n!=-1)
+        c->setCurrentIndex(n);
+    else
+        c->setCurrentIndex(0);
+}
+
+
 void MainWindow::addRow(QTableWidget* w,const QStringList& l,const std::string& data)
 {
     int column=0;
@@ -229,7 +240,11 @@ void MainWindow::on_pushButton_clicked()
                 lst<<QString("%1").arg(t.id)<<QString("%1").arg(t.timecode==-1?0:t.timecode)<<t.lang.c_str();
 
                 if(cc.type==1)
-                    lst<<QString("%1").arg(1000000000./t.duration);
+                {
+                    QString fps=QString("%1").arg(1000000000./t.duration);
+                    lst<<fps;
+                    setFPS(ui->comboBox_2,fps);
+                }
 
                 lst<<t.codec.c_str();
 
@@ -340,7 +355,7 @@ void MainWindow::on_pushButton_3_clicked()
     source_file_name.clear();
     ui->label_5->clear();
     ui->label_6->clear();
-    //ui->comboBox->setCurrentIndex(0);
+    ui->comboBox_2->setCurrentIndex(0);
 }
 
 void MainWindow::on_pushButton_4_clicked()
