@@ -67,6 +67,7 @@ private:
     void parseCmdParams(const QString& s,QStringList& lst);
     void startMuxing(bool delay);
     std::string getFPS(QComboBox* c);
+    void setFPS(QComboBox* c,QString& fps);
 
 private slots:
     void on_tableWidget_itemSelectionChanged();
