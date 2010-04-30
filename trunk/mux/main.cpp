@@ -121,16 +121,16 @@ return 0;
 
     demux::file file;
 
-    demux::parser* p=new ac3::parser;
-//    demux::parser* p=new h264::parser;
+//    demux::parser* p=new ac3::parser;
+    demux::parser* p=new h264::parser;
 
     p->set_reader(&file);
 
 
     if(!file.open(argv[1]))
     {
-        parse_ac3(p);
-//        parse_h264(p);
+//        parse_ac3(p);
+        parse_h264(p);
 //        split_to_files(p,10);
 //        write_to_file(p,"dump.bin");
 
