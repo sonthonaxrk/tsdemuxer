@@ -1,6 +1,7 @@
 #ifndef __READER_H
 #define __READER_H
 
+#include <stdio.h>
 
 namespace demux
 {
@@ -46,6 +47,7 @@ namespace demux
 
         int getch(void);
     };
+
 
 }
 
