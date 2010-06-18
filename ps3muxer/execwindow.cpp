@@ -93,7 +93,10 @@ void execWindow::NextCmd()
             m_ui->plainTextEdit->appendHtml(QString("<font color=blue>%1</font><br>").arg(s));
         }
 
-        m_proc->start(cmd.cmd,cmd.params);
+        QString cc=cmd.cmd;
+        cc.replace(QRegExp("%path%"),QApplication::applicationDirPath());
+
+        m_proc->start(cc,cmd.params);
     }
 }
 

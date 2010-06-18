@@ -330,27 +330,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="113"/>
+        <location filename="execwindow.cpp" line="116"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Execute error (%1)&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка времени исполнения (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="125"/>
+        <location filename="execwindow.cpp" line="128"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Crash&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Аварийное завершение процесса&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="132"/>
+        <location filename="execwindow.cpp" line="135"/>
         <source>&lt;font color=red&gt;&lt;b&gt;FAIL (%1)&lt;/b&gt;&lt;/font&gt;</source>
         <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="136"/>
+        <location filename="execwindow.cpp" line="139"/>
         <source>&lt;font color=green&gt;&lt;b&gt;OK&lt;/b&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="223"/>
+        <location filename="execwindow.cpp" line="226"/>
         <source>Abort action?</source>
         <translation>Отменить действие?</translation>
     </message>
@@ -360,7 +360,7 @@
         <translation>Процесс</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="223"/>
+        <location filename="execwindow.cpp" line="226"/>
         <location filename="execwindow.ui" line="70"/>
         <source>Abort</source>
         <translation>Прервать</translation>
