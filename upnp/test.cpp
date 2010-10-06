@@ -6,6 +6,8 @@
 
 int main(int argc,char** argv)
 {
+    upnp::verb_fp=stderr;
+
     upnp::mcast_grp grp("239.255.255.250:1900","eth0",1,1);
 //    upnp::mcast_grp grp("239.255.255.250:1900","",1,1);
 
@@ -20,7 +22,24 @@ int main(int argc,char** argv)
 
         if(sock_up!=-1)
         {
-            grp.send(sock_up,"Hello",5);
+            const char ss[]=
+"M-SEARCH * HTTP/1.1\r\n"
+"HOST: 239.255.255.250:1900\r\n"
+"ST: urn:schemas-upnp-org:device:MediaServer:1\r\n"
+"MAN: \"ssdp:discover\"\r\n"
+"MX: 2\r\n"
+"X-AV-Client-Info: av=5.0; cn=\"Sony Computer Entertainment Inc.\"; mn=\"PLAYSTATION 3\"; mv=\"1.0\";\r\n\r\n";
+
+            grp.send(sock_up,ss,sizeof(ss)-1);
+
+            char tmp[1024];
+            int n=grp.recv(sock_up,tmp,sizeof(tmp)-1,0);
+            if(n>0)
+            {
+                tmp[n]=0;
+                printf("%s\n",tmp);
+            }
+
 
             grp.close(sock_up);
         }
@@ -32,10 +51,10 @@ int main(int argc,char** argv)
         {
             while(1)
             {
-                char tmp[256];
-                int n=grp.recv(sock_down,tmp,sizeof(tmp)-1);
+                char tmp[1024];
+                int n=grp.recv(sock_down,tmp,sizeof(tmp)-1,0);
 
-                if(!n)
+                if(!n || n==-1)
                     break;
 
                 tmp[n]=0;

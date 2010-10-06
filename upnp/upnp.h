@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <stdio.h>
 
 namespace upnp
 {
@@ -30,6 +31,8 @@ namespace upnp
         u_int32_t if_flags;
     };
 
+    extern FILE* verb_fp;
+
     void uuid_gen(char* dst);
     int get_if_info(const char* if_name,if_info* ifi);
     int get_if_list(if_info* ifi,int nifi);
@@ -44,15 +47,20 @@ namespace upnp
         int mcast_ttl;
         int mcast_loop;
     public:
+        mcast_grp(void);
         mcast_grp(const char* addr,const char* iface,int ttl,int loop);
+
+        char interface[64];
+
+        int init(const char* addr,const char* iface,int ttl,int loop);
 
         int join(void) const;
         int leave(int sock) const;
 
         int upstream(void) const;
 
-        int send(int sock,const char* buf,int len) const;
-        int recv(int sock,char* buf,int len) const;
+        int send(int sock,const char* buf,int len,sockaddr_in* sin=0) const;
+        int recv(int sock,char* buf,int len,sockaddr_in* sin) const;
 
         static void close(int sock);
     };
