@@ -1,14 +1,11 @@
 #include "upnp.h"
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <uuid/uuid.h>
 #include <netdb.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -16,7 +13,7 @@
 
 namespace upnp
 {
-    FILE* verb_fp=stderr;
+    FILE* verb_fp=0;
 
     void trace(const char* fmt,...)
     {
@@ -148,7 +145,21 @@ int upnp::get_socket_port(int s)
 }
 
 
+upnp::mcast_grp::mcast_grp(void)
+{
+    memset((char*)&mcast_sin,0,sizeof(mcast_sin));
+    memset((char*)&mcast_if_sin,0,sizeof(mcast_if_sin));
+    mcast_ttl=0;
+    mcast_loop=0;
+    *interface=0;
+}
+
 upnp::mcast_grp::mcast_grp(const char* addr,const char* iface,int ttl,int loop)
+{
+    init(addr,iface,ttl,loop);
+}
+
+int upnp::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
 {
     mcast_ttl=ttl;
     mcast_loop=loop;
@@ -161,13 +172,13 @@ upnp::mcast_grp::mcast_grp(const char* addr,const char* iface,int ttl,int loop)
     mcast_if_sin.sin_port=0;
     mcast_if_sin.sin_addr.s_addr=INADDR_ANY;
 
+    *interface=0;
+
     char tmp[256];
     strcpy(tmp,addr);
 
     if(mcast_ttl<1)
         mcast_ttl=1;
-    else if(mcast_ttl>4)
-        mcast_ttl=4;
 
     char* port=strchr(tmp,':');
 
@@ -195,7 +206,9 @@ upnp::mcast_grp::mcast_grp(const char* addr,const char* iface,int ttl,int loop)
             memcpy((char*)&mcast_if_sin,&ifi.if_sin,sizeof(sockaddr_in));
         }else
             mcast_if_sin.sin_addr.s_addr=inet_addr(iface);
-    }else
+    }
+
+    if(mcast_if_sin.sin_addr.s_addr==INADDR_ANY)
     {
         trace("find multicast default interface address\n");
         mcast_if_sin.sin_addr=get_best_mcast_if_addr();
@@ -206,6 +219,10 @@ upnp::mcast_grp::mcast_grp(const char* addr,const char* iface,int ttl,int loop)
         trace("multicast interface address: '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
         trace("multicast group address: '%s:%i'\n",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
     }
+
+    snprintf(interface,sizeof(interface),"%s",inet_ntoa(mcast_if_sin.sin_addr));
+
+    return 0;
 }
 
 int upnp::mcast_grp::join(void) const
@@ -246,6 +263,13 @@ int upnp::mcast_grp::join(void) const
         close(sock);
     }
 
+    if(verb_fp)
+    {
+        trace("can`t join to multicast group '%s:%i' on ",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
+        trace("interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+    }
+
+
     return -1;
 }
 
@@ -261,6 +285,13 @@ int upnp::mcast_grp::leave(int sock) const
         if(verb_fp)
         {
             trace("leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
+            trace("interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
+        }
+    }else
+    {
+        if(verb_fp)
+        {
+            trace("can`t leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
             trace("interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
         }
     }
@@ -295,6 +326,8 @@ int upnp::mcast_grp::upstream(void) const
         return sock;
     }
 
+    trace("can`t create multicast upstream channel\n");
+
     return -1;
 }
 
@@ -303,28 +336,37 @@ void upnp::mcast_grp::close(int sock)
     ::close(sock);
 }
 
-int upnp::mcast_grp::send(int sock,const char* buf,int len) const
+int upnp::mcast_grp::send(int sock,const char* buf,int len,sockaddr_in* sin) const
 {
-    int n=sendto(sock,buf,len,0,(sockaddr*)&mcast_sin,sizeof(mcast_sin));
+    int n=sendto(sock,buf,len,0,(sockaddr*)(sin?sin:&mcast_sin),sizeof(sockaddr_in));
 
     if(n>0 && verb_fp)
     {
-        trace("send %i bytes to multicast group '%s:%i' via ",n,inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
-        trace("interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+        if(sin)
+            trace("send %i bytes to '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
+        else
+        {
+            trace("send %i bytes to multicast group '%s:%i' via ",n,inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
+            trace("interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+        }
     }
 
-    return n>0?n:0;
+    return n;
 }
 
-int upnp::mcast_grp::recv(int sock,char* buf,int len) const
+int upnp::mcast_grp::recv(int sock,char* buf,int len,sockaddr_in* sin) const
 {
-   sockaddr_in sin;
-   socklen_t sin_len=sizeof(sin);
+   socklen_t sin_len=sizeof(sockaddr_in);
 
-   int n=recvfrom(sock,buf,len,0,(sockaddr*)&sin,&sin_len);
+   int n=recvfrom(sock,buf,len,0,(sockaddr*)sin,sin?&sin_len:0);
 
     if(n>0 && verb_fp)
-        trace("recv %i bytes from '%s:%i'\n",n,inet_ntoa(sin.sin_addr),ntohs(sin.sin_port));
+    {
+        if(sin)
+            trace("recv %i bytes from '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
+        else
+            trace("recv %i bytes\n",n);
+    }
 
-    return n>0?n:0;
+    return n;
 }
