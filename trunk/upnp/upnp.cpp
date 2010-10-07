@@ -354,19 +354,44 @@ int upnp::mcast_grp::send(int sock,const char* buf,int len,sockaddr_in* sin) con
     return n;
 }
 
-int upnp::mcast_grp::recv(int sock,char* buf,int len,sockaddr_in* sin) const
+int upnp::mcast_grp::recv(int sock,char* buf,int len,sockaddr_in* sin,int flags) const
 {
-   socklen_t sin_len=sizeof(sockaddr_in);
+    sockaddr_in ssin;
+    socklen_t sin_len=sizeof(sockaddr_in);
 
-   int n=recvfrom(sock,buf,len,0,(sockaddr*)sin,sin?&sin_len:0);
+    if(!sin)
+        sin=&ssin;
+
+    int n=recvfrom(sock,buf,len,flags,(sockaddr*)sin,&sin_len);
 
     if(n>0 && verb_fp)
-    {
-        if(sin)
-            trace("recv %i bytes from '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
-        else
-            trace("recv %i bytes\n",n);
-    }
+        trace("recv %i bytes from '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
 
     return n;
+}
+
+int upnp::create_tcp_listener(int port)
+{
+    int s=socket(PF_INET,SOCK_STREAM,0);
+
+    if(s!=-1)
+    {
+        int reuse=1;
+        setsockopt(s,SOL_SOCKET,SO_REUSEADDR,&reuse,sizeof(reuse));
+
+        sockaddr_in sin;
+        sin.sin_family=AF_INET;
+        sin.sin_addr.s_addr=INADDR_ANY;
+        sin.sin_port=htons(port);
+
+        if(!bind(s,(sockaddr*)&sin,sizeof(sin)))
+        {
+            if(!listen(s,5))
+                return s;
+        }
+
+        close(s);
+    }
+
+    return -1;
 }

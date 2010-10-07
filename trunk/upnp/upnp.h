@@ -38,6 +38,7 @@ namespace upnp
     int get_if_list(if_info* ifi,int nifi);
     in_addr get_best_mcast_if_addr(void);
     int get_socket_port(int s);
+    int create_tcp_listener(int port);
 
     class mcast_grp
     {
@@ -60,7 +61,7 @@ namespace upnp
         int upstream(void) const;
 
         int send(int sock,const char* buf,int len,sockaddr_in* sin=0) const;
-        int recv(int sock,char* buf,int len,sockaddr_in* sin) const;
+        int recv(int sock,char* buf,int len,sockaddr_in* sin,int flags=0) const;
 
         static void close(int sock);
     };
