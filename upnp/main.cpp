@@ -7,7 +7,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 namespace dlna
 {
@@ -20,9 +28,13 @@ namespace dlna
 
     volatile int __sig_quit=0;
     volatile int __sig_alarm=0;
+    volatile int __sig_child=0;
+    int __sig_pipe[2]={-1,-1};
+    sigset_t __sig_proc_mask;
 
     int sock_up=-1;
     int sock_down=-1;
+    int sock_http=-1;
 
     FILE* verb_fp=0;
 
@@ -38,7 +50,6 @@ namespace dlna
 
     list* ssdp_alive_list=0;
     list* ssdp_byebye_list=0;
-    list* ssdp_msearch_resp_list=0;
 
     upnp::mcast_grp mcast_grp;
 
@@ -54,9 +65,13 @@ namespace dlna
     int send_ssdp_byebye_notify(void);
     int send_ssdp_msearch_response(sockaddr_in* sin);
     int on_ssdp_message(char* buf,int len,sockaddr_in* sin);
+    int on_http_connection(FILE* fp);
 
     list* add_to_list(list* lst,const char* s,int len);
     void free_list(list* lst);
+
+    template<typename T>
+    T max(T a,T b) { return a>b?a:b; }
 }
 
 void dlna::__sig_handler(int n)
@@ -73,7 +88,12 @@ void dlna::__sig_handler(int n)
     case SIGALRM:
         __sig_alarm=1;
         break;
+    case SIGCHLD:
+        __sig_child=1;
+        break;
     }
+
+    send(__sig_pipe[1],"$",1,MSG_DONTWAIT);
 
     errno=err;
 }
@@ -188,12 +208,20 @@ int main(int argc,char** argv)
     if(dlna::http_port<0)
         dlna::http_port=0;
 
+    setsid();
+
+    sigfillset(&dlna::__sig_proc_mask);
+    socketpair(PF_UNIX,SOCK_STREAM,0,dlna::__sig_pipe);
+
     dlna::signal(SIGHUP ,SIG_IGN);
     dlna::signal(SIGPIPE,SIG_IGN);
     dlna::signal(SIGINT ,dlna::__sig_handler);
     dlna::signal(SIGQUIT,dlna::__sig_handler);
     dlna::signal(SIGTERM,dlna::__sig_handler);
     dlna::signal(SIGALRM,dlna::__sig_handler);
+    dlna::signal(SIGCHLD,dlna::__sig_handler);
+
+    sigprocmask(SIG_BLOCK,&dlna::__sig_proc_mask,0);
 
     dlna::mcast_grp.init(dlna::upnp_mgrp,mcast_iface,mcast_ttl,mcast_loop);
 
@@ -203,7 +231,6 @@ int main(int argc,char** argv)
     if(dlna::verb_fp)
         fprintf(dlna::verb_fp,"root device uuid: '%s'\n",dlna::device_uuid);
 
-
     dlna::sock_up=dlna::mcast_grp.upstream();
 
     if(dlna::sock_up!=-1)
@@ -212,55 +239,157 @@ int main(int argc,char** argv)
 
         if(dlna::sock_down!=-1)
         {
-            dlna::init_ssdp();
+            dlna::sock_http=upnp::create_tcp_listener(dlna::http_port);
 
-            dlna::send_ssdp_alive_notify();
-
-            alarm(dlna::upnp_notify_timeout);
-
-            while(!dlna::__sig_quit)
+            if(dlna::sock_http!=-1)
             {
-                char tmp[1024];
+                dlna::init_ssdp();
 
-                sockaddr_in sin;
+                alarm(dlna::upnp_notify_timeout);
 
-                int n=dlna::mcast_grp.recv(dlna::sock_down,tmp,sizeof(tmp)-1,&sin);
+                int maxfd=dlna::max(dlna::sock_up,dlna::sock_down);
+                maxfd=dlna::max(maxfd,dlna::__sig_pipe[0]);
+                maxfd=dlna::max(maxfd,dlna::sock_http);
+                maxfd++;
 
-                if(n>0)
+                dlna::send_ssdp_alive_notify();
+
+                while(!dlna::__sig_quit)
                 {
-                    tmp[n]=0;
+                    fd_set fdset;
 
-//                    if(dlna::verb_fp)
-//                        fprintf(dlna::verb_fp,"%s\n",tmp);
+                    FD_ZERO(&fdset);
+                    FD_SET(dlna::sock_up,&fdset);
+                    FD_SET(dlna::sock_down,&fdset);
+                    FD_SET(dlna::__sig_pipe[0],&fdset);
+                    FD_SET(dlna::sock_http,&fdset);
 
-                    dlna::on_ssdp_message(tmp,n,&sin);
+                    sigprocmask(SIG_UNBLOCK,&dlna::__sig_proc_mask,0);
 
-                }else if(n==-1)
-                {
-                    if(errno!=EINTR)
-                        break;
-                }else
-                    break;
+                    int rc=select(maxfd,&fdset,0,0,0);
 
-                if(dlna::__sig_alarm)
-                {
-                    dlna::__sig_alarm=0;
-                    alarm(dlna::upnp_notify_timeout);
+                    sigprocmask(SIG_BLOCK,&dlna::__sig_proc_mask,0);
 
-                    dlna::send_ssdp_alive_notify();
+                    if(rc==-1)
+                    {
+                        if(errno!=EINTR)
+                            break;
+                    }
+
+                    if(rc>0)
+                    {
+                        char tmp[1024];
+
+                        if(FD_ISSET(dlna::__sig_pipe[0],&fdset))
+                            while(recv(dlna::__sig_pipe[0],tmp,sizeof(tmp),MSG_DONTWAIT)>0);
+
+                        if(FD_ISSET(dlna::sock_up,&fdset))
+                            while(recv(dlna::sock_up,tmp,sizeof(tmp),MSG_DONTWAIT)>0);
+
+                        if(FD_ISSET(dlna::sock_down,&fdset))
+                        {
+                            sockaddr_in sin;
+
+                            int n;
+
+                            while((n=dlna::mcast_grp.recv(dlna::sock_down,tmp,sizeof(tmp)-1,&sin,MSG_DONTWAIT))>0)
+                            {
+                                tmp[n]=0;
+
+                                dlna::on_ssdp_message(tmp,n,&sin);
+                            }
+                        }
+
+                        if(FD_ISSET(dlna::sock_http,&fdset))
+                        {
+                            sockaddr_in sin;
+                            socklen_t sin_len=sizeof(sin);
+
+                            int fd=accept(dlna::sock_http,(sockaddr*)&sin,&sin_len);
+
+                            if(fd!=-1)
+                            {
+                                if(dlna::verb_fp)
+                                    fprintf(stderr,"tcp connection accepted from '%s:%i'\n",inet_ntoa(sin.sin_addr),ntohs(sin.sin_port));
+
+                                pid_t pid=fork();
+
+                                if(!pid)
+                                {
+                                    close(dlna::sock_up);
+                                    close(dlna::sock_down);
+                                    close(dlna::sock_http);
+                                    for(int i=0;i<sizeof(dlna::__sig_pipe)/sizeof(*dlna::__sig_pipe);i++)
+                                        close(dlna::__sig_pipe[i]);
+
+                                    dlna::signal(SIGHUP ,SIG_DFL);
+                                    dlna::signal(SIGPIPE,SIG_DFL);
+                                    dlna::signal(SIGINT ,SIG_DFL);
+                                    dlna::signal(SIGQUIT,SIG_DFL);
+                                    dlna::signal(SIGTERM,SIG_DFL);
+                                    dlna::signal(SIGALRM,SIG_DFL);
+                                    dlna::signal(SIGCHLD,SIG_DFL);
+
+                                    int on=1;
+                                    setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,&on,sizeof(on));
+
+                                    sigprocmask(SIG_UNBLOCK,&dlna::__sig_proc_mask,0);
+
+                                    FILE* fp=fdopen(fd,"a+");
+
+                                    if(fp)
+                                    {
+                                        dlna::on_http_connection(fp);
+                                        fclose(fp);
+                                    }else
+                                        close(fd);
+
+                                    exit(0);
+                                }
+
+                                close(fd);
+                            }
+                        }
+                    }
+
+                    if(dlna::__sig_child)
+                    {
+                        dlna::__sig_child=0;
+
+                        while(wait3(0,WNOHANG,0)>0);
+                    }
+
+                    if(dlna::__sig_alarm)
+                    {
+                        dlna::__sig_alarm=0;
+                        alarm(dlna::upnp_notify_timeout);
+
+                        dlna::send_ssdp_alive_notify();
+                    }
                 }
-            }
 
-            dlna::send_ssdp_byebye_notify();
+                dlna::send_ssdp_byebye_notify();
+
+                dlna::done_ssdp();
+
+                close(dlna::sock_http);
+            }
 
             dlna::mcast_grp.leave(dlna::sock_down);
             dlna::mcast_grp.close(dlna::sock_down);
-
-            dlna::done_ssdp();
         }
 
         dlna::mcast_grp.close(dlna::sock_up);
     }
+
+    dlna::signal(SIGTERM,SIG_IGN);
+
+    sigprocmask(SIG_UNBLOCK,&dlna::__sig_proc_mask,0);
+
+    kill(0,SIGTERM);
+
+    for(int i=0;i<sizeof(dlna::__sig_pipe)/sizeof(*dlna::__sig_pipe);i++)
+        close(dlna::__sig_pipe[i]);
 
     return 0;
 }
@@ -349,22 +478,6 @@ int dlna::init_ssdp(void)
     ll=add_to_list(ll,tmp,n);
 
 
-    char date[64];
-    get_gmt_date(date,sizeof(date));
-
-    n=snprintf(tmp,sizeof(tmp),
-        "HTTP/1.1 200 OK\r\n"
-        "CACHE-CONTROL: max-age=1800\r\n"
-        "DATE: %s\r\n"
-        "EXT:\r\n"
-        "LOCATION: http://%s:%i/description\r\n"
-        "Server: %s\r\n"
-        "ST: urn:schemas-upnp-org:device:MediaServer:1\r\n"
-        "USN: uuid:%s::urn:schemas-upnp-org:device:MediaServer:1\r\n\r\n",
-        date,mcast_grp.interface,http_port,device_name,device_uuid);
-
-    ll=0; ssdp_msearch_resp_list=ll=add_to_list(ll,tmp,n);
-
     return 0;
 }
 
@@ -372,7 +485,6 @@ int dlna::done_ssdp(void)
 {
     free_list(ssdp_alive_list);
     free_list(ssdp_byebye_list);
-    free_list(ssdp_msearch_resp_list);
     return 0;
 }
 
@@ -441,8 +553,10 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
                                     ignore=1;
                             }else if(!strcasecmp(tmp,"ST"))
                             {
-                                if(strcasecmp(p,"urn:schemas-upnp-org:device:MediaServer:1"))
-                                    ignore=1;
+                                if(strcasecmp(p,"urn:schemas-upnp-org:device:MediaServer:1") &&
+                                    strcasecmp(p,"ssdp:all") && strcasecmp(p,"upnp:rootdevice") &&
+                                        strcasecmp(p,"urn:schemas-upnp-org:service:ContentDirectory:1"))
+                                            ignore=1;
                             }
                         }
                     }
@@ -461,8 +575,127 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
 
 int dlna::send_ssdp_msearch_response(sockaddr_in* sin)
 {
-    for(list* l=ssdp_msearch_resp_list;l;l=l->next)
-        mcast_grp.send(sock_up,l->buf,l->len,sin);
+    char date[64], tmp[1024];
+
+    get_gmt_date(date,sizeof(date));
+
+    int n=snprintf(tmp,sizeof(tmp),
+        "HTTP/1.1 200 OK\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "DATE: %s\r\n"
+        "EXT:\r\n"
+        "LOCATION: http://%s:%i/description\r\n"
+        "Server: %s\r\n"
+        "ST: urn:schemas-upnp-org:device:MediaServer:1\r\n"
+        "USN: uuid:%s::urn:schemas-upnp-org:device:MediaServer:1\r\n\r\n",
+        date,mcast_grp.interface,http_port,device_name,device_uuid);
+
+    mcast_grp.send(sock_up,tmp,n,sin);
+
+    return 0;
+}
+
+int dlna::on_http_connection(FILE* fp)
+{
+    int keep_alive=0;
+
+    do
+    {
+        enum {m_get=1, m_post=2};
+
+        int method=0;
+
+        char req[128]="";
+
+        int content_length=-1;
+
+        char tmp[1024];
+
+        int line=0;
+
+        while(fgets(tmp,sizeof(tmp),fp))
+        {
+            char* p=strpbrk(tmp,"\r\n");
+            if(p)
+                *p=0;
+
+            if(!*tmp)
+                break;
+
+            if(!line)
+            {
+                char* uri=strchr(tmp,' ');
+                if(uri)
+                {
+                    *uri=0; uri++;
+                    while(*uri && *uri==' ')
+                        uri++;
+
+                    char* ver=strchr(uri,' ');
+                    if(ver)
+                    {
+                        *ver=0; ver++;
+                        while(*ver && *ver==' ')
+                            ver++;
+
+                        if(!strcasecmp(ver,"HTTP/1.1"))
+                            keep_alive=1;
+                        else
+                            keep_alive=0;
+
+                        if(!strcasecmp(tmp,"GET"))
+                            method=m_get;
+                        else if(!strcasecmp(tmp,"POST"))
+                            method=m_post;
+
+                        snprintf(req,sizeof(req),"%s",uri);
+                    }
+                }
+            }else
+            {
+                p=strchr(tmp,':');
+                if(p)
+                {
+                    *p=0; p++;
+                    while(*p && *p==' ')
+                        p++;
+
+                    if(!strcasecmp(tmp,"Connection"))
+                    {
+                        if(!strcasecmp(p,"Keep-Alive"))
+                            keep_alive=1;
+                        else
+                            keep_alive=0;
+                    }else if(!strcasecmp(tmp,"Content-Length"))
+                    {
+                        char* endptr=0;
+                        int ll=strtol(p,&endptr,10);
+
+                        if((!*endptr || *endptr==' ') && ll>=0)
+                            content_length=ll;
+                        else
+                            keep_alive=0;
+                    }
+                }
+            }
+
+            line++;
+        }
+
+        if(!method || !*req)
+            break;
+
+        if(content_length>0)
+        {
+        }
+
+        printf("%i, '%s', %i, %i\n",method,req,content_length,keep_alive);
+
+
+    }while(keep_alive);
+
+    if(verb_fp)
+        fprintf(stderr,"tcp connection closed\n");
 
     return 0;
 }
