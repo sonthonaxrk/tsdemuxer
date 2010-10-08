@@ -32,6 +32,7 @@ namespace upnp
     };
 
     extern FILE* verb_fp;
+    extern int debug;
 
     void uuid_gen(char* dst);
     int get_if_info(const char* if_name,if_info* ifi);

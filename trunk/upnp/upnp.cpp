@@ -9,22 +9,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <stdarg.h>
 
 namespace upnp
 {
     FILE* verb_fp=0;
-
-    void trace(const char* fmt,...)
-    {
-        if(!verb_fp)
-            return;
-
-        va_list ap;
-        va_start(ap,fmt);
-        vfprintf(verb_fp,fmt,ap);
-        va_end(ap);
-    }
+    int debug=0;
 }
 
 void upnp::uuid_gen(char* dst)
@@ -199,7 +188,8 @@ int upnp::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
     {
         if(if_by_name)
         {
-            trace("find multicast interface address by name '%s'\n",iface);
+            if(verb_fp);
+                fprintf(verb_fp,"find multicast interface address by name '%s'\n",iface);
 
             if_info ifi;
             get_if_info(iface,&ifi);
@@ -210,14 +200,15 @@ int upnp::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
 
     if(mcast_if_sin.sin_addr.s_addr==INADDR_ANY)
     {
-        trace("find multicast default interface address\n");
+        if(verb_fp);
+            fprintf(verb_fp,"find multicast default interface address\n");
         mcast_if_sin.sin_addr=get_best_mcast_if_addr();
     }
 
     if(verb_fp)
     {
-        trace("multicast interface address: '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
-        trace("multicast group address: '%s:%i'\n",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
+        fprintf(verb_fp,"multicast interface address: '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+        fprintf(verb_fp,"multicast group address: '%s:%i'\n",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
     }
 
     snprintf(interface,sizeof(interface),"%s",inet_ntoa(mcast_if_sin.sin_addr));
@@ -251,8 +242,8 @@ int upnp::mcast_grp::join(void) const
             {
                 if(verb_fp)
                 {
-                    trace("join to multicast group '%s:%i' on ",inet_ntoa(mcast_group.imr_multiaddr),ntohs(sin.sin_port));
-                    trace("interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
+                    fprintf(verb_fp,"join to multicast group '%s:%i' on ",inet_ntoa(mcast_group.imr_multiaddr),ntohs(sin.sin_port));
+                    fprintf(verb_fp,"interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
                 }
 
                 return sock;
@@ -265,8 +256,8 @@ int upnp::mcast_grp::join(void) const
 
     if(verb_fp)
     {
-        trace("can`t join to multicast group '%s:%i' on ",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
-        trace("interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+        fprintf(verb_fp,"can`t join to multicast group '%s:%i' on ",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
+        fprintf(verb_fp,"interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
     }
 
 
@@ -284,15 +275,15 @@ int upnp::mcast_grp::leave(int sock) const
     {
         if(verb_fp)
         {
-            trace("leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
-            trace("interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
+            fprintf(verb_fp,"leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
+            fprintf(verb_fp,"interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
         }
     }else
     {
         if(verb_fp)
         {
-            trace("can`t leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
-            trace("interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
+            fprintf(verb_fp,"can`t leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
+            fprintf(verb_fp,"interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
         }
     }
 
@@ -319,14 +310,15 @@ int upnp::mcast_grp::upstream(void) const
 
         if(verb_fp)
         {
-            trace("multicast upstream address: '%s:%i'\n",inet_ntoa(sin.sin_addr),get_socket_port(sock));
-            trace("multicast upstream ttl: %i\n",mcast_ttl);
+            fprintf(verb_fp,"multicast upstream address: '%s:%i'\n",inet_ntoa(sin.sin_addr),get_socket_port(sock));
+            fprintf(verb_fp,"multicast upstream ttl: %i\n",mcast_ttl);
         }
 
         return sock;
     }
 
-    trace("can`t create multicast upstream channel\n");
+    if(verb_fp);
+        fprintf(verb_fp,"can`t create multicast upstream channel\n");
 
     return -1;
 }
@@ -343,11 +335,17 @@ int upnp::mcast_grp::send(int sock,const char* buf,int len,sockaddr_in* sin) con
     if(n>0 && verb_fp)
     {
         if(sin)
-            trace("send %i bytes to '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
+            fprintf(verb_fp,"send %i bytes to '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
         else
         {
-            trace("send %i bytes to multicast group '%s:%i' via ",n,inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
-            trace("interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+            fprintf(verb_fp,"send %i bytes to multicast group '%s:%i' via ",n,inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
+            fprintf(verb_fp,"interface '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+        }
+
+        if(debug)
+        {
+            fwrite(buf,len,1,verb_fp);
+            fprintf(verb_fp,"\n");
         }
     }
 
@@ -365,7 +363,15 @@ int upnp::mcast_grp::recv(int sock,char* buf,int len,sockaddr_in* sin,int flags)
     int n=recvfrom(sock,buf,len,flags,(sockaddr*)sin,&sin_len);
 
     if(n>0 && verb_fp)
-        trace("recv %i bytes from '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
+    {
+        fprintf(verb_fp,"recv %i bytes from '%s:%i'\n",n,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
+
+        if(debug)
+        {
+            fwrite(buf,n,1,verb_fp);
+            fprintf(verb_fp,"\n");
+        }
+    }
 
     return n;
 }
