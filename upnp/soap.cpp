@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 namespace soap
 {
@@ -30,6 +32,161 @@ namespace soap
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
     };
+
+    class string
+    {
+    protected:
+        char* ptr;
+        int size;
+    public:
+        string(void):ptr(0),size(0) {}
+        ~string(void) { clear(); }
+
+        void clear(void)
+        {
+            if(ptr)
+            {
+                free(ptr);
+                ptr=0;
+            }
+            size=0;
+        }
+
+        int length(void) const { return size; }
+        const char* c_str(void) const { return ptr?ptr:""; }
+
+        void swap(string& s)
+        {
+            s.clear();
+            s.ptr=ptr; s.size=size;
+            ptr=0; size=0;
+        }
+
+        friend class string_builder;
+    };
+
+    struct chunk
+    {
+        enum { max_size=64 };
+
+        char* ptr;
+        int size;
+
+        chunk* next;
+    };
+
+    class string_builder
+    {
+    protected:
+        chunk *beg,*end;
+
+        int add_chunk(void)
+        {
+            chunk* p=(chunk*)malloc(sizeof(chunk)+chunk::max_size);
+            if(!p)
+                return -1;
+
+            p->ptr=(char*)(p+1);
+            p->size=0;
+            p->next=0;
+
+            if(!beg)
+                beg=end=p;
+            else
+            {
+                end->next=p;
+                end=p;
+            }
+            return 0;
+        }
+    public:
+        string_builder(void):beg(0),end(0) {}
+        ~string_builder(void) { clear(); }
+
+        void clear(void)
+        {
+            while(beg)
+            {
+                chunk* tmp=beg;
+                beg=beg->next;
+                free(tmp);
+            }
+            beg=end=0;
+        }
+
+        void add(int ch)
+        {
+            if(!end || end->size>=chunk::max_size)
+                if(add_chunk())
+                    return;
+            ((unsigned char*)end->ptr)[end->size++]=ch;
+        }
+
+        void add(const char* s,int len);
+
+        void swap(string& s);
+    };
+
+    void string_builder::add(const char* s,int len)
+    {
+        if(!s)
+            return;
+        if(len==-1)
+            len=strlen(s);
+        if(!len)
+            return;
+
+        while(len>0)
+        {
+            int n=end?(chunk::max_size-end->size):0;
+
+            if(n<=0)
+            {
+                if(add_chunk())
+                    return;
+                n=chunk::max_size;
+            }
+    
+            int m=len>n?n:len;
+            memcpy(end->ptr+end->size,s,m);
+            end->size+=m;
+            len-=m;
+            s+=m;
+        }
+    }
+
+    void string_builder::swap(string& s)
+    {
+        int len=0;
+
+        for(chunk* p=beg;p;p=p->next)
+            len+=p->size;
+
+        s.clear();
+
+        if(len>0)
+        {
+            char* ptr=(char*)malloc(len+1);
+            if(ptr)
+            {
+                char* pp=ptr;
+
+                for(chunk* p=beg;p;p=p->next)
+                {
+                    memcpy(pp,p->ptr,p->size);
+                    pp+=p->size;
+                }
+
+                *pp=0;
+
+                s.ptr=ptr;
+                s.size=len;
+            }
+        }
+
+        clear();
+    }
+
 
     class ctx
     {
