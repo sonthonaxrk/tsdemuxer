@@ -26,15 +26,6 @@ namespace dlna
         list* next;
     };
 
-    enum { upnp_dev_location_size=64 };
-
-    struct upnp_dev
-    {
-        sockaddr_in sin;
-        time_t timestamp;
-        char location[upnp_dev_location_size];
-    };
-
     volatile int __sig_quit=0;
     volatile int __sig_alarm=0;
     volatile int __sig_child=0;
@@ -80,12 +71,6 @@ namespace dlna
 
     list* add_to_list(list* lst,const char* s,int len);
     void free_list(list* lst);
-
-    enum { max_upnp_dev_num=8 };
-    upnp_dev devices[max_upnp_dev_num];
-
-    void init_upnp_devices(void);
-    void add_upnp_device(sockaddr_in* sin,const char* location);
 
     template<typename T>
     T max(T a,T b) { return a>b?a:b; }
@@ -152,52 +137,6 @@ void dlna::free_list(dlna::list* lst)
         free(p);
     }
 }
-
-void dlna::init_upnp_devices(void)
-{
-    for(int i=0;i<max_upnp_dev_num;i++)
-    {
-        devices[i].sin.sin_addr.s_addr=0;
-        devices[i].sin.sin_port=0;
-        *devices[i].location=0;
-        devices[i].timestamp=0;
-    }
-}
-void dlna::add_upnp_device(sockaddr_in* sin,const char* location)
-{
-    int n=-1, m=-1;
-
-    for(int i=0;i<max_upnp_dev_num;i++)
-    {
-        if(!devices[i].sin.sin_addr.s_addr ||
-            (devices[i].sin.sin_addr.s_addr==sin->sin_addr.s_addr /*&& devices[i].sin.sin_port==sin->sin_port*/))
-                { n=i; break; }
-        else
-        {
-            if(m==-1 || devices[i].timestamp<=devices[m].timestamp)
-                m=i;
-        }
-    }
-
-    if(n==-1)
-        n=m;
-
-    if(n!=-1)
-    {
-        devices[n].sin.sin_addr.s_addr=sin->sin_addr.s_addr;
-        devices[n].sin.sin_port=sin->sin_port;
-        devices[n].timestamp=time(0);
-        if(!location)
-            *devices[n].location=0;
-        else
-        {
-            int nn=snprintf(devices[n].location,upnp_dev_location_size,"%s",location);
-            if(nn<0 || nn>=upnp_dev_location_size)
-                devices[n].location[upnp_dev_location_size-1]=0;
-        }
-    }
-}
-
 
 int dlna::get_gmt_date(char* dst,int ndst)
 {
@@ -290,8 +229,6 @@ int main(int argc,char** argv)
     sigprocmask(SIG_BLOCK,&dlna::__sig_proc_mask,0);
 
     dlna::mcast_grp.init(dlna::upnp_mgrp,mcast_iface,mcast_ttl,mcast_loop);
-
-    dlna::init_upnp_devices();
 
     if(!*dlna::device_uuid)
         upnp::uuid_gen(dlna::device_uuid);
@@ -504,22 +441,6 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 
-/*
-    n=snprintf(tmp,sizeof(tmp),
-        "NOTIFY * HTTP/1.1\r\n"
-        "HOST: 239.255.255.250:1900\r\n"
-        "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
-        "NT: urn:schemas-upnp-org:service:ConnectionManager:1\r\n"
-        "NTS: ssdp:alive\r\n"
-        "Server: %s\r\n"
-        "USN: uuid:%s::urn:schemas-upnp-org:service:ConnectionManager:1\r\n\r\n",
-        mcast_grp.interface,http_port,device_name,device_uuid);
-
-    ll=add_to_list(ll,tmp,n);
-*/
-
-
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
@@ -559,21 +480,6 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 
-/*
-    n=snprintf(tmp,sizeof(tmp),
-        "NOTIFY * HTTP/1.1\r\n"
-        "HOST: 239.255.255.250:1900\r\n"
-        "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
-        "NT: urn:schemas-upnp-org:service:ConnectionManager:1\r\n"
-        "NTS: ssdp:byebye\r\n"
-        "Server: %s\r\n"
-        "USN: uuid:%s::urn:schemas-upnp-org:service:ConnectionManager:1\r\n\r\n",
-        mcast_grp.interface,http_port,device_name,device_uuid);
-
-    ll=add_to_list(ll,tmp,n);
-*/
-
     return 0;
 }
 
@@ -608,9 +514,7 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
 
     int ignore=0;
 
-    int upnp_added=0;
-
-    for(int i=0,j=0;i<len;i++)
+    for(int i=0,j=0;i<len && !ignore;i++)
     {
         if(buf[i]!='\r')
         {
@@ -655,10 +559,6 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
                                     strcasecmp(p,"ssdp:all") && strcasecmp(p,"upnp:rootdevice") &&
                                         strcasecmp(p,"urn:schemas-upnp-org:service:ContentDirectory:1"))
                                             ignore=1;
-                            }else if(!strcasecmp(tmp,"Location"))
-                            {
-                                add_upnp_device(sin,p);
-                                upnp_added=1;
                             }
                         }
                     }
@@ -668,9 +568,6 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
             }
         }
     }
-
-    if(!upnp_added)
-        add_upnp_device(sin,0);
 
     if(!ignore)
         send_ssdp_msearch_response(sin);
@@ -871,17 +768,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 "                <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>\n"
                 "                <SCPDURL>/cds.xml</SCPDURL>\n"
                 "                <controlURL>/cds_control</controlURL>\n"
-                "                <eventSubURL>/cds_event</eventSubURL>\n"
+                "                <eventSubURL>/cms_event</eventSubURL>\n"
                 "            </service>\n"
-/*
-                "            <service>\n"
-                "               <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>\n"
-                "               <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>\n"
-                "               <SCPDURL>/cms.xml</SCPDURL>\n"
-                "               <controlURL>/cms_control</controlURL>\n"
-                "               <eventSubURL>/cms_event</eventSubURL>\n"
-                "            </service>\n"
-*/
                 "        </serviceList>\n"
                 "    </device>\n"
                 "    <URLBase>http://%s:%i/</URLBase>\n"
@@ -1013,6 +901,20 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         }
         else if(!strcmp(req,"/cds_control"))
         {
+/*
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body>
+<u:Browse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
+<ObjectID>0</ObjectID>
+<BrowseFlag>BrowseDirectChildren</BrowseFlag>
+<Filter>*</Filter>
+<StartingIndex>0</StartingIndex>
+<RequestedCount>0</RequestedCount>
+<SortCriteria></SortCriteria>
+</u:Browse>
+</s:Body>
+</s:Envelope>
+*/
         }
         else if(!strcmp(req,"/cds_event"))
         {
@@ -1033,29 +935,9 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 "        SSDP notify: %i sec<br>\n"
                 "        <a href=\'/root.xml\'>Root Device Description</a><br>\n"
                 "        <a href=\'/cds.xml\'>Content Directory Description</a><br>\n"
-                "        <br>Other UPNP devices:<br>\n",
-                device_name,device_name,device_uuid,mcast_grp.interface,http_port,upnp_notify_timeout);
-
-            time_t t=time(0);
-
-            for(int i=0;i<max_upnp_dev_num;i++)
-                if(devices[i].sin.sin_addr.s_addr)
-                {
-                    if(*devices[i].location)
-                        fprintf(fp,
-                "        <a href=\'%s\'>%s:%i</a> (%lu sec)<br>\n",
-                            devices[i].location,inet_ntoa(devices[i].sin.sin_addr),ntohs(devices[i].sin.sin_port),
-                                t-devices[i].timestamp);
-                    else
-                        fprintf(fp,
-                "        %s:%i (%lu sec)<br>\n",
-                            inet_ntoa(devices[i].sin.sin_addr),ntohs(devices[i].sin.sin_port),t-devices[i].timestamp);
-                }
-
-
-            fprintf(fp,
                 "    </body>\n"
-                "</html>\n");
+                "</html>\n",
+                device_name,device_name,device_uuid,mcast_grp.interface,http_port,upnp_notify_timeout);
         }
 
         fflush(fp);
