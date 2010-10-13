@@ -57,9 +57,10 @@ namespace soap
 
         void swap(string& s)
         {
-            s.clear();
+            char* pp=s.ptr;
+            int ss=s.size;
             s.ptr=ptr; s.size=size;
-            ptr=0; size=0;
+            ptr=pp; size=ss;
         }
 
         friend class string_builder;
@@ -191,10 +192,13 @@ namespace soap
     class ctx
     {
     protected:
-        int st;
-        int st_close_tag;
-        int st_quot;
-        int err;
+        short st;
+        short st_close_tag;
+        short st_quot;
+        short st_text;
+        short err;
+
+        string_builder data;
 
         enum { max_tok_size=64 };
 
@@ -227,15 +231,23 @@ namespace soap
             st_quot=0;
             st=0;
         }
+
         void ch_push(unsigned char ch)
         {
-            printf("%c",ch);
+            data.add(ch);
+        }
+
+        void data_push(void)
+        {
+            string s;
+            data.swap(s);
+            printf("%s",s.c_str());
         }
 
     public:
         int line;
     public:
-        ctx(void):st(0),err(0),line(0),tok_size(0),st_close_tag(0),st_quot(0) {}
+        ctx(void):st(0),err(0),line(0),tok_size(0),st_close_tag(0),st_quot(0),st_text(0) {}
 
         int parse(const char* buf,int len);
     };
@@ -257,15 +269,51 @@ int soap::ctx::parse(const char* buf,int len)
         {
         case 0:
             if(ch=='<')
+            {
                 st=10;
-            else
-                ch_push(ch);
+                data_push();
+                tok_reset();
+                st_text=0;
+            }else
+            {
+                switch(st_text)
+                {
+                case 0:
+//                    if(cht==cht_sp) continue; st_text=10;
+                case 10:
+                    if(ch=='&') { tok_add(ch); st_text=20; }else ch_push(ch);
+                    break;
+                case 20:
+                    tok_add(ch);
+                    if(ch==';')
+                    {
+                        tok[tok_size]=0;
+
+                        if(!strcmp(tok,"&lt;")) ch_push('<');
+                        else if(!strcmp(tok,"&gt;")) ch_push('>');
+                        else if(!strcmp(tok,"&apos;")) ch_push('\'');
+                        else if(!strcmp(tok,"&quot;")) ch_push('\"');
+                        else if(!strcmp(tok,"&amp;")) ch_push('&');
+                        tok_reset();
+                        st_text=0;
+                    }                    
+                    break;
+                }
+            }
             break;
         case 10:
             if(ch=='/')
             {
                 st=20;
                 st_close_tag=1;
+                continue;
+            }else if(ch=='?')
+            {
+                st=50;
+                continue;
+            }else if(ch=='!')
+            {
+                st=60;
                 continue;
             }
             st=11;
@@ -281,9 +329,7 @@ int soap::ctx::parse(const char* buf,int len)
             }
             break;
         case 20:
-            if(cht==cht_sp)
-                continue;
-            st=21;
+            if(cht==cht_sp) continue; st=21;
         case 21:
             if(ch==':')
                 tok_reset();
@@ -316,10 +362,31 @@ int soap::ctx::parse(const char* buf,int len)
             }
             break;
         case 40:
-            if(ch!='>')
-                err=1;
-            else
-                tok_push();
+            if(ch!='>') err=1; else tok_push();
+            break;
+        case 50:
+            if(ch=='?') st=55;
+            break;
+        case 55:
+            if(ch=='>') st=0; else if(ch!='?') st=50;                
+            break;
+        case 60:
+            if(ch=='-') st=61; else err=1;
+            break;
+        case 61:
+            if(ch=='-') st=62; else err=1;
+            break;
+        case 62:
+            if(ch=='-') st=63;
+            break;
+        case 63:
+            if(ch=='-') st=64; else st=62;
+            break;
+        case 64:
+            if(ch=='>')
+                st=0;
+            else if(ch!='-')
+                st=62;
             break;
         }
     }
@@ -331,6 +398,7 @@ int soap::ctx::parse(const char* buf,int len)
 int main(void)
 {
     static const char s[]=
+        "<!-- comment -->\n"
         "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
         "       <s:Body>\n"
         "               <u:Browse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
@@ -342,6 +410,7 @@ int main(void)
         "                       <SortCriteria></SortCriteria>\n"
         "                       <staff/>\n"
         "                       <  staff2  />\n"
+        "                       <staff3>Hello &lt;&gt;&aaa; World</staff3>\n"
         "               </u:Browse>\n"
         "       </s:Body>\n"
         "</s:Envelope>\n";
