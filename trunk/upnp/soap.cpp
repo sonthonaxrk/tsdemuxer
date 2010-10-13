@@ -1,3 +1,4 @@
+#include "soap.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,100 +34,65 @@ namespace soap
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
     };
 
-    class string
+    void string::clear(void)
     {
-    protected:
-        char* ptr;
-        int size;
-    public:
-        string(void):ptr(0),size(0) {}
-        ~string(void) { clear(); }
-
-        void clear(void)
+        if(ptr)
         {
-            if(ptr)
-            {
-                free(ptr);
-                ptr=0;
-            }
-            size=0;
+            free(ptr);
+            ptr=0;
         }
+        size=0;
+    }
 
-        int length(void) const { return size; }
-        const char* c_str(void) const { return ptr?ptr:""; }
-
-        void swap(string& s)
-        {
-            char* pp=s.ptr;
-            int ss=s.size;
-            s.ptr=ptr; s.size=size;
-            ptr=pp; size=ss;
-        }
-
-        friend class string_builder;
-    };
-
-    struct chunk
+    void string::swap(string& s)
     {
-        enum { max_size=64 };
+        char* pp=s.ptr;
+        int ss=s.size;
+        s.ptr=ptr; s.size=size;
+        ptr=pp; size=ss;
+    }
 
-        char* ptr;
-        int size;
-
-        chunk* next;
-    };
-
-    class string_builder
+    void string::trim_right(void)
     {
-    protected:
-        chunk *beg,*end;
-
-        int add_chunk(void)
+#ifndef NO_TRIM_DATA
+        if(ptr && size>0)
         {
-            chunk* p=(chunk*)malloc(sizeof(chunk)+chunk::max_size);
-            if(!p)
-                return -1;
-
-            p->ptr=(char*)(p+1);
-            p->size=0;
-            p->next=0;
-
-            if(!beg)
-                beg=end=p;
-            else
-            {
-                end->next=p;
-                end=p;
-            }
-            return 0;
+            for(;size>0 && types[ptr[size-1]]==cht_sp;size--);
+            ptr[size]=0;
         }
-    public:
-        string_builder(void):beg(0),end(0) {}
-        ~string_builder(void) { clear(); }
+#endif
+    }
 
-        void clear(void)
+    int string_builder::add_chunk(void)
+    {
+        chunk* p=(chunk*)malloc(sizeof(chunk)+chunk::max_size);
+        if(!p)
+            return -1;
+
+        p->ptr=(char*)(p+1);
+        p->size=0;
+        p->next=0;
+
+        if(!beg)
+            beg=end=p;
+        else
         {
-            while(beg)
-            {
-                chunk* tmp=beg;
-                beg=beg->next;
-                free(tmp);
-            }
-            beg=end=0;
+            end->next=p;
+            end=p;
         }
+        return 0;
+    }
 
-        void add(int ch)
+    void string_builder::clear(void)
+    {
+        while(beg)
         {
-            if(!end || end->size>=chunk::max_size)
-                if(add_chunk())
-                    return;
-            ((unsigned char*)end->ptr)[end->size++]=ch;
+            chunk* tmp=beg;
+            beg=beg->next;
+            free(tmp);
         }
-
-        void add(const char* s,int len);
-
-        void swap(string& s);
-    };
+        beg=end=0;
+    }
 
     void string_builder::add(const char* s,int len)
     {
@@ -188,69 +154,74 @@ namespace soap
         clear();
     }
 
-
-    class ctx
+    node* node::add_node(void)
     {
-    protected:
-        short st;
-        short st_close_tag;
-        short st_quot;
-        short st_text;
-        short err;
-
-        string_builder data;
-
-        enum { max_tok_size=64 };
-
-        char tok[max_tok_size];
-        int tok_size;
-
-        void tok_add(unsigned char ch)
+        node* p=(node*)malloc(sizeof(node));
+        if(!p)
+            return 0;
+    
+        p->init();
+        p->parent=this;
+    
+        if(!beg)
+            beg=end=p;
+        else
         {
-            if(tok_size<max_tok_size-1)
-                ((unsigned char*)tok)[tok_size++]=ch;
-        }
-        void tok_reset(void)
-        {
-            tok_size=0;
-        }
-        void tok_push(void)
-        {
-            tok[tok_size]=0;
-
-            if(st==40)
-            {
-                if(tok_size)
-                    printf("[%i,'%s']",0,tok);
-                printf("[%i,'%s']",1,"");
-            }else
-                printf("[%i,'%s']",st_close_tag,tok);
-
-            tok_size=0;
-            st_close_tag=0;
-            st_quot=0;
-            st=0;
+            end->next=p;
+            end=p;
         }
 
-        void ch_push(unsigned char ch)
+        return p;
+    }
+
+    void node::clear(void)
+    {
+printf("%s=%s\n",name,data);
+
+        if(name) { free(name); name=0; }
+
+        if(data) { free(data); data=0; len=0; }
+
+        while(beg)
         {
-            data.add(ch);
+printf("%s\n",beg->name);
+            node* p=beg;
+
+            beg=beg->next;
+
+            p->clear();
+
+            free(p);
         }
+printf("------\n");
+        beg=end=0;
+    }
+    
+}
 
-        void data_push(void)
-        {
-            string s;
-            data.swap(s);
-            printf("%s",s.c_str());
-        }
 
-    public:
-        int line;
-    public:
-        ctx(void):st(0),err(0),line(0),tok_size(0),st_close_tag(0),st_quot(0),st_text(0) {}
+void soap::ctx::begin(void)
+{
+    st=0;
+    err=0;
+    line=0;
+    tok_size=0;
+    st_close_tag=0;
+    st_quot=0;
+    st_text=0;
+}
 
-        int parse(const char* buf,int len);
-    };
+int soap::ctx::end(void)
+{
+    if(tok_size>0 || st)
+    {
+        err=1;
+        return -1;
+    }
+
+    data_push();
+
+    return 0;
 }
 
 
@@ -279,9 +250,12 @@ int soap::ctx::parse(const char* buf,int len)
                 switch(st_text)
                 {
                 case 0:
-//                    if(cht==cht_sp) continue; st_text=10;
+#ifndef NO_TRIM_DATA
+                    if(cht==cht_sp) continue;
+#endif
+                    st_text=10;
                 case 10:
-                    if(ch=='&') { tok_add(ch); st_text=20; }else ch_push(ch);
+                    if(ch=='&') { tok_add(ch); st_text=20; } else ch_push(ch);
                     break;
                 case 20:
                     tok_add(ch);
@@ -295,7 +269,7 @@ int soap::ctx::parse(const char* buf,int len)
                         else if(!strcmp(tok,"&quot;")) ch_push('\"');
                         else if(!strcmp(tok,"&amp;")) ch_push('&');
                         tok_reset();
-                        st_text=0;
+                        st_text=10;
                     }                    
                     break;
                 }
@@ -395,6 +369,8 @@ int soap::ctx::parse(const char* buf,int len)
 }
 
 
+
+
 int main(void)
 {
     static const char s[]=
@@ -415,11 +391,13 @@ int main(void)
         "       </s:Body>\n"
         "</s:Envelope>\n";
 
-    soap::ctx ctx;
+    soap::node root;
 
-    int n=ctx.parse(s,sizeof(s)-1);
+    soap::ctx ctx(&root);
 
-    if(n)
+    ctx.begin();
+
+    if(ctx.parse(s,sizeof(s)-1) || ctx.end())
         printf("\n\nerror in line %i\n",ctx.line+1);
 
     return 0;
