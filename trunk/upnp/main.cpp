@@ -63,6 +63,8 @@ namespace dlna
 
     int get_gmt_date(char* dst,int ndst);
 
+    int parse_playlist(const char* name);
+
     int init_ssdp(void);
     int done_ssdp(void);
     int send_ssdp_alive_notify(void);
@@ -161,6 +163,7 @@ int main(int argc,char** argv)
     int mcast_ttl=0;
     int mcast_loop=0;
 
+    const char* playlist_filename="";
 
     const char* app_name=strrchr(argv[0],'/');
     if(app_name)
@@ -197,7 +200,7 @@ int main(int argc,char** argv)
             break;
         case 'h':
         case '?':
-            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port]\n",app_name);
+            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port] playlist.csv\n",app_name);
             fprintf(stderr,"   -v   Turn on verbose output\n");
             fprintf(stderr,"   -d   Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l   Turn on loopback multicast transmission\n");
@@ -206,11 +209,15 @@ int main(int argc,char** argv)
             fprintf(stderr,"   -n   DLNA server friendly name\n");
             fprintf(stderr,"   -t   Multicast datagrams time-to-live (TTL)\n");
             fprintf(stderr,"   -p   TCP port for incoming HTTP connections\n\n");
-            fprintf(stderr,"example 1: './%s -i eth0'\n",app_name);
+            fprintf(stderr,"example 1: './%s -i eth0 playlist.csv'\n",app_name);
             fprintf(stderr,"example 2: './%s -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -n IPTV -t 1 -p 4044'\n",app_name);
             fprintf(stderr,"example 3: './%s -v'\n\n",app_name);
             return 0;
         }
+
+
+    if(argc>optind)
+        playlist_filename=argv[optind];
 
     if(mcast_ttl<1)
         mcast_ttl=1;
@@ -219,6 +226,8 @@ int main(int argc,char** argv)
 
     if(dlna::http_port<0)
         dlna::http_port=0;
+
+    dlna::parse_playlist(playlist_filename);
 
     setsid();
 
@@ -1040,6 +1049,20 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
     return 0;
 }
 
+int dlna::parse_playlist(const char* name)
+{
+    FILE* fp=fopen(name,"r");
+    
+    if(fp)
+    {
+        
+
+        fclose(fp);
+    }
+    
+    return 0;
+}
+
 int dlna::upnp_browse(FILE* fp,const char* object_id,const char* flag,const char* filter,int index,int count)
 {
     fprintf(fp,
@@ -1048,12 +1071,22 @@ int dlna::upnp_browse(FILE* fp,const char* object_id,const char* flag,const char
         "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
         "   <s:Body>\n"
         "      <u:BrowseResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
-        "         <Result></Result>\n"
-        "          <NumberReturned>0</NumberReturned>\n"
-        "          <TotalMatches>0</TotalMatches>\n"
-        "          <UpdateID>1</UpdateID>\n"
+        "         <Result>"
+"&lt;DIDL-Lite xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot;&gt;"
+"    &lt;container id=&quot;0&quot; childCount=&quot;0&quot; parentID=&quot;-1&quot; restricted=&quot;true&quot;"
+"    &gt;"
+"        &lt;dc:title&gt;UPnP IPTV Browser&lt;/dc:title&gt;"
+"        &lt;upnp:class&gt;object.container&lt;/upnp:class&gt;"
+"    &lt;/container&gt;"
+"&lt;/DIDL-Lite&gt;"
+        "</Result>\n"
+        "         <NumberReturned>1</NumberReturned>\n"
+        "         <TotalMatches>1</TotalMatches>\n"
+        "         <UpdateID>1</UpdateID>\n"
         "      </u:BrowseResponse>\n"
         "   </s:Body>\n"
         "</s:Envelope>\n");
+
+    return 0;
 }
 
