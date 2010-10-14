@@ -113,7 +113,7 @@ namespace soap
                     return;
                 n=chunk::max_size;
             }
-    
+
             int m=len>n?n:len;
             memcpy(end->ptr+end->size,s,m);
             end->size+=m;
@@ -159,10 +159,10 @@ namespace soap
         node* p=(node*)malloc(sizeof(node));
         if(!p)
             return 0;
-    
+
         p->init();
         p->parent=this;
-    
+
         if(!beg)
             beg=end=p;
         else
@@ -176,15 +176,8 @@ namespace soap
 
     void node::clear(void)
     {
-printf("%s=%s\n",name,data);
-
-        if(name) { free(name); name=0; }
-
-        if(data) { free(data); data=0; len=0; }
-
         while(beg)
         {
-printf("%s\n",beg->name);
             node* p=beg;
 
             beg=beg->next;
@@ -193,10 +186,57 @@ printf("%s\n",beg->name);
 
             free(p);
         }
-printf("------\n");
+
         beg=end=0;
+
+        if(name) { free(name); name=0; }
+
+        if(data) { free(data); data=0; len=0; }
     }
-    
+
+    node* node::find_child(const char* s,int l)
+    {
+        for(node* p=beg;p;p=p->next)
+            if(p->name && !strncmp(p->name,s,l))
+                return p;
+        return 0;
+    }
+
+    node* node::find(const char* s)
+    {
+        node* pp=this;
+
+        for(char *p1=(char*)s,*p2=0;p1 && pp;p1=p2)
+        {
+            int l=0;
+
+            p2=strchr(p1,'/');
+            if(p2)
+                { l=p2-p1; p2++; }
+            else
+                l=strlen(p1);
+
+            if(l)
+                pp=pp->find_child(p1,l);
+        }
+
+        return pp;
+    }
+
+
+    void dump(node* node,int depth)
+    {
+        for(int i=0;i<depth;i++)
+            printf("  ");
+
+        if(node->len>0)
+            printf("<%s>=\"%s\" [%i]\n",node->name?node->name:"???",node->data,node->len);
+        else
+            printf("<%s>\n",node->name?node->name:"???");
+
+        for(soap::node* p=node->beg;p;p=p->next)
+            dump(p,depth+1);
+    }
 }
 
 
@@ -223,6 +263,73 @@ int soap::ctx::end(void)
 
     return 0;
 }
+
+void soap::ctx::tok_push(void)
+{
+    tok[tok_size]=0;
+
+    if(st==40)
+    {
+        if(tok_size)
+            tag_open(tok,tok_size);
+        tag_close("",0);
+    }else
+    {
+        if(st_close_tag)
+            tag_close(tok,tok_size);
+        else
+            tag_open(tok,tok_size);
+    }
+
+    tok_size=0;
+    st_close_tag=0;
+    st_quot=0;
+    st=0;
+}
+
+void soap::ctx::tag_open(const char* s,int len)
+{
+    if(!len) { err=1; return; }
+
+    node* p=cur->add_node();
+
+    if(!p) { err=1; return; }
+
+    p->name=(char*)malloc(len+1);
+
+    if(p->name)
+    {
+        memcpy(p->name,s,len);
+        p->name[len]=0;
+    }
+    cur=p;               
+}
+
+void soap::ctx::tag_close(const char* s,int len)
+{
+    if(!cur->parent || !cur->name) { err=1; return; }
+
+    if(len && strcmp(cur->name,s)) { err=1; return; }
+
+    cur=cur->parent;
+}
+
+void soap::ctx::data_push(void)
+{
+    string s;
+    data.swap(s);
+    s.trim_right();
+
+    if(s.length())
+    {
+        if(cur->data) free(cur->data);
+        cur->data=s.ptr;
+        cur->len=s.size;
+        s.ptr=0;
+        s.size=0;
+    }
+}
+
 
 
 int soap::ctx::parse(const char* buf,int len)
@@ -270,7 +377,7 @@ int soap::ctx::parse(const char* buf,int len)
                         else if(!strcmp(tok,"&amp;")) ch_push('&');
                         tok_reset();
                         st_text=10;
-                    }                    
+                    }
                     break;
                 }
             }
@@ -342,7 +449,7 @@ int soap::ctx::parse(const char* buf,int len)
             if(ch=='?') st=55;
             break;
         case 55:
-            if(ch=='>') st=0; else if(ch!='?') st=50;                
+            if(ch=='>') st=0; else if(ch!='?') st=50;
             break;
         case 60:
             if(ch=='-') st=61; else err=1;
@@ -368,9 +475,16 @@ int soap::ctx::parse(const char* buf,int len)
     return err;
 }
 
+int soap::parse(const char* s,int l,node* root)
+{
+    soap::ctx ctx(root);
 
+    if(!ctx.parse(s,l) && !ctx.end())
+        return 0;
+    return -1;
+}
 
-
+/*
 int main(void)
 {
     static const char s[]=
@@ -399,6 +513,13 @@ int main(void)
 
     if(ctx.parse(s,sizeof(s)-1) || ctx.end())
         printf("\n\nerror in line %i\n",ctx.line+1);
+    else
+    {
+        soap::dump(&root,0);
+
+        printf("\n\"%s\"\n",root["Envelope/Body/Browse/staff3"]);
+    }
 
     return 0;
 }
+*/
