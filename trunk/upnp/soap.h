@@ -1,10 +1,6 @@
 #ifndef __SOAP_H
 #define __SOAP_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 namespace soap
 {
     class string
@@ -80,12 +76,23 @@ namespace soap
         node(void):parent(0),next(0),beg(0),end(0),name(0),data(0),len(0) {}
         ~node(void) { clear(); }
 
-        void init(void) { parent=next=beg=end; name=data=0; len=0; }
+        void init(void) { parent=next=beg=end=0; name=data=0; len=0; }
 
         node* add_node(void);
 
         void clear(void);
-    
+
+        node* find_child(const char* s,int l);
+        node* find(const char* s);
+
+        const char* operator[](const char* s)
+        {
+            node* pp=find(s);
+
+            if(pp && pp->data)
+                return pp->data;
+            return "";
+        }
     };
 
 
@@ -115,72 +122,10 @@ namespace soap
         void tok_reset(void) { tok_size=0; }
 
         void ch_push(unsigned char ch) { data.add(ch); }
-
-        void tok_push(void)
-        {
-            tok[tok_size]=0;
-
-            if(st==40)
-            {
-                if(tok_size)
-                    tag_open(tok,tok_size);
-                tag_close("",0);
-            }else
-            {
-                if(st_close_tag)
-                    tag_close(tok,tok_size);
-                else
-                    tag_open(tok,tok_size);
-            }
-
-            tok_size=0;
-            st_close_tag=0;
-            st_quot=0;
-            st=0;
-        }
-
-        void tag_open(const char* s,int len)
-        {
-            if(!len) { err=1; return; }
-
-            node* p=cur->add_node();
-
-            if(!p) { err=1; return; }
-
-            p->name=(char*)malloc(len+1);
-
-            if(p->name)
-            {
-                memcpy(p->name,s,len);
-                p->name[len]=0;
-            }
-
-            cur=p;
-        }
-        void tag_close(const char* s,int len)
-        {
-            if(!cur->parent || !cur->name) { err=1; return; }
-
-            if(len && strcmp(cur->name,s)) { err=1; return; }
-
-            cur=cur->parent;
-        }
-
-        void data_push(void)
-        {
-            string s;
-            data.swap(s);
-            s.trim_right();
-
-            if(s.length())
-            {
-                if(cur->data) free(cur->data);
-                cur->data=s.ptr;
-                cur->len=s.size;
-                s.ptr=0;
-                s.size=0;
-            }
-        }
+        void tok_push(void);
+        void tag_open(const char* s,int len);
+        void tag_close(const char* s,int len);
+        void data_push(void);
 
     public:
         int line;
@@ -193,6 +138,9 @@ namespace soap
 
         int end(void);
     };
+
+
+    int parse(const char* s,int l,node* root);
 }
 
 #endif /* __SOAP_H */

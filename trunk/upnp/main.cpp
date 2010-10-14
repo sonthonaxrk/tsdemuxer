@@ -16,6 +16,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "soap.h"
 
 namespace dlna
 {
@@ -611,6 +612,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
         char req[128]="";
 
+        char soap_action[128]="";
+
         int content_length=-1;
 
         char* content=0;
@@ -681,7 +684,9 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                             content_length=ll;
                         else
                             keep_alive=0;
-                    }
+                    }else if(!strcasecmp(tmp,"SOAPAction"))
+                        snprintf(soap_action,sizeof(soap_action),"%s",p);
+                    
                 }
             }
 
@@ -901,6 +906,21 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         }
         else if(!strcmp(req,"/cds_control"))
         {
+            if(*soap_action)
+            {
+                soap::node req;
+
+                if(content && content_length>0)
+                    soap::parse(content,content_length,&req);
+
+                if(verb_fp)
+                {
+//                    "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
+                    fprintf(verb_fp,"%s\n%s\n",soap_action,req["Envelope/Body/Browse/ObjectID"]);
+                }
+
+            }
+
 /*
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
 <s:Body>
