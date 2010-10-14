@@ -87,6 +87,11 @@ namespace soap
 
         const char* operator[](const char* s)
         {
+            return find_data(s);
+        }
+
+        const char* find_data(const char* s)
+        {
             node* pp=find(s);
 
             if(pp && pp->data)

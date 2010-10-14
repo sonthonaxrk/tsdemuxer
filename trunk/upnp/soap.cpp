@@ -484,6 +484,7 @@ int soap::parse(const char* s,int l,node* root)
     return -1;
 }
 
+
 /*
 int main(void)
 {
@@ -520,6 +521,14 @@ int main(void)
         printf("\n\"%s\"\n",root["Envelope/Body/Browse/staff3"]);
     }
 
+//    soap::node root;
+//    const char s[]="<xml>&lt;DIDL-Lite xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\"&gt;&lt;item restricted=\"true\" id=\"0/144/145/143\" parentID=\"0/144/145\"&gt;&lt;dc:title&gt;77-orugie voinov&lt;/dc:title&gt;&lt;dc:publisher&gt;Unknown publisher&lt;/dc:publisher&gt;&lt;upnp:artist&gt;Unknown&lt;/upnp:artist&gt;&lt;res bitsPerSample=\"16\" protocolInfo=\"http-get:*:video/avi:DLNA.ORG_OP=01\" duration=\"00:46:56.000\" resolution=\"720x416\" size=\"734033920\" nrAudioChannels=\"2\" bitrate=\"260665\" sampleFrequency=\"48000\"&gt;http://192.168.1.34:41952/getres/143/77-orugie+voinov.avi.avi&lt;/res&gt;&lt;upnp:genre&gt;Unknown Genre&lt;/upnp:genre&gt;&lt;upnp:album&gt;Unknown Album&lt;/upnp:album&gt;&lt;upnp:class&gt;object.item.videoItem&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</xml>";
+//    const char s[]="<xml>&lt;DIDL-Lite xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\"&gt;&lt;container id=\"0\" childCount=\"7\" parentID=\"-1\" restricted=\"true\"&gt;&lt;dc:title&gt;TVersity&lt;/dc:title&gt;&lt;upnp:class&gt;object.container&lt;/upnp:class&gt;&lt;/container&gt;&lt;/DIDL-Lite&gt;</xml>";
+//    if(!soap::parse(s,sizeof(s)-1,&root))
+//        printf("%s\n",root["xml"]);
+
     return 0;
 }
 */
+
+
