@@ -170,7 +170,6 @@ int upnp::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
         mcast_ttl=1;
 
     char* port=strchr(tmp,':');
-
     if(port)
     {
         *port=0;
@@ -200,7 +199,7 @@ int upnp::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
 
     if(mcast_if_sin.sin_addr.s_addr==INADDR_ANY)
     {
-        if(verb_fp);
+        if(verb_fp)
             fprintf(verb_fp,"find multicast default interface address\n");
         mcast_if_sin.sin_addr=get_best_mcast_if_addr();
     }

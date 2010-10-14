@@ -45,7 +45,8 @@ namespace dlna
 
     static const int http_timeout=15;
 
-    static const char device_name[]="Lolipop IPTV Directory";
+    static const char device_name[]="UPnP PlayList Browser";
+    const char* device_friendly_name="UPnP-IPTV";
 
     char device_uuid[64]="";
 
@@ -69,6 +70,7 @@ namespace dlna
     int send_ssdp_msearch_response(sockaddr_in* sin);
     int on_ssdp_message(char* buf,int len,sockaddr_in* sin);
     int on_http_connection(FILE* fp,sockaddr_in* sin);
+    int upnp_browse(FILE* fp,const char* object_id,const char* flag,const char* filter,int index,int count);
 
     list* add_to_list(list* lst,const char* s,int len);
     void free_list(list* lst);
@@ -167,7 +169,7 @@ int main(int argc,char** argv)
         app_name=argv[0];
 
     int opt;
-    while((opt=getopt(argc,argv,"dvli:u:t:p:h?"))>=0)
+    while((opt=getopt(argc,argv,"dvli:u:t:p:n:h?"))>=0)
         switch(opt)
         {
         case 'd':
@@ -190,6 +192,9 @@ int main(int argc,char** argv)
         case 'p':
             dlna::http_port=atoi(optarg);
             break;
+        case 'n':
+            dlna::device_friendly_name=optarg;
+            break;
         case 'h':
         case '?':
             fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port]\n",app_name);
@@ -198,10 +203,11 @@ int main(int argc,char** argv)
             fprintf(stderr,"   -l   Turn on loopback multicast transmission\n");
             fprintf(stderr,"   -i   Multicast interface address or device name\n");
             fprintf(stderr,"   -u   DLNA server UUID\n");
+            fprintf(stderr,"   -n   DLNA server friendly name\n");
             fprintf(stderr,"   -t   Multicast datagrams time-to-live (TTL)\n");
             fprintf(stderr,"   -p   TCP port for incoming HTTP connections\n\n");
             fprintf(stderr,"example 1: './%s -i eth0'\n",app_name);
-            fprintf(stderr,"example 2: './%s -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -t 1 -p 4044'\n",app_name);
+            fprintf(stderr,"example 2: './%s -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -n IPTV -t 1 -p 4044'\n",app_name);
             fprintf(stderr,"example 3: './%s -v'\n\n",app_name);
             return 0;
         }
@@ -232,11 +238,36 @@ int main(int argc,char** argv)
     dlna::mcast_grp.init(dlna::upnp_mgrp,mcast_iface,mcast_ttl,mcast_loop);
 
     if(!*dlna::device_uuid)
-        upnp::uuid_gen(dlna::device_uuid);
+    {
+        char filename[512]="";
+        snprintf(filename,sizeof(filename),"/var/tmp/%s.uuid",dlna::device_friendly_name);
+
+        FILE* fp=fopen(filename,"r");
+        if(fp)
+        {
+            int n=fread(dlna::device_uuid,1,sizeof(dlna::device_uuid)-1,fp);
+            dlna::device_uuid[n]=0;
+            fclose(fp);
+        }
+
+        if(!*dlna::device_uuid)
+        {
+            upnp::uuid_gen(dlna::device_uuid);
+
+            FILE* fp=fopen(filename,"w");
+            if(fp)
+            {
+                fprintf(fp,"%s",dlna::device_uuid);
+                fclose(fp);
+            }
+        }
+    }
 
     if(dlna::verb_fp)
+    {
         fprintf(dlna::verb_fp,"root device uuid: '%s'\n",dlna::device_uuid);
-
+        fprintf(dlna::verb_fp,"device friendly name: '%s'\n",dlna::device_friendly_name);
+    }
     dlna::sock_up=dlna::mcast_grp.upstream();
 
     if(dlna::sock_up!=-1)
@@ -606,6 +637,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
     do
     {
+        // read HTTP request
+
         enum {m_get=1, m_post=2};
 
         int method=0;
@@ -685,7 +718,19 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                         else
                             keep_alive=0;
                     }else if(!strcasecmp(tmp,"SOAPAction"))
-                        snprintf(soap_action,sizeof(soap_action),"%s",p);
+                    {
+                        if(*p=='\"')
+                            p++;
+
+                        int n=snprintf(soap_action,sizeof(soap_action),"%s",p);
+                        if(n==-1 || n>=sizeof(soap_action))
+                        {
+                            n=sizeof(soap_action)-1;
+                            soap_action[n]=0;
+                        }
+                        if(n>0 && soap_action[n-1]=='\"')
+                            soap_action[n-1]=0;
+                    }
                     
                 }
             }
@@ -779,7 +824,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 "    </device>\n"
                 "    <URLBase>http://%s:%i/</URLBase>\n"
                 "</root>\n",
-                device_name,device_name,device_uuid,mcast_grp.interface,http_port);
+                device_friendly_name,device_name,device_uuid,mcast_grp.interface,http_port);
         }
         else if(!strcmp(req,"/cds.xml"))
         {
@@ -914,27 +959,47 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     soap::parse(content,content_length,&req);
 
                 if(verb_fp)
+                    fprintf(verb_fp,"SOAPAction: %s\n",soap_action);
+
+                char* req_type=strchr(soap_action,'#');
+                
+                if(req_type)
                 {
-//                    "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
-                    fprintf(verb_fp,"%s\n%s\n",soap_action,req["Envelope/Body/Browse/ObjectID"]);
+                    req_type++;
+
+                    if(!strcmp(req_type,"Browse"))
+                    {
+                        soap::node* req_data=req.find("Envelope/Body/Browse");
+
+                        if(req_data)
+                        {
+                            const char* object_id=req_data->find_data("ObjectID");
+                            const char* flag=req_data->find_data("BrowseFlag");         // BrowseMetadata, BrowseDirectChildren
+                            const char* filter=req_data->find_data("Filter");
+                            int index=atoi(req_data->find_data("StartingIndex"));
+                            int count=atoi(req_data->find_data("RequestedCount"));
+
+                            if(verb_fp)
+                                fprintf(verb_fp,"Browse: ObjectID=%s, BrowseFlag='%s', StartingIndex=%i, RequestedCount=%i\n",
+                                    object_id,flag,index,count);
+
+                            upnp_browse(fp,object_id,flag,filter,index,count);
+                        }
+                    }else if(!strcmp(req_type,"GetSystemUpdateID"))
+                    {
+                        fprintf(fp,
+                            "Content-Type: text/xml\r\n\r\n"
+                            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                            "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                            "   <s:Body>\n"
+                            "      <u:GetSystemUpdateIDResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
+                            "         <Id>1</Id>\n"
+                            "      </u:GetSystemUpdateIDResponse>\n"
+                            "   </s:Body>\n"
+                            "</s:Envelope>\n");                
+                    }
                 }
-
             }
-
-/*
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-<s:Body>
-<u:Browse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
-<ObjectID>0</ObjectID>
-<BrowseFlag>BrowseDirectChildren</BrowseFlag>
-<Filter>*</Filter>
-<StartingIndex>0</StartingIndex>
-<RequestedCount>0</RequestedCount>
-<SortCriteria></SortCriteria>
-</u:Browse>
-</s:Body>
-</s:Envelope>
-*/
         }
         else if(!strcmp(req,"/cds_event"))
         {
@@ -973,5 +1038,22 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
     alarm(0);
 
     return 0;
+}
+
+int dlna::upnp_browse(FILE* fp,const char* object_id,const char* flag,const char* filter,int index,int count)
+{
+    fprintf(fp,
+        "Content-Type: text/xml\r\n\r\n"
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+        "   <s:Body>\n"
+        "      <u:BrowseResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
+        "         <Result></Result>\n"
+        "          <NumberReturned>0</NumberReturned>\n"
+        "          <TotalMatches>0</TotalMatches>\n"
+        "          <UpdateID>1</UpdateID>\n"
+        "      </u:BrowseResponse>\n"
+        "   </s:Body>\n"
+        "</s:Envelope>\n");
 }
 
