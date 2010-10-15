@@ -87,6 +87,7 @@ namespace dlna
         char* url;
         const char* upnp_class;
         const char* upnp_mime_type;
+        int childs;
 
         playlist_item* next;
     };
@@ -94,8 +95,9 @@ namespace dlna
     playlist_item* playlist_beg=0;
     playlist_item* playlist_end=0;
     int playlist_counter=0;
+    playlist_item* playlist_root=0;
 
-    playlist_item* playlist_add(int parent_id,const char* name,const char* length,const char* url,const char* upnp_class,const char* upnp_mime_type)
+    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* length,const char* url,const char* upnp_class,const char* upnp_mime_type)
     {
         if(!url || !*url)
             url="";
@@ -115,13 +117,14 @@ namespace dlna
         if(!p)
             return 0;
 
-        p->parent_id=parent_id;
+        p->parent_id=parent?parent->object_id:-1;
         p->object_id=playlist_counter;
         p->name=(char*)(p+1);
         p->length=p->name+name_len;
         p->url=p->length+length_len;
         p->upnp_class=upnp_class?upnp_class:"";
         p->upnp_mime_type=upnp_mime_type?upnp_mime_type:"";
+        p->childs=0;
 
         strcpy(p->name,name);
         strcpy(p->length,length);
@@ -142,6 +145,9 @@ namespace dlna
         }
 
         playlist_counter++;
+
+        if(parent)
+            parent->childs++;
 
         return p;
     }
@@ -214,7 +220,8 @@ namespace dlna
     int send_ssdp_msearch_response(sockaddr_in* sin);
     int on_ssdp_message(char* buf,int len,sockaddr_in* sin);
     int on_http_connection(FILE* fp,sockaddr_in* sin);
-    int upnp_browse(FILE* fp,const char* object_id,const char* flag,const char* filter,int index,int count);
+    int upnp_print_item(FILE* fp,playlist_item* item);
+    int upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count);
 
     list* add_to_list(list* lst,const char* s,int len);
     void free_list(list* lst);
@@ -378,7 +385,7 @@ int main(int argc,char** argv)
     if(dlna::http_port<0)
         dlna::http_port=0;
 
-    dlna::playlist_add(-1,dlna::device_friendly_name,0,0,dlna::upnp_container,0);
+    dlna::playlist_root=dlna::playlist_add(0,dlna::device_friendly_name,0,0,dlna::upnp_container,0);
 
     dlna::parse_playlist(playlist_filename);
 
@@ -964,9 +971,9 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 "    <device>\n"
                 "        <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>\n"
                 "        <friendlyName>%s</friendlyName>\n"
-                "        <manufacturer>Anton Burdinuk <clark15b@gmail.com></manufacturer>\n"
+                "        <manufacturer>Anton Burdinuk &lt;clark15b@gmail.com&gt;</manufacturer>\n"
                 "        <manufacturerURL>http://code.google.com/p/tsdemuxer</manufacturerURL>\n"
-                "        <modelDescription>UPnP Content Directory server from Anton Burdinuk <clark15b@gmail.com></modelDescription>\n"
+                "        <modelDescription>UPnP Content Directory server from Anton Burdinuk &lt;clark15b@gmail.com&gt;</modelDescription>\n"
                 "        <modelName>%s</modelName>\n"
                 "        <modelNumber>0.0.1</modelNumber>\n"
                 "        <modelURL>http://code.google.com/p/tsdemuxer</modelURL>\n"
@@ -1137,14 +1144,14 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
                         if(req_data)
                         {
-                            const char* object_id=req_data->find_data("ObjectID");
+                            int object_id=atoi(req_data->find_data("ObjectID"));
                             const char* flag=req_data->find_data("BrowseFlag");
                             const char* filter=req_data->find_data("Filter");
                             int index=atoi(req_data->find_data("StartingIndex"));
                             int count=atoi(req_data->find_data("RequestedCount"));
 
                             if(verb_fp)
-                                fprintf(verb_fp,"Browse: ObjectID=%s, BrowseFlag='%s', StartingIndex=%i, RequestedCount=%i\n",
+                                fprintf(verb_fp,"Browse: ObjectID=%i, BrowseFlag='%s', StartingIndex=%i, RequestedCount=%i\n",
                                     object_id,flag,index,count);
 
                             upnp_browse(fp,object_id,flag,filter,index,count);
@@ -1283,7 +1290,7 @@ int dlna::parse_playlist_file(const char* name)
         if(verb_fp)
             fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
 
-        playlist_item* parent_item=playlist_add(0,playlist_name,0,0,upnp_container,0);
+        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,0,upnp_container,0);
 
         char track_length[32]="";
         char track_name[64]="";
@@ -1355,7 +1362,7 @@ int dlna::parse_playlist_file(const char* name)
                 if(verb_fp && upnp::debug)
                     fprintf(verb_fp,"   len=%s, name='%s', url='%s', mime=%s (%s)\n",track_length,track_name,track_url,track_type,track_class);
 
-                playlist_item* item=playlist_add(parent_item->object_id,track_name,track_length,track_url,track_class,track_type);
+                playlist_item* item=playlist_add(parent_item,track_name,track_length,track_url,track_class,track_type);
 
                 *track_length=0;
                 *track_name=0;
@@ -1372,10 +1379,42 @@ int dlna::parse_playlist_file(const char* name)
     return 0;
 }
 
+int dlna::upnp_print_item(FILE* fp,playlist_item* item)
+{
+    if(item->upnp_class==upnp_container)
+        fprintf(fp,
+        "               &lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;\n",
+                            item->object_id,item->childs,item->parent_id);
+    else
+        fprintf(fp,
+        "               &lt;item id=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;\n",
+                            item->object_id,item->parent_id);
 
-int dlna::upnp_browse(FILE* fp,const char* object_id,const char* flag,const char* filter,int index,int count)
+        fprintf(fp,
+        "                  &lt;dc:title&gt;%s&lt;/dc:title&gt;\n"
+        "                  &lt;upnp:class&gt;%s&lt;/upnp:class&gt;\n",
+                                item->name,item->upnp_class);
+
+    if(item->upnp_class!=upnp_container)
+        fprintf(fp,
+        "                  &lt;res protocolInfo=\"%s\" duration=\"%s\"&gt;%s&lt;/res&gt;\n"
+        "               &lt;/item&gt;\n",
+                                item->upnp_mime_type,item->length,item->url);
+    else
+        fprintf(fp,
+        "               &lt;/container&gt;\n");
+
+
+    return 0;
+}
+
+int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count)
 {
 // flag: BrowseMetadata, BrowseDirectChildren
+
+    playlist_item def_item= { -1, object_id, (char*)"???", (char*)"-1", (char*)"", upnp_container, "", 0 };
+
+    int num=0;
 
     fprintf(fp,
         "Content-Type: text/xml\r\n\r\n"
@@ -1383,21 +1422,39 @@ int dlna::upnp_browse(FILE* fp,const char* object_id,const char* flag,const char
         "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
         "   <s:Body>\n"
         "      <u:BrowseResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
-        "         <Result>"
-"&lt;DIDL-Lite xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot;&gt;"
-"    &lt;container id=&quot;0&quot; childCount=&quot;0&quot; parentID=&quot;-1&quot; restricted=&quot;true&quot;"
-"    &gt;"
-"        &lt;dc:title&gt;UPnP IPTV Browser&lt;/dc:title&gt;"
-"        &lt;upnp:class&gt;object.container&lt;/upnp:class&gt;"
-"    &lt;/container&gt;"
-"&lt;/DIDL-Lite&gt;"
-        "</Result>\n"
-        "         <NumberReturned>1</NumberReturned>\n"
-        "         <TotalMatches>1</TotalMatches>\n"
+        "         <Result>\n"
+        "            &lt;DIDL-Lite xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot;&gt;\n");
+
+
+    if(!strcmp(flag,"BrowseMetadata"))
+    {
+        playlist_item* item=playlist_find_by_id(object_id);
+
+        upnp_print_item(fp,item?item:&def_item);
+    }else
+    {
+        for(playlist_item* item=playlist_beg;item;item=item->next)
+        {
+            if(item->parent_id==object_id)
+            {
+                upnp_print_item(fp,item);
+                upnp_print_item(stdout,item);
+                num++;
+            }
+        }
+    }
+
+
+    fprintf(fp,
+        "            &lt;/DIDL-Lite&gt;\n"
+        "         </Result>\n"
+        "         <NumberReturned>%i</NumberReturned>\n"
+        "         <TotalMatches>%i</TotalMatches>\n"
         "         <UpdateID>1</UpdateID>\n"
         "      </u:BrowseResponse>\n"
         "   </s:Body>\n"
-        "</s:Envelope>\n");
+        "</s:Envelope>\n",num,num);
+
 
     return 0;
 }
