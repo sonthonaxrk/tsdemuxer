@@ -996,7 +996,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                         if(req_data)
                         {
                             const char* object_id=req_data->find_data("ObjectID");
-                            const char* flag=req_data->find_data("BrowseFlag");         // BrowseMetadata, BrowseDirectChildren
+                            const char* flag=req_data->find_data("BrowseFlag");
                             const char* filter=req_data->find_data("Filter");
                             int index=atoi(req_data->find_data("StartingIndex"));
                             int count=atoi(req_data->find_data("RequestedCount"));
@@ -1062,19 +1062,6 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
     return 0;
 }
 
-int dlna::parse_playlist_file(const char* name)
-{
-    FILE* fp=fopen(name,"r");
-    
-    if(fp)
-    {
-        printf("'%s'\n",name);
-
-        fclose(fp);
-    }
-
-    return 0;
-}
 
 int dlna::parse_playlist(const char* name)
 {
@@ -1124,8 +1111,120 @@ int dlna::parse_playlist(const char* name)
     return 0;
 }
 
+int dlna::parse_playlist_file(const char* name)
+{
+    const char* ext=strrchr(name,'.');
+    if(!ext || strcasecmp(ext+1,"m3u"))
+        return -1;
+
+    FILE* fp=fopen(name,"r");
+    
+    if(fp)
+    {
+        char playlist_name[64]="";
+
+        {
+            const char* fname=strrchr(name,'/');
+            if(!fname)
+                fname=name;
+            else
+                fname++;
+
+            int n=ext-fname;
+
+            if(n>=sizeof(playlist_name))
+                n=sizeof(playlist_name)-1;
+            memcpy(playlist_name,fname,n);
+            playlist_name[n]=0;
+        }
+    
+        if(verb_fp)
+            fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
+
+
+        char track_length[32]="";
+        char track_name[64]="";
+        char track_url[256]="";
+        int  track_type=0;                      // 0 - mpeg, 1 - avi, 2 - wmv, 3 - mp3
+
+        char buf[256];
+        while(fgets(buf,sizeof(buf),fp))
+        {
+            char* p=strpbrk(buf,"\r\n");
+            if(p)
+                *p=0;
+            p=buf;
+            if(!strncmp(p,"\xEF\xBB\xBF",3))    // skip BOM
+                p+=3;
+
+            if(!*p)
+                continue;
+
+            if(*p=='#')
+            {
+                p++;
+                static const char tag[]="EXTINF:";
+                if(!strncmp(p,tag,sizeof(tag)-1))
+                {
+                    p+=sizeof(tag)-1;
+
+                    char* p2=strchr(p,',');
+                    if(p2)
+                    {
+                        *p2=0;
+                        p2++;
+
+                        int n=snprintf(track_length,sizeof(track_length),"%s",p);
+                        if(n==-1 || n>=sizeof(track_length))
+                            track_length[sizeof(track_length)-1]=0;
+
+                        n=snprintf(track_name,sizeof(track_name),"%s",p2);
+                        if(n==-1 || n>=sizeof(track_name))
+                            track_name[sizeof(track_name)-1]=0;
+                    }
+                }
+            }else
+            {
+                int n=snprintf(track_url,sizeof(track_url),"%s",p);
+                if(n==-1 || n>=sizeof(track_url))
+                    track_url[sizeof(track_url)-1]=0;
+
+                const char* p=track_url+strlen(track_url)-1;
+                while(p>track_url && p[-1]!='/' && p[-1]!='.') p--;
+                if(p[-1]=='.')
+                {
+                    if(!strcasecmp(p,"avi")) track_type=1;
+                    else if(!strcasecmp(p,"wmv")) track_type=2;
+                    else if(!strcasecmp(p,"mp3")) track_type=3;
+                    else track_type=0;
+                }
+
+                if(verb_fp)
+                    fprintf(verb_fp,"   len=%s, name='%s', url='%s', type=%i\n",track_length,track_name,track_url,track_type);
+
+                *track_length=0;
+                *track_name=0;
+                *track_url=0;
+                track_type=0;
+            }
+//#EXTM3U^M
+//#EXTINF:0,Эфирный: Первый^M
+
+            
+        }
+
+
+        fclose(fp);
+    }
+
+    return 0;
+}
+
+
 int dlna::upnp_browse(FILE* fp,const char* object_id,const char* flag,const char* filter,int index,int count)
 {
+// flag: BrowseMetadata, BrowseDirectChildren
+
     fprintf(fp,
         "Content-Type: text/xml\r\n\r\n"
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
