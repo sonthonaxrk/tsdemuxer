@@ -30,6 +30,144 @@ namespace dlna
         list* next;
     };
 
+    // mime classes
+    const char upnp_video[]     = "object.item.videoItem";
+    const char upnp_audio[]     = "object.item.audioItem.musicTrack";
+    const char upnp_container[] = "object.container";
+
+    // mime types
+    const char upnp_avi[]       = "http-get:*:video/avi:";
+    const char upnp_asf[]       = "http-get:*:video/x-ms-asf:";
+    const char upnp_wmv[]       = "http-get:*:video/x-ms-wmv:";
+    const char upnp_mp4[]       = "http-get:*:video/mp4:";
+    const char upnp_mpeg[]      = "http-get:*:video/mpeg:";
+    const char upnp_mpeg2[]     = "http-get:*:video/mpeg2:";
+    const char upnp_mov[]       = "http-get:*:video/quicktime:";
+    const char upnp_aac[]       = "http-get:*:audio/x-aac:";
+    const char upnp_ac3[]       = "http-get:*:audio/x-ac3:";
+    const char upnp_mp3[]       = "http-get:*:audio/mpeg:";
+    const char upnp_ogg[]       = "http-get:*:audio/x-ogg:";
+    const char upnp_wma[]       = "http-get:*:audio/x-ms-wma:";
+
+    struct mime
+    {
+        const char* file_ext;
+        const char* upnp_class;
+        const char* type;
+    };
+
+    mime mime_type_list[]=
+    {
+        {"mpg"  ,upnp_video,upnp_mpeg},                                 // default
+        {"mpeg" ,upnp_video,upnp_mpeg},
+        {"mpeg2",upnp_video,upnp_mpeg2},
+        {"m2v"  ,upnp_video,upnp_mpeg2},
+        {"ts"   ,upnp_video,upnp_mpeg2},
+        {"m2ts" ,upnp_video,upnp_mpeg2},
+        {"mts"  ,upnp_video,upnp_mpeg2},
+        {"avi"  ,upnp_video,upnp_avi},
+        {"asf"  ,upnp_video,upnp_asf},
+        {"wmv"  ,upnp_video,upnp_wmv},
+        {"mp4"  ,upnp_video,upnp_mp4},
+        {"mov"  ,upnp_video,upnp_mov},
+        {"aac"  ,upnp_audio,upnp_aac},
+        {"ac3"  ,upnp_audio,upnp_ac3},
+        {"mp3"  ,upnp_audio,upnp_mp3},
+        {"ogg"  ,upnp_audio,upnp_ogg},
+        {"wma"  ,upnp_audio,upnp_wma},
+        {0,0,0}
+    };
+
+    struct playlist_item
+    {
+        int parent_id;
+        int object_id;
+        char* name;
+        char* length;
+        char* url;
+        const char* upnp_class;
+        const char* upnp_mime_type;
+
+        playlist_item* next;
+    };
+
+    playlist_item* playlist_beg=0;
+    playlist_item* playlist_end=0;
+    int playlist_counter=0;
+
+    playlist_item* playlist_add(int parent_id,const char* name,const char* length,const char* url,const char* upnp_class,const char* upnp_mime_type)
+    {
+        if(!url || !*url)
+            url="";
+
+        if(!name || !*name)
+            name=url;
+        if(!length || !*length)
+            length="-1";
+
+        int name_len=strlen(name)+1;
+        int length_len=strlen(length)+1;
+        int url_len=strlen(url)+1;
+
+        int len=name_len+length_len+url_len+sizeof(playlist_item);
+        
+        playlist_item* p=(playlist_item*)malloc(len);
+        if(!p)
+            return 0;
+
+        p->parent_id=parent_id;
+        p->object_id=playlist_counter;
+        p->name=(char*)(p+1);
+        p->length=p->name+name_len;
+        p->url=p->length+length_len;
+        p->upnp_class=upnp_class?upnp_class:"";
+        p->upnp_mime_type=upnp_mime_type?upnp_mime_type:"";
+
+        strcpy(p->name,name);
+        strcpy(p->length,length);
+        strcpy(p->url,url);
+
+        p->name[name_len-1]=0;
+        p->length[length_len-1]=0;
+        p->url[url_len-1]=0;
+
+        p->next=0;
+
+        if(!playlist_beg)
+            playlist_beg=playlist_end=p;
+        else
+        {
+            playlist_end->next=p;
+            playlist_end=p;
+        }
+
+        playlist_counter++;
+
+        return p;
+    }
+
+    void playlist_free(void)
+    {
+        while(playlist_beg)
+        {
+            playlist_item* p=playlist_beg;
+            playlist_beg=playlist_beg->next;
+            free(p);            
+        }
+        playlist_beg=0;
+        playlist_end=0;
+        playlist_counter=0;
+    }
+
+    playlist_item* playlist_find_by_id(int id)
+    {
+        for(playlist_item* p=playlist_beg;p;p=p->next)
+            if(p->object_id==id)
+                return p;
+        return 0;
+    }
+
+
     volatile int __sig_quit=0;
     volatile int __sig_alarm=0;
     volatile int __sig_child=0;
@@ -240,6 +378,8 @@ int main(int argc,char** argv)
     if(dlna::http_port<0)
         dlna::http_port=0;
 
+    dlna::playlist_add(-1,dlna::device_friendly_name,0,0,dlna::upnp_container,0);
+
     dlna::parse_playlist(playlist_filename);
 
     setsid();
@@ -438,6 +578,8 @@ int main(int argc,char** argv)
 
         dlna::mcast_grp.close(dlna::sock_up);
     }
+
+    dlna::playlist_free();
 
     dlna::signal(SIGTERM,SIG_IGN);
 
@@ -1141,11 +1283,13 @@ int dlna::parse_playlist_file(const char* name)
         if(verb_fp)
             fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
 
+        playlist_item* parent_item=playlist_add(0,playlist_name,0,0,upnp_container,0);
 
         char track_length[32]="";
         char track_name[64]="";
         char track_url[256]="";
-        int  track_type=0;                      // 0 - mpeg, 1 - avi, 2 - wmv, 3 - mp3
+        const char* track_type=0;
+        const char* track_class=0;
 
         char buf[256];
         while(fgets(buf,sizeof(buf),fp))
@@ -1193,24 +1337,32 @@ int dlna::parse_playlist_file(const char* name)
                 while(p>track_url && p[-1]!='/' && p[-1]!='.') p--;
                 if(p[-1]=='.')
                 {
-                    if(!strcasecmp(p,"avi")) track_type=1;
-                    else if(!strcasecmp(p,"wmv")) track_type=2;
-                    else if(!strcasecmp(p,"mp3")) track_type=3;
-                    else track_type=0;
+                    for(int i=0;mime_type_list[i].file_ext;i++)
+                    {
+                        if(!strcmp(p,mime_type_list[i].file_ext))
+                        {
+                            track_type=mime_type_list[i].type;
+                            track_class=mime_type_list[i].upnp_class;
+                            break;
+                        }
+                    }
+                    if(!track_type)
+                    {
+                        track_type=upnp_mpeg;
+                        track_class=upnp_video;
+                    }
                 }
+                if(verb_fp && upnp::debug)
+                    fprintf(verb_fp,"   len=%s, name='%s', url='%s', mime=%s (%s)\n",track_length,track_name,track_url,track_type,track_class);
 
-                if(verb_fp)
-                    fprintf(verb_fp,"   len=%s, name='%s', url='%s', type=%i\n",track_length,track_name,track_url,track_type);
+                playlist_item* item=playlist_add(parent_item->object_id,track_name,track_length,track_url,track_class,track_type);
 
                 *track_length=0;
                 *track_name=0;
                 *track_url=0;
                 track_type=0;
+                track_class=0;
             }
-//#EXTM3U^M
-//#EXTINF:0,Эфирный: Первый^M
-
-            
         }
 
 
