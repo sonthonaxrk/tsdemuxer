@@ -385,6 +385,28 @@ int main(int argc,char** argv)
     if(dlna::http_port<0)
         dlna::http_port=0;
 
+    if(!dlna::verb_fp)
+    {
+        pid_t pid=fork();
+        if(pid==-1)
+        {
+            perror("fork");
+            return 1;
+        }else if(pid)
+            exit(0);
+
+        int fd=open("/dev/null",O_RDWR);
+        if(fd!=-1)
+        {
+            for(int i=0;i<3;i++)
+                dup2(fd,i);
+            close(fd);
+        }else
+            for(int i=0;i<3;i++)
+                close(i);
+    }
+
+
     dlna::playlist_root=dlna::playlist_add(0,dlna::device_friendly_name,0,0,dlna::upnp_container,0);
 
     dlna::parse_playlist(playlist_filename);
@@ -1353,12 +1375,14 @@ int dlna::parse_playlist_file(const char* name)
                             break;
                         }
                     }
-                    if(!track_type)
-                    {
-                        track_type=upnp_mpeg;
-                        track_class=upnp_video;
-                    }
                 }
+
+                if(!track_type)
+                {
+                    track_type=upnp_mpeg;
+                    track_class=upnp_video;
+                }
+
                 if(verb_fp && upnp::debug)
                     fprintf(verb_fp,"   len=%s, name='%s', url='%s', mime=%s (%s)\n",track_length,track_name,track_url,track_type,track_class);
 
@@ -1410,8 +1434,6 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
 int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count)
 {
-// flag: BrowseMetadata, BrowseDirectChildren
-
     playlist_item def_item= { -1, object_id, (char*)"???", (char*)"-1", (char*)"", upnp_container, "", 0 };
 
     int num=0;
@@ -1433,13 +1455,21 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
         upnp_print_item(fp,item?item:&def_item);
     }else
     {
+        int n=0;
         for(playlist_item* item=playlist_beg;item;item=item->next)
         {
             if(item->parent_id==object_id)
             {
-                upnp_print_item(fp,item);
-                upnp_print_item(stdout,item);
-                num++;
+                if(n>=index)
+                {
+                    upnp_print_item(fp,item);
+//upnp_print_item(stdout,item);
+                    num++;
+                
+                    if(count>0 && num>=count)
+                        break;
+                }
+                n++;
             }
         }
     }
