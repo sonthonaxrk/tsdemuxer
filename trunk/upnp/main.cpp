@@ -12,11 +12,14 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <dirent.h>
 #include "soap.h"
+
 
 namespace dlna
 {
@@ -45,7 +48,7 @@ namespace dlna
 
     static const int http_timeout=15;
 
-    static const char device_name[]="UPnP PlayList Browser";
+    static const char device_name[]="UPnP Playlist Browser";
     const char* device_friendly_name="UPnP-IPTV";
 
     char device_uuid[64]="";
@@ -63,6 +66,7 @@ namespace dlna
 
     int get_gmt_date(char* dst,int ndst);
 
+    int parse_playlist_file(const char* name);
     int parse_playlist(const char* name);
 
     int init_ssdp(void);
@@ -200,17 +204,26 @@ int main(int argc,char** argv)
             break;
         case 'h':
         case '?':
-            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port] playlist.csv\n",app_name);
-            fprintf(stderr,"   -v   Turn on verbose output\n");
-            fprintf(stderr,"   -d   Turn on verbose output + debug messages\n");
-            fprintf(stderr,"   -l   Turn on loopback multicast transmission\n");
-            fprintf(stderr,"   -i   Multicast interface address or device name\n");
-            fprintf(stderr,"   -u   DLNA server UUID\n");
-            fprintf(stderr,"   -n   DLNA server friendly name\n");
-            fprintf(stderr,"   -t   Multicast datagrams time-to-live (TTL)\n");
-            fprintf(stderr,"   -p   TCP port for incoming HTTP connections\n\n");
-            fprintf(stderr,"example 1: './%s -i eth0 playlist.csv'\n",app_name);
-            fprintf(stderr,"example 2: './%s -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -n IPTV -t 1 -p 4044'\n",app_name);
+            fprintf(stderr,"\n%s UPnP Playlist Browser\n",app_name);
+            fprintf(stderr,"\nThis program is a simple DLNA Media Server which provides ContentDirectory:1 service\n",app_name);
+            fprintf(stderr,"    for sharing IPTV unicast streams over local area network (with 'udpxy' for multicast maybe).\n\n");
+            fprintf(stderr,"Copyright (C) 2010 Anton Burdinuk\n\n");
+            fprintf(stderr,"clark15b@gmail.com\n");
+            fprintf(stderr,"http://code.google.com/p/tsdemuxer\n\n");
+
+
+            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port] playlist\n",app_name);
+            fprintf(stderr,"   -v          Turn on verbose output\n");
+            fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
+            fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
+            fprintf(stderr,"   -i          Multicast interface address or device name\n");
+            fprintf(stderr,"   -u          DLNA server UUID\n");
+            fprintf(stderr,"   -n          DLNA server friendly name\n");
+            fprintf(stderr,"   -t          Multicast datagrams time-to-live (TTL)\n");
+            fprintf(stderr,"   -p          TCP port for incoming HTTP connections\n");
+            fprintf(stderr,"    playlist   single file or directory with utf8-encoded *.m3u files\n\n");
+            fprintf(stderr,"example 1: './%s -i eth0 playlist.m3u'\n",app_name);
+            fprintf(stderr,"example 2: './%s -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -n IPTV -t 1 -p 4044 playlists/'\n",app_name);
             fprintf(stderr,"example 3: './%s -v'\n\n",app_name);
             return 0;
         }
@@ -809,9 +822,9 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 "    <device>\n"
                 "        <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>\n"
                 "        <friendlyName>%s</friendlyName>\n"
-                "        <manufacturer>Anton Burdinuk</manufacturer>\n"
+                "        <manufacturer>Anton Burdinuk <clark15b@gmail.com></manufacturer>\n"
                 "        <manufacturerURL>http://code.google.com/p/tsdemuxer</manufacturerURL>\n"
-                "        <modelDescription>UPnP Content Directory server from clark15b@doom9</modelDescription>\n"
+                "        <modelDescription>UPnP Content Directory server from Anton Burdinuk <clark15b@gmail.com></modelDescription>\n"
                 "        <modelName>%s</modelName>\n"
                 "        <modelNumber>0.0.1</modelNumber>\n"
                 "        <modelURL>http://code.google.com/p/tsdemuxer</modelURL>\n"
@@ -1049,16 +1062,64 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
     return 0;
 }
 
-int dlna::parse_playlist(const char* name)
+int dlna::parse_playlist_file(const char* name)
 {
     FILE* fp=fopen(name,"r");
     
     if(fp)
     {
-        
+        printf("'%s'\n",name);
 
         fclose(fp);
     }
+
+    return 0;
+}
+
+int dlna::parse_playlist(const char* name)
+{
+    struct stat st;
+
+    int rc=stat(name,&st);
+
+    if(rc==-1)
+        return -1;
+
+    if(S_ISDIR(st.st_mode))
+    {
+        char buf[512];
+
+        int n=snprintf(buf,sizeof(buf),"%s/",name);
+        if(n==-1 || n>=sizeof(buf))
+            n=sizeof(buf)-1;
+
+        if(n>1 && buf[n-2]=='/')
+            n--;
+
+        int m=sizeof(buf)-n;
+
+        DIR* dfp=opendir(name);
+
+        if(!dfp)
+            return -1;
+
+        dirent* d=0;
+
+        while((d=readdir(dfp)))
+        {
+            if((d->d_type==DT_REG || d->d_type==DT_LNK) && *d->d_name!='.')
+            {
+                int nn=snprintf(buf+n,m,"%s",d->d_name);
+                if(nn==-1 || nn>=m)
+                    buf[sizeof(buf)-1]=0;
+
+                parse_playlist_file(buf);
+            }
+        }
+
+        closedir(dfp);
+    }else
+        parse_playlist_file(name);
     
     return 0;
 }
