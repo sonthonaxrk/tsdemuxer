@@ -385,6 +385,36 @@ int main(int argc,char** argv)
     if(dlna::http_port<0)
         dlna::http_port=0;
 
+    if(!*dlna::device_uuid)
+    {
+#ifndef NO_UUIDGEN  
+        char filename[512]="";
+        snprintf(filename,sizeof(filename),"/var/tmp/%s.uuid",dlna::device_friendly_name);
+
+        FILE* fp=fopen(filename,"r");
+        if(fp)
+        {
+            int n=fread(dlna::device_uuid,1,sizeof(dlna::device_uuid)-1,fp);
+            dlna::device_uuid[n]=0;
+            fclose(fp);
+        }
+
+        if(!*dlna::device_uuid)
+        {
+            upnp::uuid_gen(dlna::device_uuid);
+
+            FILE* fp=fopen(filename,"w");
+            if(fp)
+            {
+                fprintf(fp,"%s",dlna::device_uuid);
+                fclose(fp);
+            }
+        }
+#else
+        strcpy(dlna::device_uuid,"32ccc90a-27a7-494a-a02d-71f8e02b1937");
+#endif
+    }
+
     if(!dlna::verb_fp)
     {
         pid_t pid=fork();
@@ -428,31 +458,6 @@ int main(int argc,char** argv)
 
     dlna::mcast_grp.init(dlna::upnp_mgrp,mcast_iface,mcast_ttl,mcast_loop);
 
-    if(!*dlna::device_uuid)
-    {
-        char filename[512]="";
-        snprintf(filename,sizeof(filename),"/var/tmp/%s.uuid",dlna::device_friendly_name);
-
-        FILE* fp=fopen(filename,"r");
-        if(fp)
-        {
-            int n=fread(dlna::device_uuid,1,sizeof(dlna::device_uuid)-1,fp);
-            dlna::device_uuid[n]=0;
-            fclose(fp);
-        }
-
-        if(!*dlna::device_uuid)
-        {
-            upnp::uuid_gen(dlna::device_uuid);
-
-            FILE* fp=fopen(filename,"w");
-            if(fp)
-            {
-                fprintf(fp,"%s",dlna::device_uuid);
-                fclose(fp);
-            }
-        }
-    }
 
     if(dlna::verb_fp)
     {

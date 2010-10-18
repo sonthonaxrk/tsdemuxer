@@ -1,4 +1,8 @@
+MIPSEL_CC       = /usr/local/toolchain-mipsel_gcc3.4.6/mipsel-linux/bin/gcc
+
 all:
-	gcc -fno-exceptions -fno-rtti -o pshare main.cpp upnp.cpp soap.cpp -luuid
+	g++ -fno-exceptions -fno-rtti -o pshare main.cpp upnp.cpp soap.cpp -luuid
 	strip pshare
-#	gcc -fno-exceptions -fno-rtti -o test test.cpp upnp.cpp -luuid
+
+mipsel:
+	$(MIPSEL_CC) -fno-exceptions -fno-rtti -DNO_UUIDGEN -o pshare main.cpp upnp.cpp soap.cpp

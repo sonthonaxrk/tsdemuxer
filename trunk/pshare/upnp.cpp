@@ -1,7 +1,11 @@
 #include "upnp.h"
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+#ifndef NO_UUIDGEN
 #include <uuid/uuid.h>
+#endif
+
 #include <netdb.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -16,6 +20,7 @@ namespace upnp
     int debug=0;
 }
 
+#ifndef NO_UUIDGEN
 void upnp::uuid_gen(char* dst)
 {
     uuid_t uuid;
@@ -23,6 +28,7 @@ void upnp::uuid_gen(char* dst)
 
     uuid_unparse_lower(uuid,dst);
 }
+#endif
 
 int upnp::get_if_info(const char* if_name,if_info* ifi)
 {
