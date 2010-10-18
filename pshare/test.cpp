@@ -26,6 +26,8 @@ int main(int argc,char** argv)
 "M-SEARCH * HTTP/1.1\r\n"
 "HOST: 239.255.255.250:1900\r\n"
 "ST: urn:schemas-upnp-org:device:MediaServer:1\r\n"
+//"ST: uuid:742ee682-2e3b-4198-a62d-d1c15dd1232d\r\n"
+//"ST: urn:schemas-upnp-org:service:ContentDirectory:1\r\n"
 "MAN: \"ssdp:discover\"\r\n"
 "MX: 2\r\n"
 "X-AV-Client-Info: av=5.0; cn=\"Sony Computer Entertainment Inc.\"; mn=\"PLAYSTATION 3\"; mv=\"1.0\";\r\n\r\n";
