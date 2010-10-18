@@ -217,7 +217,7 @@ namespace dlna
     int done_ssdp(void);
     int send_ssdp_alive_notify(void);
     int send_ssdp_byebye_notify(void);
-    int send_ssdp_msearch_response(sockaddr_in* sin);
+    int send_ssdp_msearch_response(sockaddr_in* sin,const char* st);
     int on_ssdp_message(char* buf,int len,sockaddr_in* sin);
     int on_http_connection(FILE* fp,sockaddr_in* sin);
     int upnp_print_item(FILE* fp,playlist_item* item);
@@ -637,11 +637,11 @@ int dlna::init_ssdp(void)
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
         "LOCATION: http://%s:%i/root.xml\r\n"
-        "NT: upnp:rootdevice\r\n"
+        "NT: uuid:%s\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
-        "USN: uuid:%s::upnp:rootdevice\r\n\r\n",
-        mcast_grp.interface,http_port,device_name,device_uuid);
+        "USN: uuid:%s\r\n\r\n",
+        mcast_grp.interface,http_port,device_uuid,device_name,device_uuid);
 
     list* ll=0; ssdp_alive_list=ll=add_to_list(ll,tmp,n);
 
@@ -650,6 +650,19 @@ int dlna::init_ssdp(void)
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
         "LOCATION: http://%s:%i/root.xml\r\n"
+        "NT: upnp:rootdevice\r\n"
+        "NTS: ssdp:alive\r\n"
+        "Server: %s\r\n"
+        "USN: uuid:%s::upnp:rootdevice\r\n\r\n",
+        mcast_grp.interface,http_port,device_name,device_uuid);
+
+    ll=add_to_list(ll,tmp,n);
+
+    n=snprintf(tmp,sizeof(tmp),
+        "NOTIFY * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "LOCATION: http://%s:%i/root.xml\r\n"
         "NT: urn:schemas-upnp-org:device:MediaServer:1\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
@@ -670,6 +683,33 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
+
+    n=snprintf(tmp,sizeof(tmp),
+        "NOTIFY * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "LOCATION: http://%s:%i/root.xml\r\n"
+        "NT: urn:schemas-upnp-org:service:ConnectionManager:1\r\n"
+        "NTS: ssdp:alive\r\n"
+        "Server: %s\r\n"
+        "USN: uuid:%s::urn:schemas-upnp-org:service:ConnectionManager:1\r\n\r\n",
+        mcast_grp.interface,http_port,device_name,device_uuid);
+
+    ll=add_to_list(ll,tmp,n);
+
+
+    n=snprintf(tmp,sizeof(tmp),
+        "NOTIFY * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "LOCATION: http://%s:%i/root.xml\r\n"
+        "NT: uuid:%s\r\n"
+        "NTS: ssdp:byebye\r\n"
+        "Server: %s\r\n"
+        "USN: uuid:%s\r\n\r\n",
+        mcast_grp.interface,http_port,device_uuid,device_name,device_uuid);
+
+    ll=0; ssdp_byebye_list=ll=add_to_list(ll,tmp,n);
 
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
@@ -682,7 +722,7 @@ int dlna::init_ssdp(void)
         "USN: uuid:%s::upnp:rootdevice\r\n\r\n",
         mcast_grp.interface,http_port,device_name,device_uuid);
 
-    ll=0; ssdp_byebye_list=ll=add_to_list(ll,tmp,n);
+    ll=add_to_list(ll,tmp,n);
 
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
@@ -706,6 +746,19 @@ int dlna::init_ssdp(void)
         "NTS: ssdp:byebye\r\n"
         "Server: %s\r\n"
         "USN: uuid:%s::urn:schemas-upnp-org:service:ContentDirectory:1\r\n\r\n",
+        mcast_grp.interface,http_port,device_name,device_uuid);
+
+    ll=add_to_list(ll,tmp,n);
+
+    n=snprintf(tmp,sizeof(tmp),
+        "NOTIFY * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "LOCATION: http://%s:%i/root.xml\r\n"
+        "NT: urn:schemas-upnp-org:service:ConnectionManager:1\r\n"
+        "NTS: ssdp:byebye\r\n"
+        "Server: %s\r\n"
+        "USN: uuid:%s::urn:schemas-upnp-org:service:ConnectionManager:1\r\n\r\n",
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
@@ -743,6 +796,8 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
     int line=0;
 
     int ignore=0;
+
+    char what[256]="";
 
     for(int i=0,j=0;i<len && !ignore;i++)
     {
@@ -785,10 +840,9 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
                                     ignore=1;
                             }else if(!strcasecmp(tmp,"ST"))
                             {
-                                if(strcasecmp(p,"urn:schemas-upnp-org:device:MediaServer:1") &&
-                                    strcasecmp(p,"ssdp:all") && strcasecmp(p,"upnp:rootdevice") &&
-                                        strcasecmp(p,"urn:schemas-upnp-org:service:ContentDirectory:1"))
-                                            ignore=1;
+                                int n=snprintf(what,sizeof(what),"%s",p);
+                                if(n==-1 || n>=sizeof(what))
+                                    what[sizeof(what)-1]=0;
                             }
                         }
                     }
@@ -800,13 +854,42 @@ int dlna::on_ssdp_message(char* buf,int len,sockaddr_in* sin)
     }
 
     if(!ignore)
-        send_ssdp_msearch_response(sin);
+        send_ssdp_msearch_response(sin,what);
 
     return 0;
 }
 
-int dlna::send_ssdp_msearch_response(sockaddr_in* sin)
+int dlna::send_ssdp_msearch_response(sockaddr_in* sin,const char* st)
 {
+    const char* what=st;
+
+    static const char dev_type[]="urn:schemas-upnp-org:device:MediaServer:1";
+
+    if(strcmp(st,"ssdp:all") && strcmp(st,"upnp:rootdevice"))
+    {
+        static const char tag[]="urn:";
+        static const char tag2[]="uuid:";
+
+        if(!strncmp(st,tag,sizeof(tag)-1))
+        {
+            const char* p=st+sizeof(tag)-1;
+
+            if(strcmp(p,"schemas-upnp-org:device:MediaServer:1") && strcmp(p,"schemas-upnp-org:service:ContentDirectory:1") &&
+                strcmp(p,"schemas-upnp-org:service:ConnectionManager:1"))
+                    return -1;
+        }else if(!strncmp(st,tag2,sizeof(tag2)-1))
+        {
+            const char* p=st+sizeof(tag2)-1;
+
+            if(strcmp(p,device_uuid))
+                    return -1;
+
+            what=dev_type;
+        }
+    }else
+        what=dev_type;
+
+
     char date[64], tmp[1024];
 
     get_gmt_date(date,sizeof(date));
@@ -818,9 +901,9 @@ int dlna::send_ssdp_msearch_response(sockaddr_in* sin)
         "EXT:\r\n"
         "LOCATION: http://%s:%i/root.xml\r\n"
         "Server: %s\r\n"
-        "ST: urn:schemas-upnp-org:device:MediaServer:1\r\n"
-        "USN: uuid:%s::urn:schemas-upnp-org:device:MediaServer:1\r\n\r\n",
-        date,mcast_grp.interface,http_port,device_name,device_uuid);
+        "ST: %s\r\n"
+        "USN: uuid:%s::%s\r\n\r\n",
+        date,mcast_grp.interface,http_port,device_name,st,device_uuid,what);
 
     mcast_grp.send(sock_up,tmp,n,sin);
 

@@ -6,3 +6,6 @@ all:
 
 mipsel:
 	$(MIPSEL_CC) -fno-exceptions -fno-rtti -DNO_UUIDGEN -o pshare main.cpp upnp.cpp soap.cpp
+
+tests:
+	g++ -fno-exceptions -fno-rtti -o test test.cpp upnp.cpp -luuid
