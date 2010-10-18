@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include "soap.h"
-
+#include "tmpl.h"
 
 namespace dlna
 {
@@ -1068,7 +1068,14 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nConnection: %s\r\n",
             date,device_name,keep_alive?"Keep-Alive":"close");
 
-        if(!strcmp(req,"/root.xml"))
+        static const char ttag[]="/tmpl/";
+        static const char ftag[]="/file/";
+
+        if(!strncmp(req,ttag,sizeof(ttag)-1))
+            tmpl::get_file_env(req+sizeof(ttag)-1,fp);
+        else if(!strncmp(req,ftag,sizeof(ftag)-1))
+            tmpl::get_file(req+sizeof(ftag)-1,fp);
+        else if(!strcmp(req,"/root.xml"))
         {
             fprintf(fp,
                 "Content-Type: text/xml\r\n\r\n"
@@ -1099,6 +1106,13 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 "                <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>\n"
                 "                <SCPDURL>/cds.xml</SCPDURL>\n"
                 "                <controlURL>/cds_control</controlURL>\n"
+                "                <eventSubURL>/cds_event</eventSubURL>\n"
+                "            </service>\n"
+                "            <service>\n"
+                "                <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>\n"
+                "                <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>\n"
+                "                <SCPDURL>/cms.xml</SCPDURL>\n"
+                "                <controlURL>/cms_control</controlURL>\n"
                 "                <eventSubURL>/cms_event</eventSubURL>\n"
                 "            </service>\n"
                 "        </serviceList>\n"
@@ -1283,6 +1297,12 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
             }
         }
         else if(!strcmp(req,"/cds_event"))
+        {
+        }
+        else if(!strcmp(req,"/cms_control"))
+        {
+        }
+        else if(!strcmp(req,"/cms_event"))
         {
         }
         else
