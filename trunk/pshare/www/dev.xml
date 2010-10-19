@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root xmlns:dlna="urn:schemas-dlna-org:device-1-0" xmlns="urn:schemas-upnp-org:device-1-0">
+    <specVersion>
+        <major>1</major>
+        <minor>0</minor>
+    </specVersion>
+    <device>
+        <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+        <friendlyName>#DEV_FNAME#</friendlyName>
+        <manufacturer>Anton Burdinuk &lt;clark15b@gmail.com&gt;</manufacturer>
+        <manufacturerURL>http://code.google.com/p/tsdemuxer</manufacturerURL>
+        <modelDescription>UPnP Content Directory server from Anton Burdinuk &lt;clark15b@gmail.com&gt;</modelDescription>
+        <modelName>#DEV_NAME#</modelName>
+        <modelNumber>0.0.1</modelNumber>
+        <modelURL>http://code.google.com/p/tsdemuxer</modelURL>
+        <serialNumber/>
+        <UPC/>
+        <UDN>uuid:#DEV_UUID#</UDN>
+        <iconList>
+           <icon>
+           <mimetype>image/png</mimetype>
+           <height>48</height>
+           <width>48</width>
+           <depth>8</depth>
+           <url>/icon-48x48.png</url>
+        </icon>
+        </iconList>
+        <presentationURL>/</presentationURL>
+        <serviceList>
+            <service>
+                <serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
+                <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>
+                <SCPDURL>/cds.xml</SCPDURL>
+                <controlURL>/cds_control</controlURL>
+                <eventSubURL>/cds_event</eventSubURL>
+            </service>
+<!--            <service>
+                <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+                <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+                <SCPDURL>/cms.xml</SCPDURL>
+                <controlURL>/cms_control</controlURL>
+                <eventSubURL>/cms_event</eventSubURL>
+            </service>  -->
+        </serviceList>
+    </device>
+    <URLBase>http://#DEV_HOST#:#DEV_PORT#/</URLBase>
+</root>
