@@ -5,8 +5,7 @@
 
 namespace tmpl
 {
-    int get_file_env(const char* src,FILE* dst);
-    int get_file(const char* src,FILE* dst);
+    int get_file(const char* filename,FILE* dst,int tmpl,const char* date,const char* device_name);
 }
 
 

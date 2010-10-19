@@ -21,6 +21,8 @@
 #include "soap.h"
 #include "tmpl.h"
 
+// TODO: icon
+
 namespace dlna
 {
     struct list
@@ -42,6 +44,8 @@ namespace dlna
     const char upnp_mp4[]       = "http-get:*:video/mp4:";
     const char upnp_mpeg[]      = "http-get:*:video/mpeg:";
     const char upnp_mpeg2[]     = "http-get:*:video/mpeg2:";
+    const char upnp_mp2t[]      = "http-get:*:video/mp2t:";
+    const char upnp_mp2p[]      = "http-get:*:video/mp2p:";
     const char upnp_mov[]       = "http-get:*:video/quicktime:";
     const char upnp_aac[]       = "http-get:*:audio/x-aac:";
     const char upnp_ac3[]       = "http-get:*:audio/x-ac3:";
@@ -62,9 +66,10 @@ namespace dlna
         {"mpeg" ,upnp_video,upnp_mpeg},
         {"mpeg2",upnp_video,upnp_mpeg2},
         {"m2v"  ,upnp_video,upnp_mpeg2},
-        {"ts"   ,upnp_video,upnp_mpeg2},
-        {"m2ts" ,upnp_video,upnp_mpeg2},
-        {"mts"  ,upnp_video,upnp_mpeg2},
+        {"ts"   ,upnp_video,upnp_mp2t},
+        {"m2ts" ,upnp_video,upnp_mp2t},
+        {"mts"  ,upnp_video,upnp_mp2t},
+        {"vob"  ,upnp_video,upnp_mp2p},
         {"avi"  ,upnp_video,upnp_avi},
         {"asf"  ,upnp_video,upnp_asf},
         {"wmv"  ,upnp_video,upnp_wmv},
@@ -195,6 +200,9 @@ namespace dlna
     static const char device_name[]="UPnP Playlist Browser";
     const char* device_friendly_name="UPnP-IPTV";
 
+    const char www_root_def[]="/opt/share/pshare/www";
+    const char pls_root_def[]="/opt/share/pshare/playlists";
+
     char device_uuid[64]="";
 
     int http_port=4044;
@@ -313,6 +321,7 @@ int main(int argc,char** argv)
     int mcast_loop=0;
 
     const char* playlist_filename="";
+    const char* www_root="";
 
     const char* app_name=strrchr(argv[0],'/');
     if(app_name)
@@ -321,7 +330,7 @@ int main(int argc,char** argv)
         app_name=argv[0];
 
     int opt;
-    while((opt=getopt(argc,argv,"dvli:u:t:p:n:h?"))>=0)
+    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:?"))>=0)
         switch(opt)
         {
         case 'd':
@@ -347,6 +356,9 @@ int main(int argc,char** argv)
         case 'n':
             dlna::device_friendly_name=optarg;
             break;
+        case 'r':
+            www_root=optarg;
+            break;
         case 'h':
         case '?':
             fprintf(stderr,"\n%s UPnP Playlist Browser\n",app_name);
@@ -357,7 +369,7 @@ int main(int argc,char** argv)
             fprintf(stderr,"http://code.google.com/p/tsdemuxer\n\n");
 
 
-            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port] playlist\n",app_name);
+            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-i iface] [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
             fprintf(stderr,"   -v          Turn on verbose output\n");
             fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
@@ -366,7 +378,8 @@ int main(int argc,char** argv)
             fprintf(stderr,"   -n          DLNA server friendly name\n");
             fprintf(stderr,"   -t          Multicast datagrams time-to-live (TTL)\n");
             fprintf(stderr,"   -p          TCP port for incoming HTTP connections\n");
-            fprintf(stderr,"    playlist   single file or directory with utf8-encoded *.m3u files\n\n");
+            fprintf(stderr,"   -r          WWW root directory (default: '%s')\n",dlna::www_root_def);
+            fprintf(stderr,"    playlist   single file or directory with utf8-encoded *.m3u files (default: '%s')\n\n",dlna::pls_root_def);
             fprintf(stderr,"example 1: './%s -i eth0 playlist.m3u'\n",app_name);
             fprintf(stderr,"example 2: './%s -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -n IPTV -t 1 -p 4044 playlists/'\n",app_name);
             fprintf(stderr,"example 3: './%s -v'\n\n",app_name);
@@ -376,6 +389,11 @@ int main(int argc,char** argv)
 
     if(argc>optind)
         playlist_filename=argv[optind];
+    else
+        playlist_filename=dlna::pls_root_def;
+
+    if(!*www_root)
+        www_root=dlna::www_root_def;
 
     if(mcast_ttl<1)
         mcast_ttl=1;
@@ -414,6 +432,7 @@ int main(int argc,char** argv)
         strcpy(dlna::device_uuid,"32ccc90a-27a7-494a-a02d-71f8e02b1937");
 #endif
     }
+
 
     if(!dlna::verb_fp)
     {
@@ -458,6 +477,18 @@ int main(int argc,char** argv)
 
     dlna::mcast_grp.init(dlna::upnp_mgrp,mcast_iface,mcast_ttl,mcast_loop);
 
+    setenv("DEV_FNAME",dlna::device_friendly_name,1);
+    setenv("DEV_NAME",dlna::device_name,1);
+    setenv("DEV_UUID",dlna::device_uuid,1);
+    setenv("DEV_HOST",dlna::mcast_grp.interface,1);
+
+    {
+        char bb[32]; sprintf(bb,"%i",dlna::http_port);
+        setenv("DEV_PORT",bb,1);
+    }
+
+    if(*www_root)
+        chdir(www_root);
 
     if(dlna::verb_fp)
     {
@@ -636,7 +667,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: uuid:%s\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
@@ -649,7 +680,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: upnp:rootdevice\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
@@ -662,7 +693,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: urn:schemas-upnp-org:device:MediaServer:1\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
@@ -675,7 +706,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: urn:schemas-upnp-org:service:ContentDirectory:1\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
@@ -683,12 +714,12 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
-
+/*
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: urn:schemas-upnp-org:service:ConnectionManager:1\r\n"
         "NTS: ssdp:alive\r\n"
         "Server: %s\r\n"
@@ -696,13 +727,13 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
-
+*/
 
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: uuid:%s\r\n"
         "NTS: ssdp:byebye\r\n"
         "Server: %s\r\n"
@@ -715,7 +746,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: upnp:rootdevice\r\n"
         "NTS: ssdp:byebye\r\n"
         "Server: %s\r\n"
@@ -728,7 +759,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: urn:schemas-upnp-org:device:MediaServer:1\r\n"
         "NTS: ssdp:byebye\r\n"
         "Server: %s\r\n"
@@ -741,7 +772,7 @@ int dlna::init_ssdp(void)
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: urn:schemas-upnp-org:service:ContentDirectory:1\r\n"
         "NTS: ssdp:byebye\r\n"
         "Server: %s\r\n"
@@ -750,11 +781,11 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 
-    n=snprintf(tmp,sizeof(tmp),
+/*    n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "NT: urn:schemas-upnp-org:service:ConnectionManager:1\r\n"
         "NTS: ssdp:byebye\r\n"
         "Server: %s\r\n"
@@ -762,7 +793,7 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
-
+*/
     return 0;
 }
 
@@ -899,7 +930,7 @@ int dlna::send_ssdp_msearch_response(sockaddr_in* sin,const char* st)
         "CACHE-CONTROL: max-age=1800\r\n"
         "DATE: %s\r\n"
         "EXT:\r\n"
-        "LOCATION: http://%s:%i/root.xml\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
         "Server: %s\r\n"
         "ST: %s\r\n"
         "USN: uuid:%s::%s\r\n\r\n",
@@ -912,8 +943,6 @@ int dlna::send_ssdp_msearch_response(sockaddr_in* sin,const char* st)
 
 int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 {
-    int keep_alive=0;
-
     alarm(http_timeout);
 
     do
@@ -961,11 +990,6 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                         while(*ver && *ver==' ')
                             ver++;
 
-                        if(!strcasecmp(ver,"HTTP/1.1"))
-                            keep_alive=1;
-                        else
-                            keep_alive=0;
-
                         if(!strcasecmp(tmp,"GET"))
                             method=m_get;
                         else if(!strcasecmp(tmp,"POST"))
@@ -983,21 +1007,13 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     while(*p && *p==' ')
                         p++;
 
-                    if(!strcasecmp(tmp,"Connection"))
-                    {
-                        if(!strcasecmp(p,"Keep-Alive"))
-                            keep_alive=1;
-                        else
-                            keep_alive=0;
-                    }else if(!strcasecmp(tmp,"Content-Length"))
+                    if(!strcasecmp(tmp,"Content-Length"))
                     {
                         char* endptr=0;
                         int ll=strtol(p,&endptr,10);
 
                         if((!*endptr || *endptr==' ') && ll>=0)
                             content_length=ll;
-                        else
-                            keep_alive=0;
                     }else if(!strcasecmp(tmp,"SOAPAction"))
                     {
                         if(*p=='\"')
@@ -1058,194 +1074,42 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
             }
         }
 
-        keep_alive=0;
-
         char date[64];
 
         get_gmt_date(date,sizeof(date));
 
 
-        fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nConnection: %s\r\n",
-            date,device_name,keep_alive?"Keep-Alive":"close");
 
-        static const char ttag[]="/tmpl/";
-        static const char ftag[]="/file/";
+        static const char ttag[]="/t/";
 
-        if(!strncmp(req,ttag,sizeof(ttag)-1))
-            tmpl::get_file_env(req+sizeof(ttag)-1,fp);
-        else if(!strncmp(req,ftag,sizeof(ftag)-1))
-            tmpl::get_file(req+sizeof(ftag)-1,fp);
-        else if(!strcmp(req,"/root.xml"))
+        if(!strcmp(req,"/"))
         {
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n",
+                date,device_name);
+
             fprintf(fp,
-                "Content-Type: text/xml\r\n\r\n"
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                "<root xmlns:dlna=\"urn:schemas-dlna-org:device-1-0\" xmlns=\"urn:schemas-upnp-org:device-1-0\">\n"
-                "    <specVersion>\n"
-                "        <major>1</major>\n"
-                "        <minor>0</minor>\n"
-                "    </specVersion>\n"
-                "    <device>\n"
-                "        <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>\n"
-                "        <friendlyName>%s</friendlyName>\n"
-                "        <manufacturer>Anton Burdinuk &lt;clark15b@gmail.com&gt;</manufacturer>\n"
-                "        <manufacturerURL>http://code.google.com/p/tsdemuxer</manufacturerURL>\n"
-                "        <modelDescription>UPnP Content Directory server from Anton Burdinuk &lt;clark15b@gmail.com&gt;</modelDescription>\n"
-                "        <modelName>%s</modelName>\n"
-                "        <modelNumber>0.0.1</modelNumber>\n"
-                "        <modelURL>http://code.google.com/p/tsdemuxer</modelURL>\n"
-                "        <serialNumber/>\n"
-                "        <UPC/>\n"
-                "        <UDN>uuid:%s</UDN>\n"
-                "        <iconList>\n"
-                "        </iconList>\n"
-                "        <presentationURL>/</presentationURL>\n"
-                "        <serviceList>\n"
-                "            <service>\n"
-                "                <serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>\n"
-                "                <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>\n"
-                "                <SCPDURL>/cds.xml</SCPDURL>\n"
-                "                <controlURL>/cds_control</controlURL>\n"
-                "                <eventSubURL>/cds_event</eventSubURL>\n"
-                "            </service>\n"
-                "            <service>\n"
-                "                <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>\n"
-                "                <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>\n"
-                "                <SCPDURL>/cms.xml</SCPDURL>\n"
-                "                <controlURL>/cms_control</controlURL>\n"
-                "                <eventSubURL>/cms_event</eventSubURL>\n"
-                "            </service>\n"
-                "        </serviceList>\n"
-                "    </device>\n"
-                "    <URLBase>http://%s:%i/</URLBase>\n"
-                "</root>\n",
-                device_friendly_name,device_name,device_uuid,mcast_grp.interface,http_port);
-        }
-        else if(!strcmp(req,"/cds.xml"))
-        {
-            static const char cds[]=
-                "Content-Type: text/xml\r\n\r\n"
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                "<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">"
-                "   <specVersion>"
-                "      <major>1</major>"
-                "      <minor>0</minor>"
-                "   </specVersion>"
-                "   <actionList>"
-                "      <action>"
-                "         <name>GetSystemUpdateID</name>"
-                "         <argumentList>"
-                "            <argument>"
-                "               <name>Id</name>"
-                "               <direction>out</direction>"
-                "               <relatedStateVariable>SystemUpdateID</relatedStateVariable>"
-                "            </argument>"
-                "         </argumentList>"
-                "      </action>"
-                "      <action>"
-                "         <name>Browse</name>"
-                "         <argumentList>"
-                "            <argument>"
-                "               <name>ObjectID</name>"
-                "               <direction>in</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_ObjectID</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>BrowseFlag</name>"
-                "               <direction>in</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_BrowseFlag</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>Filter</name>"
-                "               <direction>in</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_Filter</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>StartingIndex</name>"
-                "               <direction>in</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_Index</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>RequestedCount</name>"
-                "               <direction>in</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_Count</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>SortCriteria</name>"
-                "               <direction>in</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_SortCriteria</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>Result</name>"
-                "               <direction>out</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_Result</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>NumberReturned</name>"
-                "               <direction>out</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_Count</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>TotalMatches</name>"
-                "               <direction>out</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_Count</relatedStateVariable>"
-                "            </argument>"
-                "            <argument>"
-                "               <name>UpdateID</name>"
-                "               <direction>out</direction>"
-                "               <relatedStateVariable>A_ARG_TYPE_UpdateID</relatedStateVariable>"
-                "            </argument>"
-                "         </argumentList>"
-                "      </action>"
-                "   </actionList>"
-                "   <serviceStateTable>"
-                "      <stateVariable sendEvents=\"yes\">"
-                "         <name>SystemUpdateID</name>"
-                "         <dataType>ui4</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_ObjectID</name>"
-                "         <dataType>string</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_BrowseFlag</name>"
-                "         <dataType>string</dataType>"
-                "         <allowedValueList>"
-                "            <allowedValue>BrowseMetadata</allowedValue>"
-                "            <allowedValue>BrowseDirectChildren</allowedValue>"
-                "         </allowedValueList>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_Filter</name>"
-                "         <dataType>string</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_Index</name>"
-                "         <dataType>ui4</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_Count</name>"
-                "         <dataType>ui4</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_SortCriteria</name>"
-                "         <dataType>string</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_Result</name>"
-                "         <dataType>string</dataType>"
-                "      </stateVariable>"
-                "      <stateVariable sendEvents=\"no\">"
-                "         <name>A_ARG_TYPE_UpdateID</name>"
-                "         <dataType>ui4</dataType>"
-                "      </stateVariable>"
-                "   </serviceStateTable>"
-                "</scpd>";
-
-                fwrite(cds,sizeof(cds)-1,1,fp);
-        }
+                "<html>\n"
+                "    <head>\n"
+                "        <title>%s</title>\n"
+                "    </head>\n"
+                "    <body>\n"
+                "        Device name: %s<br>\n"
+                "        UUID: %s<br>\n"
+                "        Multicast interface: %s<br>\n"
+                "        TCP port: %i<br>\n"
+                "        SSDP notify: %i sec<br>\n"
+                "        <a href=\'/t/dev.xml\'>Root Device Description</a><br>\n"
+                "        <a href=\'/cds.xml\'>Content Directory Description</a><br>\n"
+                "    </body>\n"
+                "</html>\n",
+                device_name,device_name,device_uuid,mcast_grp.interface,http_port,upnp_notify_timeout);
+        }else if(!strncmp(req,ttag,sizeof(ttag)-1))
+            tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,device_name);
         else if(!strcmp(req,"/cds_control"))
         {
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
+                date,device_name);
+
             if(*soap_action)
             {
                 soap::node req;
@@ -1283,7 +1147,6 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     }else if(!strcmp(req_type,"GetSystemUpdateID"))
                     {
                         fprintf(fp,
-                            "Content-Type: text/xml\r\n\r\n"
                             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                             "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
                             "   <s:Body>\n"
@@ -1296,35 +1159,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 }
             }
         }
-        else if(!strcmp(req,"/cds_event"))
-        {
-        }
-        else if(!strcmp(req,"/cms_control"))
-        {
-        }
-        else if(!strcmp(req,"/cms_event"))
-        {
-        }
         else
-        {
-            fprintf(fp,
-                "Content-Type: text/html\r\n\r\n"
-                "<html>\n"
-                "    <head>\n"
-                "        <title>%s</title>\n"
-                "    </head>\n"
-                "    <body>\n"
-                "        Device name: %s<br>\n"
-                "        UUID: %s<br>\n"
-                "        Multicast interface: %s<br>\n"
-                "        TCP port: %i<br>\n"
-                "        SSDP notify: %i sec<br>\n"
-                "        <a href=\'/root.xml\'>Root Device Description</a><br>\n"
-                "        <a href=\'/cds.xml\'>Content Directory Description</a><br>\n"
-                "    </body>\n"
-                "</html>\n",
-                device_name,device_name,device_uuid,mcast_grp.interface,http_port,upnp_notify_timeout);
-        }
+            tmpl::get_file(req,fp,0,date,device_name);
 
         fflush(fp);
 
@@ -1334,7 +1170,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         alarm(http_timeout);
 
 
-    }while(keep_alive);
+    }while(0);
 
     alarm(0);
 
@@ -1393,6 +1229,7 @@ int dlna::parse_playlist(const char* name)
 int dlna::parse_playlist_file(const char* name)
 {
     const char* ext=strrchr(name,'.');
+
     if(!ext || strcasecmp(ext+1,"m3u"))
         return -1;
 
@@ -1514,27 +1351,32 @@ int dlna::parse_playlist_file(const char* name)
 int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 {
     if(item->upnp_class==upnp_container)
-        fprintf(fp,
-        "               &lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;\n",
-                            item->object_id,item->childs,item->parent_id);
+        fprintf(fp,"&lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;false&quot;&gt;",
+            item->object_id,item->childs,item->parent_id);
     else
-        fprintf(fp,
-        "               &lt;item id=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;\n",
-                            item->object_id,item->parent_id);
+        fprintf(fp,"&lt;item id=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;",item->object_id,item->parent_id);
 
-        fprintf(fp,
-        "                  &lt;dc:title&gt;%s&lt;/dc:title&gt;\n"
-        "                  &lt;upnp:class&gt;%s&lt;/upnp:class&gt;\n",
-                                item->name,item->upnp_class);
+    fprintf(fp,"&lt;dc:title&gt;");
+    
+    for(const char* p=item->name;*p;p++)
+    {
+        switch(*p)
+        {
+        case '&': fprintf(fp,"&amp;"); break;
+        case '<': fprintf(fp,"&lt;"); break;
+        case '>': fprintf(fp,"&gt;"); break;
+        case '\'': fprintf(fp,"&apos;"); break;
+        case '\"': fprintf(fp,"&quot;"); break;
+        default: fputc(*p,fp); break;
+        }
+    }
+
+    fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->upnp_class);
 
     if(item->upnp_class!=upnp_container)
-        fprintf(fp,
-        "                  &lt;res protocolInfo=\"%s\" duration=\"%s\"&gt;%s&lt;/res&gt;\n"
-        "               &lt;/item&gt;\n",
-                                item->upnp_mime_type,item->length,item->url);
+        fprintf(fp,"&lt;res protocolInfo=\"%s\" duration=\"%s\"&gt;%s&lt;/res&gt;&lt;/item&gt;",item->upnp_mime_type,item->length,item->url);
     else
-        fprintf(fp,
-        "               &lt;/container&gt;\n");
+        fprintf(fp,"&lt;/container&gt;");
 
 
     return 0;
@@ -1545,15 +1387,14 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
     playlist_item def_item= { -1, object_id, (char*)"???", (char*)"-1", (char*)"", upnp_container, "", 0 };
 
     int num=0;
+    int total_num=0;
 
     fprintf(fp,
-        "Content-Type: text/xml\r\n\r\n"
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
         "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
         "   <s:Body>\n"
         "      <u:BrowseResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
-        "         <Result>\n"
-        "            &lt;DIDL-Lite xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot;&gt;\n");
+        "         <Result>&lt;DIDL-Lite xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot;&gt;");
 
 
     if(!strcmp(flag,"BrowseMetadata"))
@@ -1561,8 +1402,16 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
         playlist_item* item=playlist_find_by_id(object_id);
 
         upnp_print_item(fp,item?item:&def_item);
+
+        num=total_num=1;
     }else
     {
+        {
+            playlist_item* ii=playlist_find_by_id(object_id);
+            if(ii)
+                total_num=ii->childs;
+        }
+
         int n=0;
         for(playlist_item* item=playlist_beg;item;item=item->next)
         {
@@ -1571,9 +1420,9 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
                 if(n>=index)
                 {
                     upnp_print_item(fp,item);
-//upnp_print_item(stdout,item);
+//upnp_print_item(stderr,item);
                     num++;
-                
+
                     if(count>0 && num>=count)
                         break;
                 }
@@ -1583,16 +1432,13 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
     }
 
 
-    fprintf(fp,
-        "            &lt;/DIDL-Lite&gt;\n"
-        "         </Result>\n"
+    fprintf(fp,"&lt;/DIDL-Lite&gt;</Result>\n"
         "         <NumberReturned>%i</NumberReturned>\n"
         "         <TotalMatches>%i</TotalMatches>\n"
         "         <UpdateID>1</UpdateID>\n"
         "      </u:BrowseResponse>\n"
         "   </s:Body>\n"
-        "</s:Envelope>\n",num,num);
-
+        "</s:Envelope>\n",num,total_num);
 
     return 0;
 }
