@@ -21,7 +21,9 @@
 #include "soap.h"
 #include "tmpl.h"
 
-// TODO: icon
+// TODO: mipsel - crash if fork(), '&' in playlist => '&amp;' but PS3 fail
+// TODO: Internet Radio - MP3 - PS3 unsupported
+// TODO: memory leak?
 
 namespace dlna
 {
@@ -1187,7 +1189,7 @@ int dlna::parse_playlist(const char* name)
     if(rc==-1)
         return -1;
 
-    if(S_ISDIR(st.st_mode))
+    if(S_IFDIR&st.st_mode)
     {
         char buf[512];
 
@@ -1209,7 +1211,7 @@ int dlna::parse_playlist(const char* name)
 
         while((d=readdir(dfp)))
         {
-            if((d->d_type==DT_REG || d->d_type==DT_LNK) && *d->d_name!='.')
+            if(*d->d_name!='.')
             {
                 int nn=snprintf(buf+n,m,"%s",d->d_name);
                 if(nn==-1 || nn>=m)
