@@ -203,10 +203,10 @@ namespace dlna
     const char* device_friendly_name="UPnP-IPTV";
 
     static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
-    static const char manufacturer_url[]="http://code.google.com/p/tsdemuxer";
+    static const char manufacturer_url[]="http://ps3muxer.org/pshare.html";
     static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
     static const char model_number[]="0.0.1";
-    static const char model_url[]="http://code.google.com/p/tsdemuxer";                                                        
+    static const char model_url[]="http://ps3muxer.org/pshare.html";
 
     char device_uuid[64]="";
 
