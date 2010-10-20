@@ -6,7 +6,7 @@ namespace tmpl
 {
     int validate_file_name(const char* src)
     {
-        if(strstr(src,"/../") || strchr(src,'\\'))
+        if(strstr(src,"../") || strchr(src,'\\'))
             return -1;
         return 0;
     }
