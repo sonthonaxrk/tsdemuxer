@@ -11,15 +11,18 @@ namespace tmpl
         return 0;
     }
 
-    const char* get_mime_type(const char* src)
+    const char* get_mime_type(const char* src,int* xml)
     {
+        if(xml)
+            *xml=0;
+
         const char* p=strrchr(src,'.');
 
         if(p)
         {
             p++;
 
-            if(!strcasecmp(p,"xml")) return "text/xml";
+            if(!strcasecmp(p,"xml")) { if(xml) *xml=1; return "text/xml"; }
             else if(!strcasecmp(p,"html") || !strcasecmp(p,"htm")) return "text/html";
             else if(!strcasecmp(p,"txt")) return "text/plain";
             else if(!strcasecmp(p,"jpeg") || !strcasecmp(p,"jpg")) return "image/jpeg";
@@ -29,7 +32,7 @@ namespace tmpl
         return "application/x-octet-stream";
     }
 
-    int get_file_env(FILE* src,FILE* dst)
+    int get_file_env(FILE* src,FILE* dst,int xml)
     {
         int st=0;
 
@@ -58,7 +61,10 @@ namespace tmpl
                     if(!p)
                         p="(null)";
 
-                    fprintf(dst,"%s",p);
+                    if(!xml)
+                        fprintf(dst,"%s",p);
+                    else
+                        print_to_xml(p,dst);
                     nvar=0;
                     st=0;
                 }else
@@ -103,13 +109,14 @@ namespace tmpl
             return -1;
         }
 
+        int xml=0;
         fprintf(dst,"HTTP/1.1 200 Ok\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: %s\r\nConnection: close\r\n\r\n",
-            date,get_mime_type(filename),device_name);
+            date,get_mime_type(filename,&xml),device_name);
 
         int rc;
 
         if(tmpl)
-            rc=get_file_env(fp,dst);
+            rc=get_file_env(fp,dst,xml);
         else
             rc=get_file_plain(fp,dst);
 
@@ -118,5 +125,20 @@ namespace tmpl
         return rc;
     }
 
-                
+    int print_to_xml(const char* s,FILE* fp)
+    {
+        for(const char* p=s;*p;p++)
+        {
+            switch(*p)
+            {               
+            case '&': fprintf(fp,"&amp;"); break;
+            case '<': fprintf(fp,"&lt;"); break;
+            case '>': fprintf(fp,"&gt;"); break;
+            case '\'': fprintf(fp,"&apos;"); break;
+            case '\"': fprintf(fp,"&quot;"); break;
+            default: fputc(*p,fp); break;
+            }
+        }
+        return 0;
+    }
 }

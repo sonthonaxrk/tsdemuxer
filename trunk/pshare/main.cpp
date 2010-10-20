@@ -202,12 +202,19 @@ namespace dlna
     static const char device_name[]="UPnP Playlist Browser";
     const char* device_friendly_name="UPnP-IPTV";
 
-    const char www_root_def[]="/opt/share/pshare/www";
-    const char pls_root_def[]="/opt/share/pshare/playlists";
+    static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
+    static const char manufacturer_url[]="http://code.google.com/p/tsdemuxer";
+    static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
+    static const char model_number[]="0.0.1";
+    static const char model_url[]="http://code.google.com/p/tsdemuxer";                                                        
 
     char device_uuid[64]="";
 
     int http_port=4044;
+
+
+    const char www_root_def[]="/opt/share/pshare/www";
+    const char pls_root_def[]="/opt/share/pshare/playlists";
 
     list* ssdp_alive_list=0;
     list* ssdp_byebye_list=0;
@@ -488,6 +495,13 @@ int main(int argc,char** argv)
         char bb[32]; sprintf(bb,"%i",dlna::http_port);
         setenv("DEV_PORT",bb,1);
     }
+
+    setenv("MANUFACTURER",dlna::manufacturer,1);
+    setenv("MANUFACTURER_URL",dlna::manufacturer_url,1);
+    setenv("MODEL_DESCRIPTION",dlna::model_description,1);
+    setenv("MODEL_NUMBER",dlna::model_number,1);
+    setenv("MODEL_URL",dlna::model_url,1);
+
 
     if(*www_root)
         chdir(www_root);
@@ -1085,27 +1099,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         static const char ttag[]="/t/";
 
         if(!strcmp(req,"/"))
-        {
-            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n",
-                date,device_name);
-
-            fprintf(fp,
-                "<html>\n"
-                "    <head>\n"
-                "        <title>%s</title>\n"
-                "    </head>\n"
-                "    <body>\n"
-                "        Device name: %s<br>\n"
-                "        UUID: %s<br>\n"
-                "        Multicast interface: %s<br>\n"
-                "        TCP port: %i<br>\n"
-                "        SSDP notify: %i sec<br>\n"
-                "        <a href=\'/t/dev.xml\'>Root Device Description</a><br>\n"
-                "        <a href=\'/cds.xml\'>Content Directory Description</a><br>\n"
-                "    </body>\n"
-                "</html>\n",
-                device_name,device_name,device_uuid,mcast_grp.interface,http_port,upnp_notify_timeout);
-        }else if(!strncmp(req,ttag,sizeof(ttag)-1))
+            tmpl::get_file("index.html",fp,1,date,device_name);
+        else if(!strncmp(req,ttag,sizeof(ttag)-1))
             tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,device_name);
         else if(!strcmp(req,"/cds_control"))
         {
@@ -1360,18 +1355,7 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
     fprintf(fp,"&lt;dc:title&gt;");
     
-    for(const char* p=item->name;*p;p++)
-    {
-        switch(*p)
-        {
-        case '&': fprintf(fp,"&amp;"); break;
-        case '<': fprintf(fp,"&lt;"); break;
-        case '>': fprintf(fp,"&gt;"); break;
-        case '\'': fprintf(fp,"&apos;"); break;
-        case '\"': fprintf(fp,"&quot;"); break;
-        default: fputc(*p,fp); break;
-        }
-    }
+    tmpl::print_to_xml(item->name,fp);
 
     fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->upnp_class);
 
