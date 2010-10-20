@@ -193,7 +193,7 @@ int upnp::mcast_grp::init(const char* addr,const char* iface,int ttl,int loop)
     {
         if(if_by_name)
         {
-            if(verb_fp);
+            if(verb_fp)
                 fprintf(verb_fp,"find multicast interface address by name '%s'\n",iface);
 
             if_info ifi;

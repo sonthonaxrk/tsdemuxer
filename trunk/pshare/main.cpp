@@ -21,7 +21,7 @@
 #include "soap.h"
 #include "tmpl.h"
 
-// TODO: mipsel - crash if fork(), '&' in playlist => '&amp;' but PS3 fail
+// TODO: '&' in playlist => '&amp;' but PS3 fail
 // TODO: Internet Radio - MP3 - PS3 unsupported
 // TODO: memory leak?
 
