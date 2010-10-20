@@ -23,7 +23,7 @@ namespace tmpl
             p++;
 
             if(!strcasecmp(p,"xml")) { if(xml) *xml=1; return "text/xml"; }
-            else if(!strcasecmp(p,"html") || !strcasecmp(p,"htm")) return "text/html";
+            else if(!strcasecmp(p,"html") || !strcasecmp(p,"htm")) { if(xml) *xml=1; return "text/html"; }
             else if(!strcasecmp(p,"txt")) return "text/plain";
             else if(!strcasecmp(p,"jpeg") || !strcasecmp(p,"jpg")) return "image/jpeg";
             else if(!strcasecmp(p,"png")) return "image/png";
