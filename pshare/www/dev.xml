@@ -8,12 +8,12 @@
     <device>
         <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
         <friendlyName>#DEV_FNAME#</friendlyName>
-        <manufacturer>Anton Burdinuk &lt;clark15b@gmail.com&gt;</manufacturer>
-        <manufacturerURL>http://code.google.com/p/tsdemuxer</manufacturerURL>
-        <modelDescription>UPnP Content Directory server from Anton Burdinuk &lt;clark15b@gmail.com&gt;</modelDescription>
+        <manufacturer>#MANUFACTURER#</manufacturer>
+        <manufacturerURL>#MANUFACTURER_URL#</manufacturerURL>
+        <modelDescription>#MODEL_DESCRIPTION#</modelDescription>
         <modelName>#DEV_NAME#</modelName>
-        <modelNumber>0.0.1</modelNumber>
-        <modelURL>http://code.google.com/p/tsdemuxer</modelURL>
+        <modelNumber>#MODEL_NUMBER#</modelNumber>
+        <modelURL>#MODEL_URL#</modelURL>
         <serialNumber/>
         <UPC/>
         <UDN>uuid:#DEV_UUID#</UDN>
