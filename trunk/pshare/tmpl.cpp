@@ -141,4 +141,21 @@ namespace tmpl
         }
         return 0;
     }
+
+    int print_to_xml2(const char* s,FILE* fp)
+    {
+        for(const char* p=s;*p;p++)
+        {
+            switch(*p)
+            {               
+            case '&': fprintf(fp,"&amp;amp;"); break;
+            case '<': fprintf(fp,"&amp;lt;"); break;
+            case '>': fprintf(fp,"&amp;gt;"); break;
+            case '\'': fprintf(fp,"&amp;apos;"); break;
+            case '\"': fprintf(fp,"&amp;quot;"); break;
+            default: fputc(*p,fp); break;
+            }
+        }
+        return 0;
+    }
 }
