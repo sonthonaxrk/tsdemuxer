@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mem.h"
 
 namespace soap
 {
@@ -38,7 +39,7 @@ namespace soap
     {
         if(ptr)
         {
-            free(ptr);
+            FREE(ptr);
             ptr=0;
         }
         size=0;
@@ -65,7 +66,7 @@ namespace soap
 
     int string_builder::add_chunk(void)
     {
-        chunk* p=(chunk*)malloc(sizeof(chunk)+chunk::max_size);
+        chunk* p=(chunk*)MALLOC(sizeof(chunk)+chunk::max_size);
         if(!p)
             return -1;
 
@@ -89,7 +90,7 @@ namespace soap
         {
             chunk* tmp=beg;
             beg=beg->next;
-            free(tmp);
+            FREE(tmp);
         }
         beg=end=0;
     }
@@ -133,7 +134,7 @@ namespace soap
 
         if(len>0)
         {
-            char* ptr=(char*)malloc(len+1);
+            char* ptr=(char*)MALLOC(len+1);
             if(ptr)
             {
                 char* pp=ptr;
@@ -156,7 +157,7 @@ namespace soap
 
     node* node::add_node(void)
     {
-        node* p=(node*)malloc(sizeof(node));
+        node* p=(node*)MALLOC(sizeof(node));
         if(!p)
             return 0;
 
@@ -184,14 +185,14 @@ namespace soap
 
             p->clear();
 
-            free(p);
+            FREE(p);
         }
 
         beg=end=0;
 
-        if(name) { free(name); name=0; }
+        if(name) { FREE(name); name=0; }
 
-        if(data) { free(data); data=0; len=0; }
+        if(data) { FREE(data); data=0; len=0; }
     }
 
     node* node::find_child(const char* s,int l)
@@ -295,7 +296,7 @@ void soap::ctx::tag_open(const char* s,int len)
 
     if(!p) { err=1; return; }
 
-    p->name=(char*)malloc(len+1);
+    p->name=(char*)MALLOC(len+1);
 
     if(p->name)
     {
@@ -322,7 +323,7 @@ void soap::ctx::data_push(void)
 
     if(s.length())
     {
-        if(cur->data) free(cur->data);
+        if(cur->data) FREE(cur->data);
         cur->data=s.ptr;
         cur->len=s.size;
         s.ptr=0;

@@ -20,10 +20,12 @@
 #include <dirent.h>
 #include "soap.h"
 #include "tmpl.h"
+#include "mem.h"
 
 // TODO: '&' in playlist => '&amp;' but PS3 fail
+// TODO: Playlist to Web interface
+// TODO: MediaRegistrar for MSMP
 // TODO: Internet Radio - MP3 - PS3 unsupported
-// TODO: memory leak?
 
 namespace dlna
 {
@@ -120,7 +122,7 @@ namespace dlna
 
         int len=name_len+length_len+url_len+sizeof(playlist_item);
         
-        playlist_item* p=(playlist_item*)malloc(len);
+        playlist_item* p=(playlist_item*)MALLOC(len);
         if(!p)
             return 0;
 
@@ -165,7 +167,7 @@ namespace dlna
         {
             playlist_item* p=playlist_beg;
             playlist_beg=playlist_beg->next;
-            free(p);            
+            FREE(p);            
         }
         playlist_beg=0;
         playlist_end=0;
@@ -287,7 +289,7 @@ int dlna::signal(int num,void (*handler)(int))
 
 dlna::list* dlna::add_to_list(dlna::list* lst,const char* s,int len)
 {
-    list* ll=(list*)malloc(sizeof(list)+len);
+    list* ll=(list*)MALLOC(sizeof(list)+len);
     ll->next=0;
     ll->len=len;
     ll->buf=(char*)(ll+1);
@@ -305,7 +307,7 @@ void dlna::free_list(dlna::list* lst)
     {
         list* p=lst;
         lst=lst->next;
-        free(p);
+        FREE(p);
     }
 }
 
@@ -370,7 +372,7 @@ int main(int argc,char** argv)
             break;
         case 'h':
         case '?':
-            fprintf(stderr,"\n%s UPnP Playlist Browser\n",app_name);
+            fprintf(stderr,"%s %s UPnP Playlist Browser\n",app_name,dlna::model_number);
             fprintf(stderr,"\nThis program is a simple DLNA Media Server which provides ContentDirectory:1 service\n",app_name);
             fprintf(stderr,"    for sharing IPTV unicast streams over local area network (with 'udpxy' for multicast maybe).\n\n");
             fprintf(stderr,"Copyright (C) 2010 Anton Burdinuk\n\n");
@@ -599,6 +601,7 @@ int main(int argc,char** argv)
                                     close(dlna::sock_http);
                                     for(int i=0;i<sizeof(dlna::__sig_pipe)/sizeof(*dlna::__sig_pipe);i++)
                                         close(dlna::__sig_pipe[i]);
+                                    dlna::done_ssdp();
 
                                     dlna::signal(SIGHUP ,SIG_DFL);
                                     dlna::signal(SIGPIPE,SIG_DFL);
@@ -621,6 +624,12 @@ int main(int argc,char** argv)
                                         fclose(fp);
                                     }else
                                         close(fd);
+
+
+                                    dlna::playlist_free();
+#ifdef DEBUG
+                                    fprintf(stderr,"MEMORY USAGE (child): %i\n",mem::mem_total);
+#endif
 
                                     exit(0);
                                 }
@@ -670,6 +679,10 @@ int main(int argc,char** argv)
 
     for(int i=0;i<sizeof(dlna::__sig_pipe)/sizeof(*dlna::__sig_pipe);i++)
         close(dlna::__sig_pipe[i]);
+
+#ifdef DEBUG
+    fprintf(stderr,"MEMORY USAGE (main): %i\n",mem::mem_total);
+#endif
 
     return 0;
 }
@@ -1056,7 +1069,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
         if(content_length>0)
         {
-            content=(char*)malloc(content_length+1);
+            content=(char*)MALLOC(content_length+1);
             if(!content)
                 break;
 
@@ -1071,7 +1084,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
             if(l!=content_length)
             {
-                free(content);
+                FREE(content);
                 break;
             }
 
@@ -1162,7 +1175,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         fflush(fp);
 
         if(content)
-            free(content);
+            FREE(content);
 
         alarm(http_timeout);
 
