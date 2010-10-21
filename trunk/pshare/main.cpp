@@ -24,7 +24,7 @@
 
 // TODO: MediaRegistrar for MSMP
 // TODO: Internet Radio (MP3) PS3 - bad data type
-// TODO: Icons
+// TODO: Icons ( <upnp:icon>http://host/icon.png</upnp:icon> )
 
 namespace dlna
 {
@@ -37,24 +37,28 @@ namespace dlna
 
     // mime classes
     const char upnp_video[]     = "object.item.videoItem";
-    const char upnp_audio[]     = "object.item.audioItem.musicTrack";
+    const char upnp_audio[]     = "object.item.audioItem";
+    const char upnp_image[]     = "object.item.imageItem";
     const char upnp_container[] = "object.container";
 
     // mime types
-    const char upnp_avi[]       = "http-get:*:video/avi:";
-    const char upnp_asf[]       = "http-get:*:video/x-ms-asf:";
-    const char upnp_wmv[]       = "http-get:*:video/x-ms-wmv:";
-    const char upnp_mp4[]       = "http-get:*:video/mp4:";
-    const char upnp_mpeg[]      = "http-get:*:video/mpeg:";
-    const char upnp_mpeg2[]     = "http-get:*:video/mpeg2:";
-    const char upnp_mp2t[]      = "http-get:*:video/mp2t:";
-    const char upnp_mp2p[]      = "http-get:*:video/mp2p:";
-    const char upnp_mov[]       = "http-get:*:video/quicktime:";
-    const char upnp_aac[]       = "http-get:*:audio/x-aac:";
-    const char upnp_ac3[]       = "http-get:*:audio/x-ac3:";
-    const char upnp_mp3[]       = "http-get:*:audio/mpeg:";
-    const char upnp_ogg[]       = "http-get:*:audio/x-ogg:";
-    const char upnp_wma[]       = "http-get:*:audio/x-ms-wma:";
+    const char upnp_avi[]       = "http-get:*:video/avi:*";
+    const char upnp_asf[]       = "http-get:*:video/x-ms-asf:*";
+    const char upnp_wmv[]       = "http-get:*:video/x-ms-wmv:*";
+    const char upnp_mp4[]       = "http-get:*:video/mp4:*";
+    const char upnp_mpeg[]      = "http-get:*:video/mpeg:*";
+    const char upnp_mpeg2[]     = "http-get:*:video/mpeg2:*";
+    const char upnp_mp2t[]      = "http-get:*:video/mp2t:*";
+    const char upnp_mp2p[]      = "http-get:*:video/mp2p:*";
+    const char upnp_mov[]       = "http-get:*:video/quicktime:*";
+    const char upnp_aac[]       = "http-get:*:audio/x-aac:*";
+    const char upnp_ac3[]       = "http-get:*:audio/x-ac3:*";
+    const char upnp_mp3[]       = "http-get:*:audio/mpeg:*";
+    const char upnp_ogg[]       = "http-get:*:audio/x-ogg:*";
+    const char upnp_wma[]       = "http-get:*:audio/x-ms-wma:*";
+    const char upnp_jpg[]       = "http-get:*:image/jpeg:*";
+    const char upnp_png[]       = "http-get:*:image/png:*";
+    const char upnp_gif[]       = "http-get:*:image/gif:*";
 
     struct mime
     {
@@ -83,6 +87,10 @@ namespace dlna
         {"mp3"  ,upnp_audio,upnp_mp3},
         {"ogg"  ,upnp_audio,upnp_ogg},
         {"wma"  ,upnp_audio,upnp_wma},
+        {"jpg"  ,upnp_image,upnp_jpg},
+        {"jpeg" ,upnp_image,upnp_jpg},
+        {"png"  ,upnp_image,upnp_png},
+        {"gif"  ,upnp_image,upnp_gif},
         {0,0,0}
     };
 
@@ -1364,7 +1372,7 @@ int dlna::parse_playlist_file(const char* name)
 int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 {
     if(item->upnp_class==upnp_container)
-        fprintf(fp,"&lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;false&quot;&gt;",
+        fprintf(fp,"&lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;",
             item->object_id,item->childs,item->parent_id);
     else
         fprintf(fp,"&lt;item id=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;",item->object_id,item->parent_id);
