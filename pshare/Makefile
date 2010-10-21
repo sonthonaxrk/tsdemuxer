@@ -1,11 +1,13 @@
-MIPSEL_CC       = /usr/local/toolchain-mipsel_gcc3.4.6/mipsel-linux/bin/gcc
+MIPSEL  = /usr/local/toolchain-mipsel_gcc3.4.6/mipsel-linux/bin
 
 all:
 	g++ -fno-exceptions -fno-rtti -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp -luuid
 	strip pshare
 
 mipsel:
-	$(MIPSEL_CC) -fno-exceptions -fno-rtti -DNO_UUIDGEN -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp
+	$(MIPSEL)/gcc -fno-exceptions -fno-rtti -DNO_UUIDGEN -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp
+	$(MIPSEL)/strip pshare
+	fakeroot ./mkipkg.sh
 
 tests:
 	g++ -fno-exceptions -fno-rtti -o test test.cpp upnp.cpp -luuid
