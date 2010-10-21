@@ -22,10 +22,9 @@
 #include "tmpl.h"
 #include "mem.h"
 
-// TODO: '&' in playlist => '&amp;' but PS3 fail
-// TODO: Playlist to Web interface
 // TODO: MediaRegistrar for MSMP
-// TODO: Internet Radio - MP3 - PS3 unsupported
+// TODO: Internet Radio (MP3) PS3 - bad data type
+// TODO: Icons
 
 namespace dlna
 {
@@ -241,6 +240,7 @@ namespace dlna
     int on_http_connection(FILE* fp,sockaddr_in* sin);
     int upnp_print_item(FILE* fp,playlist_item* item);
     int upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count);
+    int playlist_browse(const char* req,FILE* fp,const char* date,const char* device_name);
 
     list* add_to_list(list* lst,const char* s,int len);
     void free_list(list* lst);
@@ -1110,11 +1110,10 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
 
         static const char ttag[]="/t/";
+        static const char ptag[]="/p/";
 
         if(!strcmp(req,"/"))
             tmpl::get_file("index.html",fp,1,date,device_name);
-        else if(!strncmp(req,ttag,sizeof(ttag)-1))
-            tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,device_name);
         else if(!strcmp(req,"/cds_control"))
         {
             fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
@@ -1169,6 +1168,10 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                 }
             }
         }
+        else if(!strncmp(req,ttag,sizeof(ttag)-1))
+            tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,device_name);
+        else if(!strncmp(req,ptag,sizeof(ptag)-1))
+            playlist_browse(req+sizeof(ptag)-1,fp,date,device_name);
         else
             tmpl::get_file(req,fp,0,date,device_name);
 
@@ -1368,7 +1371,7 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
     fprintf(fp,"&lt;dc:title&gt;");
     
-    tmpl::print_to_xml(item->name,fp);
+    tmpl::print_to_xml2(item->name,fp);
 
     fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->upnp_class);
 
@@ -1419,7 +1422,6 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
                 if(n>=index)
                 {
                     upnp_print_item(fp,item);
-//upnp_print_item(stderr,item);
                     num++;
 
                     if(count>0 && num>=count)
@@ -1442,3 +1444,39 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
     return 0;
 }
 
+int dlna::playlist_browse(const char* req,FILE* fp,const char* date,const char* device_name)
+{
+    while(*req && *req=='/') req++;
+
+    int object_id=atoi(req);
+
+    fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/html; charset=\"utf-8\"\r\nConnection: close\r\n\r\n",
+        date,device_name);
+
+    fprintf(fp,"<html><head><title>%s - Playlist</title></head>\n\n<body>\n",device_name);
+
+    playlist_item* item=playlist_find_by_id(object_id);
+    if(item && item->parent_id>=0)
+        fprintf(fp,"<a href='/p/%i'>up</a><br>\n",item->parent_id);
+
+
+    for(item=playlist_beg;item;item=item->next)
+    {
+        if(item->parent_id==object_id)
+        {
+
+            if(item->upnp_class==upnp_container)
+                fprintf(fp,"<a href='/p/%i'>",item->object_id);
+            else
+                fprintf(fp,"<a href='%s'>",item->url);
+
+            tmpl::print_to_xml(item->name,fp);
+            fprintf(fp,"</a><br>\n");
+        }
+    }
+
+
+    fprintf(fp,"</body>\n");
+
+    return 0;
+}
