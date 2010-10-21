@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "mem.h"
 
 namespace upnp
 {
@@ -83,7 +84,7 @@ int upnp::get_if_list(if_info* ifi,int nifi)
     {
         int l=sizeof(ifreq)*nifi;
 
-        ifreq* ifr=(ifreq*)malloc(l);
+        ifreq* ifr=(ifreq*)MALLOC(l);
 
         if(ifi)
         {
@@ -104,7 +105,7 @@ int upnp::get_if_list(if_info* ifi,int nifi)
                     get_if_info(ifr[i].ifr_ifrn.ifrn_name,ifi+i);
             }
 
-            free(ifr);
+            FREE(ifr);
         }
 
         close(s);
