@@ -22,8 +22,8 @@
 #include "tmpl.h"
 #include "mem.h"
 
-// TODO: MediaRegistrar for MSMP
-// TODO: Internet Radio (MP3) PS3 - bad data type
+// TODO: MediaRegistrar for Microsoft Media Player
+// TODO: Internet Radio (MP3) on PS3 - bad data type
 // TODO: Icons ( <upnp:icon>http://host/icon.png</upnp:icon> )
 
 namespace dlna
@@ -452,6 +452,7 @@ int main(int argc,char** argv)
 #endif
     }
 
+    printf("starting UPnP service '%s'...\n",dlna::device_friendly_name);
 
     if(!dlna::verb_fp)
     {
@@ -461,7 +462,10 @@ int main(int argc,char** argv)
             perror("fork");
             return 1;
         }else if(pid)
+        {
+            printf("web port=%i, uuid=%s, pid=%d\n",dlna::http_port,dlna::device_uuid,pid);
             exit(0);
+        }
 
         int fd=open("/dev/null",O_RDWR);
         if(fd!=-1)
