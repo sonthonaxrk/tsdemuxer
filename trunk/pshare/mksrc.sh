@@ -2,9 +2,10 @@
 
 mkdir -p src/
 cp -r ipkg/ src/
+cp -r debian/ src/
 cp -r playlists src/
 cp -r www src/
-cp ipkg-build.sh src/
+cp mkdeb.sh src/
 cp mkipkg.sh src/
 cp LICENSE src/
 cp README src/

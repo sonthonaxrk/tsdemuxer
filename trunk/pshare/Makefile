@@ -1,7 +1,7 @@
 MIPSEL  = /usr/local/toolchain-mipsel_gcc3.4.6/mipsel-linux/bin
 
 all:
-	g++ -fno-exceptions -fno-rtti -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp -luuid
+	gcc -fno-exceptions -fno-rtti -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp -luuid
 	strip pshare
 
 mipsel:
