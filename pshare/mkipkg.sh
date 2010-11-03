@@ -14,6 +14,6 @@ echo "2.0" > foo/debian-binary
 
 rm -rf foo/data
 
-tar -C foo -cz ./debian-binary ./data.tar.gz ./control.tar.gz > pshare_0.0.1_mipsel.ipk
+tar -C foo -cz ./debian-binary ./data.tar.gz ./control.tar.gz > pshare_0.0.2_mipsel.ipk
 
 rm -rf foo/

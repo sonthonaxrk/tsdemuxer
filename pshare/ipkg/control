@@ -2,7 +2,7 @@ Package: pshare
 Architecture: mipsel
 Priority: optional
 Section: base
-Version: 0.0.1
+Version: 0.0.2
 Maintainer: Anton Burdinuk <clark15b@gmail.com>
 Description: UPnP Playlist Browser http://ps3muxer.org/pshare.html
 Depends:
