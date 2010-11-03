@@ -214,7 +214,7 @@ namespace dlna
     static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
     static const char manufacturer_url[]="http://ps3muxer.org/pshare.html";
     static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
-    static const char model_number[]="0.0.1";
+    static const char model_number[]="0.0.2";
     static const char model_url[]="http://ps3muxer.org/pshare.html";
 
     char device_uuid[64]="";
@@ -1205,31 +1205,21 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
 int dlna::parse_playlist(const char* name)
 {
-    struct stat st;
+    char buf[512];
 
-    int rc=stat(name,&st);
+    int n=snprintf(buf,sizeof(buf),"%s/",name);
+    if(n==-1 || n>=sizeof(buf))
+        n=sizeof(buf)-1;
 
-    if(rc==-1)
-        return -1;
+    if(n>1 && buf[n-2]=='/')
+        n--;
 
-    if(S_IFDIR&st.st_mode)
+    int m=sizeof(buf)-n;
+
+    DIR* dfp=opendir(name);
+
+    if(dfp)
     {
-        char buf[512];
-
-        int n=snprintf(buf,sizeof(buf),"%s/",name);
-        if(n==-1 || n>=sizeof(buf))
-            n=sizeof(buf)-1;
-
-        if(n>1 && buf[n-2]=='/')
-            n--;
-
-        int m=sizeof(buf)-n;
-
-        DIR* dfp=opendir(name);
-
-        if(!dfp)
-            return -1;
-
         dirent* d=0;
 
         while((d=readdir(dfp)))
