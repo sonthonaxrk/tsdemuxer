@@ -1,5 +1,5 @@
 Package: pshare
-Version: 0.0.1-ubuntu1
+Version: 0.0.2-ubuntu1
 Section: extra
 Architecture: i386
 Depends: libuuid1

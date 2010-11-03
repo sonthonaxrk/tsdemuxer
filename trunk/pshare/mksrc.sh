@@ -13,5 +13,5 @@ cp Makefile src/
 cp *.cpp src/
 cp *.h src/
 
-tar c src | gzip -c > pshare_0.0.1_src.tar.gz
+tar c src | gzip -c > pshare_0.0.2_src.tar.gz
 rm -rf src/
