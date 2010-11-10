@@ -59,6 +59,10 @@ namespace dlna
     const char upnp_png[]       = "http-get:*:image/png:*";
     const char upnp_gif[]       = "http-get:*:image/gif:*";
 
+    const char* protocol_list[]=
+        { upnp_avi,upnp_asf,upnp_wmv,upnp_mp4,upnp_mpeg,upnp_mpeg2,upnp_mp2t,upnp_mp2p,upnp_mov,upnp_aac,upnp_ac3,upnp_mp3,upnp_ogg,upnp_wma,upnp_jpg,
+            upnp_png,upnp_gif,0 };
+
     struct mime
     {
         const char* file_ext;
@@ -92,6 +96,7 @@ namespace dlna
         {"gif"  ,upnp_image,upnp_gif},
         {0,0,0}
     };
+
 
     struct playlist_item
     {
@@ -755,7 +760,6 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 
-/*
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
@@ -768,7 +772,6 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
-*/
 
 
     n=snprintf(tmp,sizeof(tmp),
@@ -837,7 +840,6 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 
-/*
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
@@ -850,7 +852,6 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
-*/
 
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
@@ -1239,7 +1240,69 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     "</s:Envelope>\n");
             }
         }
-        else if(!strcmp(req,"/cds_event") || !strcmp(req,"/cms_event") || !strcmp(req,"/msr_event") || !strcmp(req,"/cms_control"))
+        else if(!strcmp(req,"/cms_control"))    // ConnectionManager
+        {
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
+                date,device_name);
+
+            if(!strcmp(soap_req_type,"GetCurrentConnectionInfo"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:GetCurrentConnectionInfoResponse xmlns:u=\"urn:schemas-upnp-org:service:ConnectionManager:1\">\n"
+                    "         <ConnectionID>0</ConnectionID>\n"
+                    "         <RcsID>-1</RcsID>\n"
+                    "         <AVTransportID>-1</AVTransportID>\n"
+                    "         <ProtocolInfo></ProtocolInfo>\n"
+                    "         <PeerConnectionManager></PeerConnectionManager>\n"
+                    "         <PeerConnectionID>-1</PeerConnectionID>\n"
+                    "         <Direction>Output</Direction>\n"
+                    "         <Status>OK</Status>\n"
+                    "      </u:GetCurrentConnectionInfoResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");
+            }
+            else if(!strcmp(soap_req_type,"GetProtocolInfo"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:GetProtocolInfoResponse xmlns:u=\"urn:schemas-upnp-org:service:ConnectionManager:1\">\n"
+                    "         <Source>");
+
+                for(int i=0;protocol_list[i];i++)
+                {
+                    if(i)
+                        fprintf(fp,",");
+                    fprintf(fp,"%s",protocol_list[i]);
+                }
+
+
+                fprintf(fp,
+                    "</Source>\n"
+                    "         <Sink></Sink>\n"
+                    "      </u:GetProtocolInfoResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");
+
+            }
+            else if(!strcmp(soap_req_type,"GetCurrentConnectionIDs"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:GetCurrentConnectionIDsResponse xmlns:u=\"urn:schemas-upnp-org:service:ConnectionManager:1\">\n"
+                    "         <ConnectionIDs></ConnectionIDs>\n"
+                    "      </u:GetCurrentConnectionIDsResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");
+            }
+        }
+        else if(!strcmp(req,"/cds_event") || !strcmp(req,"/cms_event") || !strcmp(req,"/msr_event"))
         {
             fprintf(fp,"HTTP/1.1 401 Invalid Action\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
                 date,device_name);

@@ -35,13 +35,13 @@
                 <controlURL>/cds_control</controlURL>
                 <eventSubURL>/cds_event</eventSubURL>
             </service>
-<!--            <service>
+            <service>
                 <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
                 <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
                 <SCPDURL>/cms.xml</SCPDURL>
                 <controlURL>/cms_control</controlURL>
                 <eventSubURL>/cms_event</eventSubURL>
-            </service> -->
+            </service>
             <service>
                 <serviceType>urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1</serviceType>
                 <serviceId>urn:microsoft.com:serviceId:X_MS_MediaReceiverRegistrar</serviceId>
