@@ -22,7 +22,6 @@
 #include "tmpl.h"
 #include "mem.h"
 
-// TODO: MediaRegistrar for Microsoft Media Player
 // TODO: Internet Radio (MP3) on PS3 - bad data type
 // TODO: Icons ( <upnp:icon>http://host/icon.png</upnp:icon> )
 
@@ -755,6 +754,7 @@ int dlna::init_ssdp(void)
         mcast_grp.interface,http_port,device_name,device_uuid);
 
     ll=add_to_list(ll,tmp,n);
+
 /*
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
@@ -769,6 +769,21 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 */
+
+
+    n=snprintf(tmp,sizeof(tmp),
+        "NOTIFY * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
+        "NT: urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\r\n"
+        "NTS: ssdp:alive\r\n"
+        "Server: %s\r\n"
+        "USN: uuid:%s::urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\r\n\r\n",
+        mcast_grp.interface,http_port,device_name,device_uuid);
+
+    ll=add_to_list(ll,tmp,n);
+
 
     n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
@@ -822,7 +837,8 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 
-/*    n=snprintf(tmp,sizeof(tmp),
+/*
+    n=snprintf(tmp,sizeof(tmp),
         "NOTIFY * HTTP/1.1\r\n"
         "HOST: 239.255.255.250:1900\r\n"
         "CACHE-CONTROL: max-age=1800\r\n"
@@ -835,6 +851,20 @@ int dlna::init_ssdp(void)
 
     ll=add_to_list(ll,tmp,n);
 */
+
+    n=snprintf(tmp,sizeof(tmp),
+        "NOTIFY * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        "CACHE-CONTROL: max-age=1800\r\n"
+        "LOCATION: http://%s:%i/t/dev.xml\r\n"
+        "NT: urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\r\n"
+        "NTS: ssdp:byebye\r\n"
+        "Server: %s\r\n"
+        "USN: uuid:%s::urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\r\n\r\n",
+        mcast_grp.interface,http_port,device_name,device_uuid);
+
+    ll=add_to_list(ll,tmp,n);
+
     return 0;
 }
 
@@ -947,7 +977,7 @@ int dlna::send_ssdp_msearch_response(sockaddr_in* sin,const char* st)
             const char* p=st+sizeof(tag)-1;
 
             if(strcmp(p,"schemas-upnp-org:device:MediaServer:1") && strcmp(p,"schemas-upnp-org:service:ContentDirectory:1") &&
-                strcmp(p,"schemas-upnp-org:service:ConnectionManager:1"))
+                strcmp(p,"schemas-upnp-org:service:ConnectionManager:1") && strcmp(p,"microsoft.com:service:X_MS_MediaReceiverRegistrar:1"))
                     return -1;
         }else if(!strncmp(st,tag2,sizeof(tag2)-1))
         {
@@ -1119,66 +1149,100 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
         get_gmt_date(date,sizeof(date));
 
+        const char* soap_req_type="";
 
+        soap::node soap_req;
+
+        if(*soap_action)
+        {
+            if(verb_fp)
+                fprintf(verb_fp,"SOAPAction: %s\n",soap_action);
+
+            soap_req_type=strchr(soap_action,'#');
+            if(soap_req_type)
+                soap_req_type++;
+            else
+                soap_req_type="";
+
+            if(content && content_length>0)
+                soap::parse(content,content_length,&soap_req);
+        }
 
         static const char ttag[]="/t/";
         static const char ptag[]="/p/";
 
         if(!strcmp(req,"/"))
             tmpl::get_file("index.html",fp,1,date,device_name);
-        else if(!strcmp(req,"/cds_control"))
+        else if(!strcmp(req,"/cds_control"))    // ContentDirectory
         {
             fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
                 date,device_name);
 
-            if(*soap_action)
+            if(!strcmp(soap_req_type,"Browse"))
             {
-                soap::node req;
+                soap::node* req_data=soap_req.find("Envelope/Body/Browse");
 
-                if(content && content_length>0)
-                    soap::parse(content,content_length,&req);
-
-                if(verb_fp)
-                    fprintf(verb_fp,"SOAPAction: %s\n",soap_action);
-
-                char* req_type=strchr(soap_action,'#');
-                
-                if(req_type)
+                if(req_data)
                 {
-                    req_type++;
+                    int object_id=atoi(req_data->find_data("ObjectID"));
+                    const char* flag=req_data->find_data("BrowseFlag");
+                    const char* filter=req_data->find_data("Filter");
+                    int index=atoi(req_data->find_data("StartingIndex"));
+                    int count=atoi(req_data->find_data("RequestedCount"));
 
-                    if(!strcmp(req_type,"Browse"))
-                    {
-                        soap::node* req_data=req.find("Envelope/Body/Browse");
+                    if(verb_fp)
+                        fprintf(verb_fp,"Browse: ObjectID=%i, BrowseFlag='%s', StartingIndex=%i, RequestedCount=%i\n",
+                            object_id,flag,index,count);
 
-                        if(req_data)
-                        {
-                            int object_id=atoi(req_data->find_data("ObjectID"));
-                            const char* flag=req_data->find_data("BrowseFlag");
-                            const char* filter=req_data->find_data("Filter");
-                            int index=atoi(req_data->find_data("StartingIndex"));
-                            int count=atoi(req_data->find_data("RequestedCount"));
-
-                            if(verb_fp)
-                                fprintf(verb_fp,"Browse: ObjectID=%i, BrowseFlag='%s', StartingIndex=%i, RequestedCount=%i\n",
-                                    object_id,flag,index,count);
-
-                            upnp_browse(fp,object_id,flag,filter,index,count);
-                        }
-                    }else if(!strcmp(req_type,"GetSystemUpdateID"))
-                    {
-                        fprintf(fp,
-                            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                            "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
-                            "   <s:Body>\n"
-                            "      <u:GetSystemUpdateIDResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
-                            "         <Id>1</Id>\n"
-                            "      </u:GetSystemUpdateIDResponse>\n"
-                            "   </s:Body>\n"
-                            "</s:Envelope>\n");                
-                    }
+                    upnp_browse(fp,object_id,flag,filter,index,count);
                 }
+            }else if(!strcmp(soap_req_type,"GetSystemUpdateID"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:GetSystemUpdateIDResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
+                    "         <Id>1</Id>\n"
+                    "      </u:GetSystemUpdateIDResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");                
             }
+        }
+        else if(!strcmp(req,"/msr_control"))    // MediaReceiverRegistrar
+        {
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
+                date,device_name);
+
+            if(!strcmp(soap_req_type,"IsAuthorized") || !strcmp(soap_req_type,"IsValidated"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:%sResponse xmlns:u=\"urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\">\n"
+                    "         <Result>1</Result>\n"
+                    "      </u:%sResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n",soap_req_type,soap_req_type);
+            }
+            else if(!strcmp(soap_req_type,"RegisterDevice"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:RegisterDeviceResponse xmlns:u=\"urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\">\n"
+                    "         <RegistrationRespMsg></RegistrationRespMsg>\n"
+                    "      </u:RegisterDeviceResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");
+            }
+        }
+        else if(!strcmp(req,"/cds_event") || !strcmp(req,"/cms_event") || !strcmp(req,"/msr_event") || !strcmp(req,"/cms_control"))
+        {
+            fprintf(fp,"HTTP/1.1 401 Invalid Action\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
+                date,device_name);
         }
         else if(!strncmp(req,ttag,sizeof(ttag)-1))
             tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,device_name);
