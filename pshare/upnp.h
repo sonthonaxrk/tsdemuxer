@@ -34,9 +34,8 @@ namespace upnp
     extern FILE* verb_fp;
     extern int debug;
 
-#ifndef NO_UUIDGEN
+    void uuid_init(void);
     void uuid_gen(char* dst);
-#endif
 
     int get_if_info(const char* if_name,if_info* ifi);
     int get_if_list(if_info* ifi,int nifi);

@@ -2,7 +2,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#ifndef NO_UUIDGEN
+#ifndef NO_LIBUUID
 #include <uuid/uuid.h>
 #endif
 
@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
 #include "mem.h"
 
 namespace upnp
@@ -21,15 +22,28 @@ namespace upnp
     int debug=0;
 }
 
-#ifndef NO_UUIDGEN
+void upnp::uuid_init(void)
+{
+#ifdef NO_LIBUUID
+    srand(time(0));
+#endif
+}
+
 void upnp::uuid_gen(char* dst)
 {
+#ifndef NO_LIBUUID
     uuid_t uuid;
     uuid_generate(uuid);
 
     uuid_unparse_lower(uuid,dst);
-}
+#else
+    u_int16_t t[8];
+    for(int i=0;i<sizeof(t)/sizeof(*t);i++)
+        t[i]=rand()&0xffff;
+
+    sprintf(dst,"%.4x%.4x-%.4x-%.4x-%.4x-%.4x%.4x%.4x",t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7]);
 #endif
+}
 
 int upnp::get_if_info(const char* if_name,if_info* ifi)
 {
