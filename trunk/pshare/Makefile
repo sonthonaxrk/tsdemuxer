@@ -5,7 +5,7 @@ all:
 	strip pshare
 
 mipsel:
-	$(MIPSEL)/gcc -fno-exceptions -fno-rtti -DNO_UUIDGEN -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp
+	$(MIPSEL)/gcc -fno-exceptions -fno-rtti -DNO_LIBUUID -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp
 	$(MIPSEL)/strip pshare
 	fakeroot ./mkipkg.sh
 

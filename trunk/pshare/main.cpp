@@ -24,6 +24,8 @@
 
 // TODO: Internet Radio (MP3) on PS3 - bad data type
 // TODO: Icons ( <upnp:icon>http://host/icon.png</upnp:icon> )
+// <upnp:albumArtURI dlna:profileID="JPEG_TN">http://192.168.1.80:9000/resources/nocover_video.jpg</upnp:albumArtURI>
+
 
 namespace dlna
 {
@@ -225,7 +227,6 @@ namespace dlna
 
     int http_port=4044;
 
-
     const char www_root_def[]="/opt/share/pshare/www";
     const char pls_root_def[]="/opt/share/pshare/playlists";
 
@@ -243,6 +244,10 @@ namespace dlna
     int parse_playlist_file(const char* name);
     int parse_playlist(const char* name);
 
+    enum {m_get=1, m_post=2, m_subscribe=3, m_unsubscribe=4};
+
+    const char* get_method_name(int n);
+
     int init_ssdp(void);
     int done_ssdp(void);
     int send_ssdp_alive_notify(void);
@@ -252,6 +257,7 @@ namespace dlna
     int on_http_connection(FILE* fp,sockaddr_in* sin);
     int upnp_print_item(FILE* fp,playlist_item* item);
     int upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count);
+    int upnp_search(FILE* fp,int object_id,const char* what,const char* filter,int index,int count);
     int playlist_browse(const char* req,FILE* fp,const char* date,const char* device_name);
 
     list* add_to_list(list* lst,const char* s,int len);
@@ -426,9 +432,11 @@ int main(int argc,char** argv)
     if(dlna::http_port<0)
         dlna::http_port=0;
 
+    upnp::uuid_init();
+
     if(!*dlna::device_uuid)
     {
-#ifndef NO_UUIDGEN  
+#ifndef NO_LIBUUID
         char filename[512]="";
         snprintf(filename,sizeof(filename),"/var/tmp/%s.uuid",dlna::device_friendly_name);
 
@@ -486,6 +494,8 @@ int main(int argc,char** argv)
     dlna::playlist_root=dlna::playlist_add(0,dlna::device_friendly_name,0,0,dlna::upnp_container,0);
 
     dlna::parse_playlist(playlist_filename);
+
+//dlna::upnp_search(stdout,0,"","",0,0);
 
     setsid();
 
@@ -618,6 +628,8 @@ int main(int argc,char** argv)
                                     for(int i=0;i<sizeof(dlna::__sig_pipe)/sizeof(*dlna::__sig_pipe);i++)
                                         close(dlna::__sig_pipe[i]);
                                     dlna::done_ssdp();
+
+                                    upnp::uuid_init();
 
                                     dlna::signal(SIGHUP ,SIG_DFL);
                                     dlna::signal(SIGPIPE,SIG_DFL);
@@ -1013,6 +1025,18 @@ int dlna::send_ssdp_msearch_response(sockaddr_in* sin,const char* st)
     return 0;
 }
 
+const char* dlna::get_method_name(int n)
+{
+    switch(n)
+    {
+    case m_get: return "GET"; break;
+    case m_post: return "POST"; break;
+    case m_subscribe: return "SUBSCRIBE"; break;
+    case m_unsubscribe: return "UNSUBSCRIBE"; break;
+    }
+    return "";
+}
+
 int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 {
     alarm(http_timeout);
@@ -1021,13 +1045,14 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
     {
         // read HTTP request
 
-        enum {m_get=1, m_post=2};
-
         int method=0;
 
         char req[128]="";
 
         char soap_action[128]="";
+
+        char sid[96]="";
+        char timeout[64]="";
 
         int content_length=-1;
 
@@ -1066,6 +1091,10 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                             method=m_get;
                         else if(!strcasecmp(tmp,"POST"))
                             method=m_post;
+                        else if(!strcasecmp(tmp,"SUBSCRIBE"))
+                            method=m_subscribe;
+                        else if(!strcasecmp(tmp,"UNSUBSCRIBE"))
+                            method=m_unsubscribe;
 
                         snprintf(req,sizeof(req),"%s",uri);
                     }
@@ -1099,8 +1128,17 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                         }
                         if(n>0 && soap_action[n-1]=='\"')
                             soap_action[n-1]=0;
-                    }
-                    
+                    }else if(!strcasecmp(tmp,"SID"))
+                    {
+                        int n=snprintf(sid,sizeof(sid),"%s",p);
+                        if(n==-1 || n>=sizeof(sid))
+                            sid[sizeof(sid)-1]=0;
+                    }else if(!strcasecmp(tmp,"TIMEOUT"))
+                    {
+                        int n=snprintf(timeout,sizeof(timeout),"%s",p);
+                        if(n==-1 || n>=sizeof(timeout))
+                            timeout[sizeof(timeout)-1]=0;
+                    }                    
                 }
             }
 
@@ -1137,7 +1175,7 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
         if(verb_fp)
         {
-            fprintf(verb_fp,"%s '%s' from '%s:%i'\n",method==m_post?"POST":"GET",req,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
+            fprintf(verb_fp,"%s '%s' from '%s:%i'\n",get_method_name(method),req,inet_ntoa(sin->sin_addr),ntohs(sin->sin_port));
 
             if(upnp::debug && content)
             {
@@ -1197,6 +1235,24 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
                     upnp_browse(fp,object_id,flag,filter,index,count);
                 }
+            }else if(!strcmp(soap_req_type,"Search"))
+            {
+                soap::node* req_data=soap_req.find("Envelope/Body/Search");
+
+                if(req_data)
+                {
+                    int object_id=atoi(req_data->find_data("ObjectID"));
+                    const char* what=req_data->find_data("SearchCriteria");
+                    const char* filter=req_data->find_data("Filter");
+                    int index=atoi(req_data->find_data("StartingIndex"));
+                    int count=atoi(req_data->find_data("RequestedCount"));
+
+                    if(verb_fp)
+                        fprintf(verb_fp,"Search: ObjectID=%i, SearchCriteria='%s', StartingIndex=%i, RequestedCount=%i\n",
+                            object_id,what,index,count);
+
+                    upnp_search(fp,object_id,what,filter,index,count);
+                }
             }else if(!strcmp(soap_req_type,"GetSystemUpdateID"))
             {
                 fprintf(fp,
@@ -1206,6 +1262,17 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     "      <u:GetSystemUpdateIDResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
                     "         <Id>1</Id>\n"
                     "      </u:GetSystemUpdateIDResponse>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");                
+            }else if(!strcmp(soap_req_type,"GetSortCapabilities"))
+            {
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
+                    "      <u:GetSortCapabilitiesResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
+                    "         <SortCaps>dc:title</SortCaps>\n"
+                    "      </u:GetSortCapabilitiesResponse>\n"
                     "   </s:Body>\n"
                     "</s:Envelope>\n");                
             }
@@ -1233,11 +1300,29 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                     "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
                     "   <s:Body>\n"
+                    "      <s:Fault>\n"
+                    "         <faultcode>s:Client</faultcode>\n"
+                    "         <faultstring>UPnPError</faultstring>\n"
+                    "         <detail>\n"
+                    "            <u:UPnPError xmlns:u=\"urn:schemas-upnp-org:control-1-0\">\n"
+                    "               <u:errorCode>501</u:errorCode>\n"
+                    "               <u:errorDescription>Action Failed</u:errorDescription>\n"
+                    "            </u:UPnPError>\n"
+                    "         </detail>\n"
+                    "      </s:Fault>\n"
+                    "   </s:Body>\n"
+                    "</s:Envelope>\n");
+
+/*
+                fprintf(fp,
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+                    "   <s:Body>\n"
                     "      <u:RegisterDeviceResponse xmlns:u=\"urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\">\n"
                     "         <RegistrationRespMsg></RegistrationRespMsg>\n"
                     "      </u:RegisterDeviceResponse>\n"
                     "   </s:Body>\n"
-                    "</s:Envelope>\n");
+                    "</s:Envelope>\n");*/
             }
         }
         else if(!strcmp(req,"/cms_control"))    // ConnectionManager
@@ -1304,8 +1389,25 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         }
         else if(!strcmp(req,"/cds_event") || !strcmp(req,"/cms_event") || !strcmp(req,"/msr_event"))
         {
-            fprintf(fp,"HTTP/1.1 401 Invalid Action\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nConnection: close\r\n",
                 date,device_name);
+
+            if(method==m_subscribe)
+            {
+                if(!*sid)
+                {
+                    upnp::uuid_gen(sid);
+
+                    fprintf(fp,"SID: uuid:%s\r\n",sid);
+                }else
+                    fprintf(fp,"SID: %s\r\n",sid);
+
+                fprintf(fp,"TIMEOUT: %s\r\n",*timeout?timeout:"Second-1800");
+
+            }else if(method==m_unsubscribe)
+                fprintf(fp,"EXT:\r\n");
+
+            fprintf(fp,"\r\n");
         }
         else if(!strncmp(req,ttag,sizeof(ttag)-1))
             tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,device_name);
@@ -1567,6 +1669,52 @@ int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter
         "         <TotalMatches>%i</TotalMatches>\n"
         "         <UpdateID>1</UpdateID>\n"
         "      </u:BrowseResponse>\n"
+        "   </s:Body>\n"
+        "</s:Envelope>\n",num,total_num);
+
+    return 0;
+}
+
+int dlna::upnp_search(FILE* fp,int object_id,const char* what,const char* filter,int index,int count)
+{
+    int num=0;
+    int total_num=0;
+
+    fprintf(fp,
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+        "   <s:Body>\n"
+        "      <u:SearchResponse xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n"
+        "         <Result>&lt;DIDL-Lite xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot; xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot;&gt;");
+
+    for(playlist_item* item=playlist_beg;item;item=item->next)
+    {
+        if(item->upnp_class!=upnp_container)
+            total_num++;
+    }
+
+    int n=0;
+    for(playlist_item* item=playlist_beg;item;item=item->next)
+    {
+        if(item->upnp_class!=upnp_container)
+        {
+            if(n>=index)
+            {
+                upnp_print_item(fp,item);
+                num++;
+
+                if(count>0 && num>=count)
+                    break;
+            }
+            n++;
+        }
+    }
+
+    fprintf(fp,"&lt;/DIDL-Lite&gt;</Result>\n"
+        "         <NumberReturned>%i</NumberReturned>\n"
+        "         <TotalMatches>%i</TotalMatches>\n"
+        "         <UpdateID>1</UpdateID>\n"
+        "      </u:SearchResponse>\n"
         "   </s:Body>\n"
         "</s:Envelope>\n",num,total_num);
 
