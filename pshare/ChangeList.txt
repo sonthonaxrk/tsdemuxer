@@ -16,7 +16,10 @@
     SystemUpdateID increment when playlists reload
     '-i' now required
     playlists path must be absolute
-
+- XBox360 compatible mode ('-x' switch)
+    modelname='Windows Media Connect Compatible (pShare)'
+    start object_id=100000
+    dev.xml => <serialNumber>xxx</serialNumber>
 
 0.0.1
 - Sony PlayStation 3, IconBit HDS4L and VideoLAN as Media Player supported
