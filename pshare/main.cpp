@@ -23,10 +23,8 @@
 #include "mem.h"
 
 // TODO: New playlist format with depth and icon url
-// TODO: Icons:
-//       <upnp:icon>http://host/icon.png</upnp:icon>
-//       or <upnp:albumArtURI dlna:profileID="JPEG_TN">http://192.168.1.80:9000/resources/nocover_video.jpg</upnp:albumArtURI>
 // TODO: Build playlist from file system
+// TODO: XBox360 (STARTING_ENTRY_ID_XBOX360 100000, XBOX_MODEL_NAME "Windows Media Connect Compatible")
 
 
 namespace dlna
@@ -101,6 +99,7 @@ namespace dlna
         {0,0,0}
     };
 
+    int xbox360=0;
 
     struct playlist_item
     {
@@ -195,7 +194,10 @@ namespace dlna
             playlist_end=p;
         }
 
-        playlist_counter++;
+        if(!playlist_counter && xbox360)
+            playlist_counter=100000;
+        else
+            playlist_counter++;
 
         if(parent)
             parent->childs++;
@@ -248,7 +250,7 @@ namespace dlna
 
     static const int http_timeout=15;
 
-    static const char device_name[]="UPnP Playlist Browser";
+    const char* device_name="pShare UPnP Playlist Browser";
     const char* device_friendly_name="UPnP-IPTV";
 
     static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
@@ -256,6 +258,7 @@ namespace dlna
     static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
     static const char model_number[]="0.0.2";
     static const char model_url[]="http://ps3muxer.org/pshare.html";
+
 
     char device_uuid[64]="";
 
@@ -419,7 +422,7 @@ int main(int argc,char** argv)
 
 
     int opt;
-    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:?"))>=0)
+    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:x?"))>=0)
         switch(opt)
         {
         case 'd':
@@ -448,6 +451,9 @@ int main(int argc,char** argv)
         case 'r':
             www_root=optarg;
             break;
+        case 'x':
+            dlna::xbox360=1;
+            break;
         case 'h':
         case '?':
             fprintf(stderr,"%s %s UPnP Playlist Browser\n",app_name,dlna::model_number);
@@ -459,6 +465,7 @@ int main(int argc,char** argv)
 
 
             fprintf(stderr,"USAGE: ./%s [-v] [-l] -i iface [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
+            fprintf(stderr,"   -x          XBox360 compatible mode\n");
             fprintf(stderr,"   -v          Turn on verbose output\n");
             fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
@@ -502,6 +509,9 @@ int main(int argc,char** argv)
 
     if(dlna::http_port<0)
         dlna::http_port=0;
+
+    if(dlna::xbox360)
+        dlna::device_name="Windows Media Connect Compatible (pShare)";
 
     upnp::uuid_init();
 
