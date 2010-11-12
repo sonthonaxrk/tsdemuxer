@@ -1,0 +1,20 @@
+0.0.2
+- Microsoft MediaPlayer 11 as client supported:
+    X_MS_MediaReceiverRegistrar:1
+    ConnectionManager:1
+    ContentDirectory:1#GetSortCapabilities
+    ContentDirectory:1#Search
+    SUBSCRIBE, UNSUBSCRIBE
+- Internet Radio fix (protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3" for MP3 streams)
+- Album name and track number (-DNO_EXTRA_INFO for disable)
+- Playlists reload (SIGUSR1 or 'http://host:port/reload')
+- Bug fixes:
+    ulibc fstat() bugfix
+    uuid from /dev/urandom (-DWITH_URANDOM)
+    XML escape URLs
+
+
+0.0.1
+- Sony PlayStation 3, IconBit HDS4L and VideoLAN as Media Player supported
+- Ubuntu 10.04 (Linux, IA-32), D-Link DIR-320 (DD-WRT v24 preSP2 13064, mipsel) and ASUS WL-500gP as Media Server supported
+- UTF8 encoded M3U playlists supported

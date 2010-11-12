@@ -22,9 +22,12 @@
 #include "tmpl.h"
 #include "mem.h"
 
-// TODO: Internet Radio (MP3) on PS3 - bad data type
-// TODO: Icons ( <upnp:icon>http://host/icon.png</upnp:icon> )
-// <upnp:albumArtURI dlna:profileID="JPEG_TN">http://192.168.1.80:9000/resources/nocover_video.jpg</upnp:albumArtURI>
+// TODO: True Search (index,count,object_id,what)
+// TODO: New playlist format with depth and icon url
+// TODO: Icons:
+//       <upnp:icon>http://host/icon.png</upnp:icon>
+//       or <upnp:albumArtURI dlna:profileID="JPEG_TN">http://192.168.1.80:9000/resources/nocover_video.jpg</upnp:albumArtURI>
+// TODO: Build playlist from file system
 
 
 namespace dlna
@@ -38,7 +41,7 @@ namespace dlna
 
     // mime classes
     const char upnp_video[]     = "object.item.videoItem";
-    const char upnp_audio[]     = "object.item.audioItem";
+    const char upnp_audio[]     = "object.item.audioItem.musicTrack";
     const char upnp_image[]     = "object.item.imageItem";
     const char upnp_container[] = "object.container";
 
@@ -54,7 +57,7 @@ namespace dlna
     const char upnp_mov[]       = "http-get:*:video/quicktime:*";
     const char upnp_aac[]       = "http-get:*:audio/x-aac:*";
     const char upnp_ac3[]       = "http-get:*:audio/x-ac3:*";
-    const char upnp_mp3[]       = "http-get:*:audio/mpeg:*";
+    const char upnp_mp3[]       = "http-get:*:audio/mpeg:DLNA.ORG_PN=MP3";
     const char upnp_ogg[]       = "http-get:*:audio/x-ogg:*";
     const char upnp_wma[]       = "http-get:*:audio/x-ms-wma:*";
     const char upnp_jpg[]       = "http-get:*:image/jpeg:*";
@@ -104,6 +107,8 @@ namespace dlna
     {
         int parent_id;
         int object_id;
+        const char* album;
+        int track_number; 
         char* name;
         char* length;
         char* url;
@@ -117,7 +122,9 @@ namespace dlna
     playlist_item* playlist_beg=0;
     playlist_item* playlist_end=0;
     int playlist_counter=0;
+    int playlist_track_counter=0;
     playlist_item* playlist_root=0;
+
 
     playlist_item* playlist_add(playlist_item* parent,const char* name,const char* length,const char* url,const char* upnp_class,const char* upnp_mime_type)
     {
@@ -139,7 +146,24 @@ namespace dlna
         if(!p)
             return 0;
 
-        p->parent_id=parent?parent->object_id:-1;
+        p->parent_id=-1;
+        p->album="";
+        p->track_number=0;
+
+        if(parent)
+        {
+            p->parent_id=parent->object_id;
+
+            if(upnp_class!=upnp_container)
+                p->album=parent->name;
+        }
+
+        if(upnp_class!=upnp_container)
+        {
+            playlist_track_counter++;
+            p->track_number=playlist_track_counter;
+        }
+
         p->object_id=playlist_counter;
         p->name=(char*)(p+1);
         p->length=p->name+name_len;
@@ -185,7 +209,9 @@ namespace dlna
         playlist_beg=0;
         playlist_end=0;
         playlist_counter=0;
+        playlist_track_counter=0;
     }
+
 
     playlist_item* playlist_find_by_id(int id)
     {
@@ -199,8 +225,11 @@ namespace dlna
     volatile int __sig_quit=0;
     volatile int __sig_alarm=0;
     volatile int __sig_child=0;
+    volatile int __sig_usr1=0;
     int __sig_pipe[2]={-1,-1};
     sigset_t __sig_proc_mask;
+
+    pid_t parent_pid=-1;
 
     int sock_up=-1;
     int sock_down=-1;
@@ -265,6 +294,18 @@ namespace dlna
 
     template<typename T>
     T max(T a,T b) { return a>b?a:b; }
+
+
+    int playlist_load(const char* path)
+    {
+        if(playlist_root)
+            playlist_free();
+
+        dlna::playlist_root=playlist_add(0,device_friendly_name,0,0,upnp_container,0);
+        dlna::parse_playlist(path);
+
+        return 0;
+    }
 }
 
 void dlna::__sig_handler(int n)
@@ -283,6 +324,9 @@ void dlna::__sig_handler(int n)
         break;
     case SIGCHLD:
         __sig_child=1;
+        break;
+    case SIGUSR1:
+        __sig_usr1=1;
         break;
     }
 
@@ -357,6 +401,13 @@ int main(int argc,char** argv)
         app_name++;
     else
         app_name=argv[0];
+
+    if(argc<2)
+    {
+        fprintf(stderr,"type './%s -?' for help\n",app_name);
+        return 1;
+    }
+
 
     int opt;
     while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:?"))>=0)
@@ -436,7 +487,6 @@ int main(int argc,char** argv)
 
     if(!*dlna::device_uuid)
     {
-#ifndef NO_LIBUUID
         char filename[512]="";
         snprintf(filename,sizeof(filename),"/var/tmp/%s.uuid",dlna::device_friendly_name);
 
@@ -459,9 +509,6 @@ int main(int argc,char** argv)
                 fclose(fp);
             }
         }
-#else
-        strcpy(dlna::device_uuid,"32ccc90a-27a7-494a-a02d-71f8e02b1937");
-#endif
     }
 
     printf("starting UPnP service '%s'...\n",dlna::device_friendly_name);
@@ -490,10 +537,9 @@ int main(int argc,char** argv)
                 close(i);
     }
 
+    dlna::parent_pid=getpid();
 
-    dlna::playlist_root=dlna::playlist_add(0,dlna::device_friendly_name,0,0,dlna::upnp_container,0);
-
-    dlna::parse_playlist(playlist_filename);
+    dlna::playlist_load(playlist_filename);
 
 //dlna::upnp_search(stdout,0,"","",0,0);
 
@@ -509,6 +555,7 @@ int main(int argc,char** argv)
     dlna::signal(SIGTERM,dlna::__sig_handler);
     dlna::signal(SIGALRM,dlna::__sig_handler);
     dlna::signal(SIGCHLD,dlna::__sig_handler);
+    dlna::signal(SIGUSR1,dlna::__sig_handler);
 
     sigprocmask(SIG_BLOCK,&dlna::__sig_proc_mask,0);
 
@@ -638,6 +685,7 @@ int main(int argc,char** argv)
                                     dlna::signal(SIGTERM,SIG_DFL);
                                     dlna::signal(SIGALRM,SIG_DFL);
                                     dlna::signal(SIGCHLD,SIG_DFL);
+                                    dlna::signal(SIGUSR1,SIG_DFL);
 
                                     int on=1;
                                     setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,&on,sizeof(on));
@@ -681,6 +729,13 @@ int main(int argc,char** argv)
 
                         dlna::send_ssdp_alive_notify();
                     }
+
+                    if(dlna::__sig_usr1)
+                    {
+                        dlna::__sig_usr1=0;
+                        dlna::playlist_load(playlist_filename);
+                    }
+
                 }
 
                 dlna::send_ssdp_byebye_notify();
@@ -1387,6 +1442,13 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
                     "</s:Envelope>\n");
             }
         }
+        else if(!strcmp(req,"/reload"))
+        {
+            int rc=kill(parent_pid,SIGUSR1);
+
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n%s",
+                date,device_name,rc?"FAIL":"OK");
+        }
         else if(!strcmp(req,"/cds_event") || !strcmp(req,"/cms_event") || !strcmp(req,"/msr_event"))
         {
             fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nConnection: close\r\n",
@@ -1601,14 +1663,28 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
         fprintf(fp,"&lt;item id=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;",item->object_id,item->parent_id);
 
     fprintf(fp,"&lt;dc:title&gt;");
-    
     tmpl::print_to_xml2(item->name,fp);
-
     fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->upnp_class);
 
+
+#ifndef NO_EXTRA_INFO
+    if(*item->album)
+    {
+        fprintf(fp,"&lt;upnp:album&gt;");
+        tmpl::print_to_xml2(item->album,fp);
+        fprintf(fp,"&lt;/upnp:album&gt;");
+    }
+
+    if(item->track_number>0)
+        fprintf(fp,"&lt;upnp:originalTrackNumber&gt;%i&lt;/upnp:originalTrackNumber&gt;",item->track_number);
+#endif
+
     if(item->upnp_class!=upnp_container)
-        fprintf(fp,"&lt;res protocolInfo=\"%s\" duration=\"%s\"&gt;%s&lt;/res&gt;&lt;/item&gt;",item->upnp_mime_type,item->length,item->url);
-    else
+    {
+        fprintf(fp,"&lt;res protocolInfo=\"%s\" duration=\"%s\"&gt;",item->upnp_mime_type,item->length);
+        tmpl::print_to_xml2(item->url,fp);
+        fprintf(fp,"&lt;/res&gt;&lt;/item&gt;");
+    }else
         fprintf(fp,"&lt;/container&gt;");
 
 
@@ -1617,7 +1693,7 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
 int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count)
 {
-    playlist_item def_item= { -1, object_id, (char*)"???", (char*)"-1", (char*)"", upnp_container, "", 0 };
+    playlist_item def_item= { -1, object_id, "", 0, (char*)"???", (char*)"-1", (char*)"", upnp_container, "", 0 };
 
     int num=0;
     int total_num=0;
