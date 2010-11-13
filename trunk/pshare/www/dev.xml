@@ -14,19 +14,17 @@
         <modelName>#DEV_NAME#</modelName>
         <modelNumber>#MODEL_NUMBER#</modelNumber>
         <modelURL>#MODEL_URL#</modelURL>
-        <serialNumber>#MODEL_NUMBER#</serialNumber>
-        <UPC/>
+        <serialNumber>#SERIAL_NUMBER#</serialNumber>
         <UDN>uuid:#DEV_UUID#</UDN>
         <iconList>
            <icon>
-           <mimetype>image/png</mimetype>
-           <height>48</height>
-           <width>48</width>
-           <depth>8</depth>
-           <url>/icon-48x48.png</url>
-        </icon>
+                <mimetype>image/png</mimetype>
+                <height>48</height>
+                <width>48</width>
+                <depth>8</depth>
+                <url>/icon-48x48.png</url>
+           </icon>
         </iconList>
-        <presentationURL>/</presentationURL>
         <serviceList>
             <service>
                 <serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
@@ -50,6 +48,7 @@
                 <eventSubURL>/msr_event</eventSubURL>
             </service>
         </serviceList>
+        <presentationURL>/</presentationURL>
     </device>
     <URLBase>http://#DEV_HOST#:#DEV_PORT#/</URLBase>
 </root>
