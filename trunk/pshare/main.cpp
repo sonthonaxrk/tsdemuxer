@@ -26,14 +26,15 @@
 // TODO: Build playlist from file system
 
 // XBox360:
+//    http://gxben.wordpress.com/2008/08/24/why-do-i-hate-dlna-protocol-so-much/
 //   'X-User-Agent: redsonic'?
-//    remove <iconList>?
 
 //   http://msdn.microsoft.com/en-us/library/aa468340.aspx
 //   http://msdn.microsoft.com/en-us/library/ee780971(PROT.10).aspx
 //   IEC61883
 //   http://www.eggheadcafe.com/software/aspnet/31505111/wms-11-protocol-bug--dlnaorgpn-missing-for-avis.aspx
 //   http://www.dlna.org/industry/certification/guidelines/
+
 
 
 namespace dlna
@@ -277,9 +278,9 @@ namespace dlna
     const char* device_name_xbox360="Windows Media Connect Compatible (pShare)";
     const char* device_friendly_name="UPnP-IPTV";
 
-    static const char manufacturer[]="Anton Burdinuk (clark15b@gmail.com)";
+    static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
     static const char manufacturer_url[]="http://ps3muxer.org/pshare.html";
-    static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk (clark15b@gmail.com)";
+    static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
     static const char version_number[]="0.0.2";
     static const char model_number[]="001";
     static const char serial_number[]="PSHARE-01";
@@ -1728,7 +1729,7 @@ int dlna::parse_playlist_file(const char* name)
                 }
 
                 if(verb_fp && upnp::debug)
-                    fprintf(verb_fp,"   len=%s, name='%s', url='%s', mime=%s (%s), logo=%s\n",track_length,track_name,track_url,track_type,track_class,logo_url);
+                    fprintf(verb_fp,"   len=%s, name='%s', url='%s', mime=%s* (%s)\n",track_length,track_name,track_url,track_type,track_class);
 
                 playlist_item* item=playlist_add(parent_item,track_name,track_length,track_url,track_class,track_type,track_type_extras,logo_url);
 
