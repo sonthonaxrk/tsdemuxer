@@ -7,6 +7,7 @@ cp -r playlists src/
 cp -r www src/
 cp mkdeb.sh src/
 cp mkipkg.sh src/
+cp ChangeList.txt src/
 cp LICENSE src/
 cp README src/
 cp Makefile src/
