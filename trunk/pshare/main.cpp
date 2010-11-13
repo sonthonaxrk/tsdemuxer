@@ -24,7 +24,6 @@
 
 // TODO: New playlist format with depth and icon url
 // TODO: Build playlist from file system
-// TODO: '#EXTTYPE:mp3' for radio
 
 // XBox360:
 //   'X-User-Agent: redsonic'?
@@ -1628,6 +1627,7 @@ int dlna::parse_playlist_file(const char* name)
         char track_name[64]="";
         char track_url[256]="";
         char logo_url[256]="";
+        char file_type[64]="";
         const char* track_type=0;
         const char* track_type_extras=0;
         const char* track_class=0;
@@ -1650,9 +1650,12 @@ int dlna::parse_playlist_file(const char* name)
                 p++;
                 static const char tag[]="EXTINF:";
                 static const char logo_tag[]="EXTLOGO:";
+                static const char type_tag[]="EXTTYPE:";
                 if(!strncmp(p,tag,sizeof(tag)-1))
                 {
                     p+=sizeof(tag)-1;
+                    while(*p && *p==' ')
+                        p++;
 
                     char* p2=strchr(p,',');
                     if(p2)
@@ -1677,6 +1680,15 @@ int dlna::parse_playlist_file(const char* name)
                     int n=snprintf(logo_url,sizeof(logo_url),"%s",p);
                     if(n==-1 || n>=sizeof(logo_url))
                         logo_url[sizeof(logo_url)-1]=0;
+                }else if(!strncmp(p,type_tag,sizeof(type_tag)-1))
+                {
+                    p+=sizeof(type_tag)-1;
+                    while(*p && *p==' ')
+                        p++;
+
+                    int n=snprintf(file_type,sizeof(file_type),"%s",p);
+                    if(n==-1 || n>=sizeof(file_type))
+                        file_type[sizeof(file_type)-1]=0;
                 }
             }else
             {
@@ -1684,9 +1696,18 @@ int dlna::parse_playlist_file(const char* name)
                 if(n==-1 || n>=sizeof(track_url))
                     track_url[sizeof(track_url)-1]=0;
 
-                const char* p=track_url+strlen(track_url)-1;
-                while(p>track_url && p[-1]!='/' && p[-1]!='.') p--;
-                if(p[-1]=='.')
+
+                const char* p=file_type;
+
+                if(!*p)
+                {
+                    p=track_url+strlen(track_url)-1;
+                    while(p>track_url && p[-1]!='/' && p[-1]!='.') p--;
+                    if(p[-1]!='.')
+                        p="";
+                }
+
+                if(*p)
                 {
                     for(int i=0;mime_type_list[i].file_ext;i++)
                     {
@@ -1718,6 +1739,7 @@ int dlna::parse_playlist_file(const char* name)
                 track_type_extras=0;
                 track_class=0;
                 *logo_url=0;
+                *file_type=0;
             }
         }
 

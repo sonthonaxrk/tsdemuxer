@@ -9,6 +9,7 @@
 - Artist name and track number for radio (-DNO_EXTRA_INFO for disable)
 - Playlists reload (SIGUSR1 or 'http://host:port/reload')
 - '#EXTLOGO:' record in m3u playlists supported. Examples: '#EXTLOGO: /def_logo.jpg' or '#EXTLOGO: http://host/def_logo.jpg'
+- '#EXTTYPE:' for force stream type selection: mpeg,mpeg2,ts,vob,avi,asf,wmv,mp4,mov,aac,ac3,mp3,ogg,wma
 - No images sharing now
 - Bug fixes:
     ulibc fstat() bugfix
@@ -23,6 +24,21 @@
     modelname='Windows Media Connect Compatible (pShare)'
     start object_id=100000
     dev.xml => <serialNumber>xxx</serialNumber>
+
+Playlist example:
+--------------------------
+#EXTM3U
+#EXTINF:0,Channel 1 - TV
+#EXTLOGO:http://host/logo.jpg
+http://192.168.1.1:4022/udp/234.5.2.1:20000
+#EXTINF:0,Channel 2 - Radio
+#EXTLOGO:http://host/logo.gif
+#EXTTYPE:mp3
+http://192.168.1.1:4022/udp/234.5.2.2:20000
+#EXTINF:0,Channel 3 - Radio
+http://192.168.1.1:4022/udp/234.5.2.3:20000/stream.mp3
+
+
 
 0.0.1
 - Sony PlayStation 3, IconBit HDS4L and VideoLAN as Media Player supported
