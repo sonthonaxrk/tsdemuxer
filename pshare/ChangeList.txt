@@ -6,9 +6,10 @@
     ContentDirectory:1#Search
     SUBSCRIBE, UNSUBSCRIBE
 - Internet Radio fix (protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3" for MP3 streams)
-- Album name and track number (-DNO_EXTRA_INFO for disable)
+- Artist name and track number for radio (-DNO_EXTRA_INFO for disable)
 - Playlists reload (SIGUSR1 or 'http://host:port/reload')
 - '#EXTLOGO:' record in m3u playlists supported. Examples: '#EXTLOGO: /def_logo.jpg' or '#EXTLOGO: http://host/def_logo.jpg'
+- No images sharing now
 - Bug fixes:
     ulibc fstat() bugfix
     uuid from /dev/urandom (-DWITH_URANDOM)
@@ -16,6 +17,8 @@
     SystemUpdateID increment when playlists reload
     '-i' now required
     playlists path must be absolute
+    dlna:profileID="JPEG_TN" to upnp:albumArtURI for JPEG (use only JPEG for PS3)
+    protocolInfo extend for MP3 and WMA radio (PS3)    
 - XBox360 compatible mode ('-x' switch)
     modelname='Windows Media Connect Compatible (pShare)'
     start object_id=100000
