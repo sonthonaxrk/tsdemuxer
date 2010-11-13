@@ -20,10 +20,12 @@
     playlists path must be absolute
     dlna:profileID="JPEG_TN" to upnp:albumArtURI for JPEG (use only JPEG for PS3)
     protocolInfo extend for MP3 and WMA radio (PS3)    
-- XBox360 compatible mode ('-x' switch)
+- XBox360 compatible mode ('-x' switch) - no working
     modelname='Windows Media Connect Compatible (pShare)'
     start object_id=100000
     dev.xml => <serialNumber>xxx</serialNumber>
+    http://gxben.wordpress.com/2008/08/24/why-do-i-hate-dlna-protocol-so-much/ :(
+    http://www.twonkyvision.com/products/twonkyserver/compatibility.aspx - TwonkyServer works with other devices that aren't DLNA- or UPnP AV - compliant, such as the Xbox 360 !!!!
 
 Playlist example:
 --------------------------
