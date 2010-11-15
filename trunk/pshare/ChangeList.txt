@@ -12,6 +12,8 @@
 - '#EXTTYPE:' for force stream type selection: mpeg,mpeg2,ts,vob,avi,asf,wmv,mp4,mov,aac,ac3,mp3,ogg,wma
 - No images sharing now
 - Ignore track length from playlist
+- '-O2'
+- HTTP proxy for Internet radio (-DWITH_PROXY, 'PS3 - transferMode.dlna.org: Streaming')
 - Bug fixes:
     ulibc fstat() bugfix
     uuid from /dev/urandom (-DWITH_URANDOM)
@@ -22,9 +24,14 @@
     dlna:profileID="JPEG_TN" to upnp:albumArtURI for JPEG (use only JPEG for PS3)
     protocolInfo extend for MP3 and WMA radio (PS3)
     <res size="-1" duration="-1">    
-- XBox360 compatible - no working
+    'EXT:' header to http responses
+    setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,...)
+- XBox360 compatible (-x)
+    device name='Windows Media Connect Compatible (pShare)'
+    start object id=100000
     dev.xml => <serialNumber>xxx</serialNumber>
     extra tags to dev.xml
+    'X-User-Agent: redsonic'
     http://gxben.wordpress.com/2008/08/24/why-do-i-hate-dlna-protocol-so-much/ :(
     http://www.twonkyvision.com/products/twonkyserver/compatibility.aspx - TwonkyServer works with other devices that aren't DLNA- or UPnP AV - compliant, such as the Xbox 360 !!!!
 
