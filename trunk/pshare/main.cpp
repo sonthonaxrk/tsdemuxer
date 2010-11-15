@@ -22,12 +22,15 @@
 #include "tmpl.h"
 #include "mem.h"
 
-// TODO: New playlist format with depth and icon url
+// TODO: PS3 Radio (MP3) - 'TransferMode.DLNA.ORG: Streaming' HTTP header from remote server?
+// TODO: HTTP proxy for extend HTTP headers ('GET /http/188.127.243.169:80/ultra-192?staff=staff HTTP/1.0')
+// TODO: my udpxy with extend HTTP headers ('GET /udp/234.5.2.1:20000?staff=staff HTTP/1.0')
 // TODO: Build playlist from file system
+
+// PS3: only JPEG logos, no MP3 streaming (need proxy)
 
 // XBox360:
 //    http://gxben.wordpress.com/2008/08/24/why-do-i-hate-dlna-protocol-so-much/
-//   'X-User-Agent: redsonic'?
 
 //   http://msdn.microsoft.com/en-us/library/aa468340.aspx
 //   http://msdn.microsoft.com/en-us/library/ee780971(PROT.10).aspx
@@ -35,7 +38,69 @@
 //   http://www.eggheadcafe.com/software/aspnet/31505111/wms-11-protocol-bug--dlnaorgpn-missing-for-avis.aspx
 //   http://www.dlna.org/industry/certification/guidelines/
 
+/*
+Bravia has four arrow buttons to change position: left/right – to fast forward/reverse and up/down – to moving cursor and set time position (something like goto).
+If DLNA.ORG_OP=11, then left/rght keys uses range header, and up/down uses TimeSeekRange.DLNA.ORG header
+If DLNA.ORG_OP=10, then left/rght and up/down keys uses TimeSeekRange.DLNA.ORG header
+If DLNA.ORG_OP=01, then left/rght keys uses range header, and up/down keys are disabled
+and if DLNA.ORG_OP=00, then all keys are disabled
+So, Range header is used to fast forward/reverse, but sometimes it is very slow. TimeSeekRange.DLNA.ORG header doesn’t work with directly steramed video files (PMS returns movie from beginning):
 
+GET /get/0$0$1$0/00000.MTS HTTP/1.1
+TimeSeekRange.dlna.org: npt=1790.044-
+getcontentFeatures.dlna.org: 1
+Pragma: getIfoFileURI.dlna.org
+transferMode.dlna.org: Streaming
+Host: 192.168.1.101:5001
+
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Connection: keep-alive
+Content-Length: 1252804608
+Content-Type: video/mpeg
+ContentFeatures.DLNA.ORG: DLNA.ORG_PN=AVC_TS_HD_50_AC3;DLNA.ORG_OP=11;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000
+Server: Windows_XP-x86-5.1, UPnP/1.0, PMS/1.20
+TransferMode.DLNA.ORG: Streaming
+*/
+
+/*
+Audio:
+
+HTTP/1.1 200 OK
+Content-Type: audio/mpeg
+Content-Length: 5471488
+Date: Sun, 14 Nov 2010 12:35:13 GMT
+Pragma: no-cache
+Cache-control: no-cache
+Last-Modified: Sun, 11 Oct 2009 13:31:09 GMT
+Accept-Ranges: bytes
+Connection: close
+transferMode.dlna.org: Streaming
+EXT:
+Server: Linux/2.x.x, UPnP/1.0, pvConnect UPnP SDK/1.0
+
+----------
+Content-Type
+transferMode.dlna.org
+EXT
+Accept-Ranges: none
+
+
+
+Video:
+
+HTTP/1.1 200 OK
+Content-Type: video/x-msvideo
+Content-Length: 63924224
+Date: Sun, 14 Nov 2010 12:38:29 GMT
+Pragma: no-cache
+Cache-control: no-cache
+Last-Modified: Fri, 14 Nov 2008 20:22:28 GMT
+Accept-Ranges: bytes
+Connection: close
+EXT:
+Server: Linux/2.x.x, UPnP/1.0, pvConnect UPnP SDK/1.0
+*/
 
 namespace dlna
 {
@@ -80,9 +145,10 @@ namespace dlna
     };
 
     const char dlna_extras_none[]       = "*";
-    const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=012000000000000000000000000000000";    // OP=00 - no seek, OP=01 - seek
-    const char dlna_extras_radio_wma[]  = "DLNA.ORG_PN=WMAFULL;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=012000000000000000000000000000000";
-    const char dlna_extras_radio_ac3[]  = "DLNA.ORG_PN=AC3;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=012000000000000000000000000000000";
+//    const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=012000000000000000000000000000000";    // OP=00 - no seek, OP=01 - seek
+    const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
+    const char dlna_extras_radio_wma[]  = "DLNA.ORG_PN=WMAFULL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
+    const char dlna_extras_radio_ac3[]  = "DLNA.ORG_PN=AC3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
 
     mime mime_type_list[]=
     {
@@ -107,8 +173,6 @@ namespace dlna
         {0,0,0,0}
     };
 
-    int xbox360=0;
-
     struct playlist_item
     {
         int parent_id;
@@ -116,7 +180,6 @@ namespace dlna
         playlist_item* parent;
         int track_number; 
         char* name;
-        char* length;
         char* url;
         char* logo_url;
         const char* logo_dlna_profile;
@@ -136,7 +199,7 @@ namespace dlna
     int update_id=0;
 
 
-    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* length,const char* url,const char* upnp_class,
+    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* url,const char* upnp_class,
         const char* upnp_mime_type,const char* upnp_mime_type_dlna_extras,const char* logo_url)
     {
         if(!url)
@@ -146,15 +209,12 @@ namespace dlna
 
         if(!name || !*name)
             name=url;
-        if(!length || !*length)
-            length="-1";
 
         int name_len=strlen(name)+1;
-        int length_len=strlen(length)+1;
         int url_len=strlen(url)+1;
         int logo_url_len=strlen(logo_url)+1;
 
-        int len=name_len+length_len+url_len+logo_url_len+sizeof(playlist_item);
+        int len=name_len+url_len+logo_url_len+sizeof(playlist_item);
         
         playlist_item* p=(playlist_item*)MALLOC(len);
         if(!p)
@@ -178,8 +238,7 @@ namespace dlna
 
         p->object_id=playlist_counter;
         p->name=(char*)(p+1);
-        p->length=p->name+name_len;
-        p->url=p->length+length_len;
+        p->url=p->name+name_len;
         p->logo_url=p->url+url_len;
         p->upnp_class=upnp_class?upnp_class:"";
         p->upnp_mime_type=upnp_mime_type?upnp_mime_type:"";
@@ -187,7 +246,6 @@ namespace dlna
         p->childs=0;
 
         strcpy(p->name,name);
-        strcpy(p->length,length);
         strcpy(p->url,url);
         strcpy(p->logo_url,logo_url);
         p->logo_dlna_profile="";
@@ -203,7 +261,6 @@ namespace dlna
         }
 
         p->name[name_len-1]=0;
-        p->length[length_len-1]=0;
         p->url[url_len-1]=0;
         p->logo_url[logo_url_len-1]=0;
 
@@ -217,10 +274,7 @@ namespace dlna
             playlist_end=p;
         }
 
-        if(!playlist_counter && xbox360)
-            playlist_counter=100000;
-        else
-            playlist_counter++;
+        playlist_counter++;
 
         if(parent)
             parent->childs++;
@@ -275,15 +329,12 @@ namespace dlna
 
     static const char server_name[]="pShare UPnP Playlist Browser";
     const char* device_name=server_name;
-    const char* device_name_xbox360="Windows Media Connect Compatible (pShare)";
     const char* device_friendly_name="UPnP-IPTV";
 
     static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
     static const char manufacturer_url[]="http://ps3muxer.org/pshare.html";
     static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
     static const char version_number[]="0.0.2";
-    static const char model_number[]="001";
-    static const char serial_number[]="PSHARE-01";
     static const char model_url[]="http://ps3muxer.org/pshare.html";
 
 
@@ -337,7 +388,7 @@ namespace dlna
         if(playlist_root)
             playlist_free();
 
-        playlist_root=playlist_add(0,device_friendly_name,0,0,upnp_container,0,0,0);
+        playlist_root=playlist_add(0,device_friendly_name,0,upnp_container,0,0,0);
         parse_playlist(path);
         update_id++;
         if(update_id>4096)
@@ -449,7 +500,7 @@ int main(int argc,char** argv)
 
 
     int opt;
-    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:x?"))>=0)
+    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:?"))>=0)
         switch(opt)
         {
         case 'd':
@@ -478,9 +529,6 @@ int main(int argc,char** argv)
         case 'r':
             www_root=optarg;
             break;
-        case 'x':
-            dlna::xbox360=1;
-            break;
         case 'h':
         case '?':
             fprintf(stderr,"%s %s UPnP Playlist Browser\n",app_name,dlna::version_number);
@@ -492,7 +540,6 @@ int main(int argc,char** argv)
 
 
             fprintf(stderr,"USAGE: ./%s [-v] [-l] -i iface [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
-            fprintf(stderr,"   -x          XBox360 compatible mode\n");
             fprintf(stderr,"   -v          Turn on verbose output\n");
             fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
@@ -536,9 +583,6 @@ int main(int argc,char** argv)
 
     if(dlna::http_port<0)
         dlna::http_port=0;
-
-    if(dlna::xbox360)
-        dlna::device_name=dlna::device_name_xbox360;
 
     upnp::uuid_init();
 
@@ -631,9 +675,7 @@ int main(int argc,char** argv)
     setenv("MANUFACTURER",dlna::manufacturer,1);
     setenv("MANUFACTURER_URL",dlna::manufacturer_url,1);
     setenv("MODEL_DESCRIPTION",dlna::model_description,1);
-    setenv("MODEL_NUMBER",dlna::model_number,1);
     setenv("VERSION_NUMBER",dlna::version_number,1);
-    setenv("SERIAL_NUMBER",dlna::serial_number,1);
     setenv("MODEL_URL",dlna::model_url,1);
 
 
@@ -1622,9 +1664,8 @@ int dlna::parse_playlist_file(const char* name)
         if(verb_fp)
             fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
 
-        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,0,upnp_container,0,0,0);
+        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,upnp_container,0,0,0);
 
-        char track_length[32]="";
         char track_name[64]="";
         char track_url[256]="";
         char logo_url[256]="";
@@ -1664,11 +1705,7 @@ int dlna::parse_playlist_file(const char* name)
                         *p2=0;
                         p2++;
 
-                        int n=snprintf(track_length,sizeof(track_length),"%s",p);
-                        if(n==-1 || n>=sizeof(track_length))
-                            track_length[sizeof(track_length)-1]=0;
-
-                        n=snprintf(track_name,sizeof(track_name),"%s",p2);
+                        int n=snprintf(track_name,sizeof(track_name),"%s",p2);
                         if(n==-1 || n>=sizeof(track_name))
                             track_name[sizeof(track_name)-1]=0;
                     }
@@ -1729,11 +1766,10 @@ int dlna::parse_playlist_file(const char* name)
                 }
 
                 if(verb_fp && upnp::debug)
-                    fprintf(verb_fp,"   len=%s, name='%s', url='%s', mime=%s* (%s)\n",track_length,track_name,track_url,track_type,track_class);
+                    fprintf(verb_fp,"   name='%s', url='%s', mime=%s* (%s)\n",track_name,track_url,track_type,track_class);
 
-                playlist_item* item=playlist_add(parent_item,track_name,track_length,track_url,track_class,track_type,track_type_extras,logo_url);
+                playlist_item* item=playlist_add(parent_item,track_name,track_url,track_class,track_type,track_type_extras,logo_url);
 
-                *track_length=0;
                 *track_name=0;
                 *track_url=0;
                 track_type=0;
@@ -1765,23 +1801,23 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
 
 #ifndef NO_EXTRA_INFO
-    if(item->upnp_class!=upnp_container)
+    if(item->parent && *item->parent->name)
     {
-        if(item->parent && *item->parent->name)
+        if(item->upnp_class==upnp_video)
         {
-/*
-            fprintf(fp,"&lt;upnp:album&gt;");
+            fprintf(fp,"&lt;upnp:actor&gt;");
             tmpl::print_to_xml2(item->parent->name,fp);
-            fprintf(fp,"&lt;/upnp:album&gt;");
-*/
-            fprintf(fp,"&lt;upnp:artist&gt;");
+            fprintf(fp,"&lt;/upnp:actor&gt;");
+        }else if(item->upnp_class==upnp_audio)
+        {
+            fprintf(fp,"&lt;upnp:artist&gt;");                      // album
             tmpl::print_to_xml2(item->parent->name,fp);
             fprintf(fp,"&lt;/upnp:artist&gt;");
         }
-
-        if(item->track_number>0)
-            fprintf(fp,"&lt;upnp:originalTrackNumber&gt;%i&lt;/upnp:originalTrackNumber&gt;",item->track_number);
     }
+
+    if(item->track_number>0)
+        fprintf(fp,"&lt;upnp:originalTrackNumber&gt;%i&lt;/upnp:originalTrackNumber&gt;",item->track_number);
 
     if(*item->logo_url)
     {
@@ -1797,7 +1833,7 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
     if(item->upnp_class!=upnp_container)
     {
-        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; duration=&quot;%s&quot;&gt;",item->upnp_mime_type,item->upnp_mime_type_dlna_extras,item->length);
+        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->upnp_mime_type,item->upnp_mime_type_dlna_extras);
         tmpl::print_to_xml2(item->url,fp);
         fprintf(fp,"&lt;/res&gt;&lt;/item&gt;");
     }else
