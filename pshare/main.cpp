@@ -17,19 +17,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <dirent.h>
 #include "soap.h"
 #include "tmpl.h"
 #include "mem.h"
 
 // TODO: PS3 Radio (MP3) - 'TransferMode.DLNA.ORG: Streaming' HTTP header from remote server?
-// TODO: HTTP proxy for extend HTTP headers ('GET /http/188.127.243.169:80/ultra-192?staff=staff HTTP/1.0')
+// TODO: select() to HTTP proxy
 // TODO: my udpxy with extend HTTP headers ('GET /udp/234.5.2.1:20000?staff=staff HTTP/1.0')
 // TODO: Build playlist from file system
 
 // PS3: only JPEG logos, no MP3 streaming (need proxy)
 
 // XBox360:
+//    X-User-Agent: redsonic
 //    http://gxben.wordpress.com/2008/08/24/why-do-i-hate-dlna-protocol-so-much/
 
 //   http://msdn.microsoft.com/en-us/library/aa468340.aspx
@@ -45,61 +47,6 @@ If DLNA.ORG_OP=10, then left/rght and up/down keys uses TimeSeekRange.DLNA.ORG h
 If DLNA.ORG_OP=01, then left/rght keys uses range header, and up/down keys are disabled
 and if DLNA.ORG_OP=00, then all keys are disabled
 So, Range header is used to fast forward/reverse, but sometimes it is very slow. TimeSeekRange.DLNA.ORG header doesn’t work with directly steramed video files (PMS returns movie from beginning):
-
-GET /get/0$0$1$0/00000.MTS HTTP/1.1
-TimeSeekRange.dlna.org: npt=1790.044-
-getcontentFeatures.dlna.org: 1
-Pragma: getIfoFileURI.dlna.org
-transferMode.dlna.org: Streaming
-Host: 192.168.1.101:5001
-
-HTTP/1.1 200 OK
-Accept-Ranges: bytes
-Connection: keep-alive
-Content-Length: 1252804608
-Content-Type: video/mpeg
-ContentFeatures.DLNA.ORG: DLNA.ORG_PN=AVC_TS_HD_50_AC3;DLNA.ORG_OP=11;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000
-Server: Windows_XP-x86-5.1, UPnP/1.0, PMS/1.20
-TransferMode.DLNA.ORG: Streaming
-*/
-
-/*
-Audio:
-
-HTTP/1.1 200 OK
-Content-Type: audio/mpeg
-Content-Length: 5471488
-Date: Sun, 14 Nov 2010 12:35:13 GMT
-Pragma: no-cache
-Cache-control: no-cache
-Last-Modified: Sun, 11 Oct 2009 13:31:09 GMT
-Accept-Ranges: bytes
-Connection: close
-transferMode.dlna.org: Streaming
-EXT:
-Server: Linux/2.x.x, UPnP/1.0, pvConnect UPnP SDK/1.0
-
-----------
-Content-Type
-transferMode.dlna.org
-EXT
-Accept-Ranges: none
-
-
-
-Video:
-
-HTTP/1.1 200 OK
-Content-Type: video/x-msvideo
-Content-Length: 63924224
-Date: Sun, 14 Nov 2010 12:38:29 GMT
-Pragma: no-cache
-Cache-control: no-cache
-Last-Modified: Fri, 14 Nov 2008 20:22:28 GMT
-Accept-Ranges: bytes
-Connection: close
-EXT:
-Server: Linux/2.x.x, UPnP/1.0, pvConnect UPnP SDK/1.0
 */
 
 namespace dlna
@@ -132,6 +79,24 @@ namespace dlna
     const char upnp_ogg[]       = "http-get:*:audio/x-ogg:";
     const char upnp_wma[]       = "http-get:*:audio/x-ms-wma:";
 
+
+    const char http_mime_bin[]  = "application/x-octet-stream";
+    const char http_mime_avi[]  = "video/avi";
+    const char http_mime_asf[]  = "video/x-ms-asf";
+    const char http_mime_wmv[]  = "video/x-ms-wmv";
+    const char http_mime_mp4[]  = "video/mp4";
+    const char http_mime_mpeg[] = "video/mpeg";
+    const char http_mime_mpeg2[]= "video/mpeg2";
+    const char http_mime_mp2t[] = "video/mp2t";
+    const char http_mime_mp2p[] = "video/mp2p";
+    const char http_mime_mov[]  = "video/quicktime";
+    const char http_mime_aac[]  = "audio/x-aac";
+    const char http_mime_ac3[]  = "audio/x-ac3";
+    const char http_mime_mp3[]  = "audio/mpeg";
+    const char http_mime_ogg[]  = "application/ogg";
+    const char http_mime_wma[]  = "audio/x-ms-wma";
+
+
     const char* protocol_list[]=
         { upnp_avi,upnp_asf,upnp_wmv,upnp_mp4,upnp_mpeg,upnp_mpeg2,upnp_mp2t,upnp_mp2p,upnp_mov,upnp_aac,upnp_ac3,upnp_mp3,upnp_ogg,upnp_wma,0 };
 
@@ -142,6 +107,7 @@ namespace dlna
         const char* upnp_class;
         const char* type;
         const char* dlna_type_extras;
+        const char* http_mime_type;
     };
 
     const char dlna_extras_none[]       = "*";
@@ -150,28 +116,33 @@ namespace dlna
     const char dlna_extras_radio_wma[]  = "DLNA.ORG_PN=WMAFULL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
     const char dlna_extras_radio_ac3[]  = "DLNA.ORG_PN=AC3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
 
-    mime mime_type_list[]=
+    const mime mime_type_list[]=
     {
-        {"mpg"  ,upnp_video,upnp_mpeg,dlna_extras_none},              // default
-        {"mpeg" ,upnp_video,upnp_mpeg,dlna_extras_none},
-        {"mpeg2",upnp_video,upnp_mpeg2,dlna_extras_none},
-        {"m2v"  ,upnp_video,upnp_mpeg2,dlna_extras_none},
-        {"ts"   ,upnp_video,upnp_mp2t,dlna_extras_none},
-        {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_none},
-        {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_none},
-        {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_none},
-        {"avi"  ,upnp_video,upnp_avi,dlna_extras_none},
-        {"asf"  ,upnp_video,upnp_asf,dlna_extras_none},
-        {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_none},
-        {"mp4"  ,upnp_video,upnp_mp4,dlna_extras_none},
-        {"mov"  ,upnp_video,upnp_mov,dlna_extras_none},
-        {"aac"  ,upnp_audio,upnp_aac,dlna_extras_none},
-        {"ac3"  ,upnp_audio,upnp_ac3,dlna_extras_radio_ac3},
-        {"mp3"  ,upnp_audio,upnp_mp3,dlna_extras_radio_mp3},
-        {"ogg"  ,upnp_audio,upnp_ogg,dlna_extras_none},
-        {"wma"  ,upnp_audio,upnp_wma,dlna_extras_radio_wma},
+        {"mpg"  ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg},              // default
+        {"mpeg" ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg},
+        {"mpeg2",upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2},
+        {"m2v"  ,upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2},
+        {"ts"   ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t},
+        {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t},
+        {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t},
+        {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_none,http_mime_mp2p},
+        {"avi"  ,upnp_video,upnp_avi,dlna_extras_none,http_mime_avi},
+        {"asf"  ,upnp_video,upnp_asf,dlna_extras_none,http_mime_asf},
+        {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_none,http_mime_wmv},
+        {"mp4"  ,upnp_video,upnp_mp4,dlna_extras_none,http_mime_mp4},
+        {"mov"  ,upnp_video,upnp_mov,dlna_extras_none,http_mime_mov},
+        {"aac"  ,upnp_audio,upnp_aac,dlna_extras_none,http_mime_aac},
+        {"ac3"  ,upnp_audio,upnp_ac3,dlna_extras_radio_ac3,http_mime_ac3},
+        {"mp3"  ,upnp_audio,upnp_mp3,dlna_extras_radio_mp3,http_mime_mp3},
+        {"ogg"  ,upnp_audio,upnp_ogg,dlna_extras_none,http_mime_ogg},
+        {"wma"  ,upnp_audio,upnp_wma,dlna_extras_radio_wma,http_mime_wma},
         {0,0,0,0}
     };
+
+    const mime mime_type_none         = {"","","",dlna_extras_none};
+    const mime mime_type_container    = {"",upnp_container,"",dlna_extras_none};
+
+    int xbox360=0;
 
     struct playlist_item
     {
@@ -183,9 +154,8 @@ namespace dlna
         char* url;
         char* logo_url;
         const char* logo_dlna_profile;
-        const char* upnp_class;
-        const char* upnp_mime_type;
-        const char* upnp_mime_type_dlna_extras;
+        const mime* type_info;
+        int proxy;
         int childs;
 
         playlist_item* next;
@@ -199,13 +169,14 @@ namespace dlna
     int update_id=0;
 
 
-    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* url,const char* upnp_class,
-        const char* upnp_mime_type,const char* upnp_mime_type_dlna_extras,const char* logo_url)
+    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* url,const mime* type_info,const char* logo_url)
     {
         if(!url)
             url="";
         if(!logo_url)
             logo_url="";
+        if(!type_info)
+            type_info=&mime_type_none;
 
         if(!name || !*name)
             name=url;
@@ -223,6 +194,7 @@ namespace dlna
         p->parent_id=-1;
         p->parent=0;
         p->track_number=0;
+        p->proxy=0;
 
         if(parent)
         {
@@ -230,19 +202,25 @@ namespace dlna
             p->parent=parent;
         }
 
-        if(upnp_class==upnp_audio)
+        if(type_info->upnp_class==upnp_audio)
         {
             playlist_track_counter++;
             p->track_number=playlist_track_counter;
+#ifdef WITH_PROXY
+            p->proxy=1;
+#endif
         }
+
+#ifdef WITH_PROXY
+        if(strstr(url,"//@"))
+            p->proxy=1;
+#endif
 
         p->object_id=playlist_counter;
         p->name=(char*)(p+1);
         p->url=p->name+name_len;
         p->logo_url=p->url+url_len;
-        p->upnp_class=upnp_class?upnp_class:"";
-        p->upnp_mime_type=upnp_mime_type?upnp_mime_type:"";
-        p->upnp_mime_type_dlna_extras=(upnp_mime_type_dlna_extras && *upnp_mime_type_dlna_extras)?upnp_mime_type_dlna_extras:"*";
+        p->type_info=type_info;
         p->childs=0;
 
         strcpy(p->name,name);
@@ -274,7 +252,10 @@ namespace dlna
             playlist_end=p;
         }
 
-        playlist_counter++;
+        if(!playlist_counter && xbox360)
+            playlist_counter=100000;
+        else
+            playlist_counter++;
 
         if(parent)
             parent->childs++;
@@ -321,21 +302,25 @@ namespace dlna
 
     FILE* verb_fp=0;
 
-    static const char upnp_mgrp[]="239.255.255.250:1900";
+    const char upnp_mgrp[]="239.255.255.250:1900";
 
-    static const int upnp_notify_timeout=120;
+    const int upnp_notify_timeout=120;
 
-    static const int http_timeout=15;
+    const int http_timeout=15;
 
-    static const char server_name[]="pShare UPnP Playlist Browser";
+    const char server_name[]="pShare UPnP Playlist Browser";
     const char* device_name=server_name;
-    const char* device_friendly_name="UPnP-IPTV";
+    const char* extra_hdrs="EXT:\r\n";
 
-    static const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
-    static const char manufacturer_url[]="http://ps3muxer.org/pshare.html";
-    static const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
-    static const char version_number[]="0.0.2";
-    static const char model_url[]="http://ps3muxer.org/pshare.html";
+    const char* device_name_xbox360="Windows Media Connect Compatible (pShare)";
+    const char extra_hdrs_xbox360[]="X-User-Agent: redsonic\r\n";
+
+    const char* device_friendly_name="UPnP-IPTV";
+    const char manufacturer[]="Anton Burdinuk <clark15b@gmail.com>";
+    const char manufacturer_url[]="http://ps3muxer.org/pshare.html";
+    const char model_description[]="UPnP Playlist Browser from Anton Burdinuk <clark15b@gmail.com>";
+    const char version_number[]="0.0.2";
+    const char model_url[]="http://ps3muxer.org/pshare.html";
 
 
     char device_uuid[64]="";
@@ -375,6 +360,8 @@ namespace dlna
     const char* search_object_type(const char* exp);
     int upnp_search(FILE* fp,int object_id,const char* what,const char* filter,int index,int count);
     int playlist_browse(const char* req,FILE* fp,const char* date,const char* server_name);
+    int do_proxy(playlist_item* item,FILE* fp,const char* date,const char* server_name,const char* extra_hdrs);
+    int do_http_proxy(const char* url,int fd);
 
     list* add_to_list(list* lst,const char* s,int len);
     void free_list(list* lst);
@@ -388,7 +375,7 @@ namespace dlna
         if(playlist_root)
             playlist_free();
 
-        playlist_root=playlist_add(0,device_friendly_name,0,upnp_container,0,0,0);
+        playlist_root=playlist_add(0,device_friendly_name,0,&mime_type_container,0);
         parse_playlist(path);
         update_id++;
         if(update_id>4096)
@@ -500,7 +487,7 @@ int main(int argc,char** argv)
 
 
     int opt;
-    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:?"))>=0)
+    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:x?"))>=0)
         switch(opt)
         {
         case 'd':
@@ -529,6 +516,9 @@ int main(int argc,char** argv)
         case 'r':
             www_root=optarg;
             break;
+        case 'x':
+            dlna::xbox360=1;
+            break;
         case 'h':
         case '?':
             fprintf(stderr,"%s %s UPnP Playlist Browser\n",app_name,dlna::version_number);
@@ -540,6 +530,7 @@ int main(int argc,char** argv)
 
 
             fprintf(stderr,"USAGE: ./%s [-v] [-l] -i iface [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
+            fprintf(stderr,"   -x          XBox 360 ushare style compatible mode\n");
             fprintf(stderr,"   -v          Turn on verbose output\n");
             fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
@@ -552,6 +543,17 @@ int main(int argc,char** argv)
             fprintf(stderr,"    playlist   single file or directory absolute path with utf8-encoded *.m3u files (default: '%s')\n\n",dlna::pls_root_def);
             fprintf(stderr,"example 1: './%s -i eth0 %s/playlist.m3u'\n",app_name,dlna::pls_root_def);
             fprintf(stderr,"example 2: './%s -v -i 192.168.1.1 -u 32ccc90a-27a7-494a-a02d-71f8e02b1937 -n IPTV -t 1 -p 4044 %s/'\n\n",app_name,dlna::pls_root_def);
+
+            fprintf(stderr,"known files: ");
+            for(int i=0;dlna::mime_type_list[i].file_ext;i++)
+            {
+                if(i)
+                    fprintf(stderr,",");
+
+                fprintf(stderr,"%s",dlna::mime_type_list[i].file_ext);
+            }
+            fprintf(stderr,"\n\n");
+
             return 0;
         }
 
@@ -583,6 +585,12 @@ int main(int argc,char** argv)
 
     if(dlna::http_port<0)
         dlna::http_port=0;
+
+    if(dlna::xbox360)
+    {
+        dlna::device_name=dlna::device_name_xbox360;
+        dlna::extra_hdrs=dlna::extra_hdrs_xbox360;
+    }
 
     upnp::uuid_init();
 
@@ -680,7 +688,9 @@ int main(int argc,char** argv)
 
 
     if(*www_root)
-        chdir(www_root);
+    {
+        int rc=chdir(www_root);
+    }
 
     if(dlna::verb_fp)
     {
@@ -766,6 +776,9 @@ int main(int argc,char** argv)
                             int fd;
                             while((fd=accept(dlna::sock_http,(sockaddr*)&sin,&sin_len))!=-1)
                             {
+                                int on=1;
+                                setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,&on,sizeof(on));
+
                                 pid_t pid=fork();
 
                                 if(!pid)
@@ -780,7 +793,7 @@ int main(int argc,char** argv)
                                     upnp::uuid_init();
 
                                     dlna::signal(SIGHUP ,SIG_DFL);
-                                    dlna::signal(SIGPIPE,SIG_DFL);
+                                    dlna::signal(SIGPIPE,SIG_IGN);
                                     dlna::signal(SIGINT ,SIG_DFL);
                                     dlna::signal(SIGQUIT,SIG_DFL);
                                     dlna::signal(SIGTERM,SIG_DFL);
@@ -1365,13 +1378,14 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
         static const char ttag[]="/t/";
         static const char ptag[]="/p/";
+        static const char prtag[]="/pr/";
 
         if(!strcmp(req,"/"))
-            tmpl::get_file("index.html",fp,1,date,server_name);
+            tmpl::get_file("index.html",fp,1,date,server_name,extra_hdrs);
         else if(!strcmp(req,"/cds_control"))    // ContentDirectory
         {
-            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
-                date,server_name);
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n%s\r\n",
+                date,server_name,extra_hdrs);
 
             if(!strcmp(soap_req_type,"Browse"))
             {
@@ -1435,8 +1449,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         }
         else if(!strcmp(req,"/msr_control"))    // MediaReceiverRegistrar
         {
-            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
-                date,server_name);
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n%s\r\n",
+                date,server_name,extra_hdrs);
 
             if(!strcmp(soap_req_type,"IsAuthorized") || !strcmp(soap_req_type,"IsValidated"))
             {
@@ -1483,8 +1497,8 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         }
         else if(!strcmp(req,"/cms_control"))    // ConnectionManager
         {
-            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n\r\n",
-                date,server_name);
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/xml\r\nConnection: close\r\n%s\r\n",
+                date,server_name,extra_hdrs);
 
             if(!strcmp(soap_req_type,"GetCurrentConnectionInfo"))
             {
@@ -1547,13 +1561,13 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
         {
             int rc=kill(parent_pid,SIGUSR1);
 
-            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n%s",
-                date,server_name,rc?"FAIL":"OK");
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/plain\r\nConnection: close\r\n%s\r\n%s",
+                date,server_name,extra_hdrs,rc?"FAIL":"OK");
         }
         else if(!strcmp(req,"/cds_event") || !strcmp(req,"/cms_event") || !strcmp(req,"/msr_event"))
         {
-            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nConnection: close\r\n",
-                date,server_name);
+            fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nConnection: close\r\n%s",
+                date,server_name,extra_hdrs);
 
             if(method==m_subscribe)
             {
@@ -1567,17 +1581,44 @@ int dlna::on_http_connection(FILE* fp,sockaddr_in* sin)
 
                 fprintf(fp,"TIMEOUT: %s\r\n",*timeout?timeout:"Second-1800");
 
-            }else if(method==m_unsubscribe)
-                fprintf(fp,"EXT:\r\n");
+            }
 
             fprintf(fp,"\r\n");
         }
         else if(!strncmp(req,ttag,sizeof(ttag)-1))
-            tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,server_name);
+            tmpl::get_file(req+sizeof(ttag)-1,fp,1,date,server_name,extra_hdrs);
         else if(!strncmp(req,ptag,sizeof(ptag)-1))
             playlist_browse(req+sizeof(ptag)-1,fp,date,server_name);
-        else
-            tmpl::get_file(req,fp,0,date,server_name);
+        else if(!strncmp(req,prtag,sizeof(prtag)-1))
+        {
+            char* p1=req+(sizeof(prtag)-1);
+            char* p2=strchr(p1,'/');
+
+            int rc=-1;
+
+            if(p2)
+            {
+                *p2=0;
+
+                int object_id=strtol(p1,&p2,10);
+
+                if(!*p2 && object_id>0)
+                {
+                    playlist_item* item=playlist_find_by_id(object_id);
+
+                    if(item)
+                    {
+                        alarm(0);
+                        rc=do_proxy(item,fp,date,server_name,extra_hdrs);
+                    }
+                }
+            }
+
+            if(rc)
+                fprintf(fp,"HTTP/1.1 404 Not found\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nConnection: close\r\n%s\r\n",date,device_name,extra_hdrs);
+
+        }else
+            tmpl::get_file(req,fp,0,date,server_name,extra_hdrs);
 
         fflush(fp);
 
@@ -1664,15 +1705,13 @@ int dlna::parse_playlist_file(const char* name)
         if(verb_fp)
             fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
 
-        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,upnp_container,0,0,0);
+        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,&mime_type_container,0);
 
         char track_name[64]="";
         char track_url[256]="";
         char logo_url[256]="";
         char file_type[64]="";
-        const char* track_type=0;
-        const char* track_type_extras=0;
-        const char* track_class=0;
+        const mime* type_info=0;
 
         char buf[256];
         while(fgets(buf,sizeof(buf),fp))
@@ -1751,30 +1790,23 @@ int dlna::parse_playlist_file(const char* name)
                     {
                         if(!strcasecmp(p,mime_type_list[i].file_ext))
                         {
-                            track_type=mime_type_list[i].type;
-                            track_type_extras=mime_type_list[i].dlna_type_extras;
-                            track_class=mime_type_list[i].upnp_class;
+                            type_info=&mime_type_list[i];
                             break;
                         }
                     }
                 }
 
-                if(!track_type)
-                {
-                    track_type=upnp_mpeg;
-                    track_class=upnp_video;
-                }
+                if(!type_info)
+                    type_info=&mime_type_list[0];
 
                 if(verb_fp && upnp::debug)
-                    fprintf(verb_fp,"   name='%s', url='%s', mime=%s* (%s)\n",track_name,track_url,track_type,track_class);
+                    fprintf(verb_fp,"   name='%s', url='%s', mime=%s* (%s)\n",track_name,track_url,type_info->type,type_info->upnp_class);
 
-                playlist_item* item=playlist_add(parent_item,track_name,track_url,track_class,track_type,track_type_extras,logo_url);
+                playlist_item* item=playlist_add(parent_item,track_name,track_url,type_info,logo_url);
 
                 *track_name=0;
                 *track_url=0;
-                track_type=0;
-                track_type_extras=0;
-                track_class=0;
+                type_info=0;
                 *logo_url=0;
                 *file_type=0;
             }
@@ -1789,7 +1821,7 @@ int dlna::parse_playlist_file(const char* name)
 
 int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 {
-    if(item->upnp_class==upnp_container)
+    if(item->type_info->upnp_class==upnp_container)
         fprintf(fp,"&lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;",
             item->object_id,item->childs,item->parent_id);
     else
@@ -1797,18 +1829,18 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
     fprintf(fp,"&lt;dc:title&gt;");
     tmpl::print_to_xml2(item->name,fp);
-    fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->upnp_class);
+    fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->type_info->upnp_class);
 
 
 #ifndef NO_EXTRA_INFO
     if(item->parent && *item->parent->name)
     {
-        if(item->upnp_class==upnp_video)
+        if(item->type_info->upnp_class==upnp_video)
         {
             fprintf(fp,"&lt;upnp:actor&gt;");
             tmpl::print_to_xml2(item->parent->name,fp);
             fprintf(fp,"&lt;/upnp:actor&gt;");
-        }else if(item->upnp_class==upnp_audio)
+        }else if(item->type_info->upnp_class==upnp_audio)
         {
             fprintf(fp,"&lt;upnp:artist&gt;");                      // album
             tmpl::print_to_xml2(item->parent->name,fp);
@@ -1831,10 +1863,15 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
     }
 #endif
 
-    if(item->upnp_class!=upnp_container)
+    if(item->type_info->upnp_class!=upnp_container)
     {
-        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->upnp_mime_type,item->upnp_mime_type_dlna_extras);
-        tmpl::print_to_xml2(item->url,fp);
+        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->type_info->type,item->type_info->dlna_type_extras);
+
+        if(!item->proxy)
+            tmpl::print_to_xml2(item->url,fp);
+        else
+            fprintf(fp,"http://%s:%i/pr/%i/stream.%s",dlna::mcast_grp.interface,dlna::http_port,item->object_id,item->type_info->file_ext);
+
         fprintf(fp,"&lt;/res&gt;&lt;/item&gt;");
     }else
         fprintf(fp,"&lt;/container&gt;");
@@ -1845,7 +1882,7 @@ int dlna::upnp_print_item(FILE* fp,playlist_item* item)
 
 int dlna::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count)
 {
-    playlist_item def_item= { -1, object_id, 0, 0, (char*)"???", (char*)"-1", (char*)"", (char*)"", upnp_container, "", 0 };
+    playlist_item def_item= { -1, object_id, 0, 0, (char*)"???", (char*)"", (char*)"", (char*)"", &mime_type_container, 0, 0, 0 };
 
     int num=0;
     int total_num=0;
@@ -1976,15 +2013,15 @@ int dlna::upnp_search(FILE* fp,int object_id,const char* what,const char* filter
 
     playlist_item* beg=playlist_find_by_id(object_id);
 
-    if(beg && beg->upnp_class==upnp_container)
+    if(beg && beg->type_info->upnp_class==upnp_container)
     {
         int n=0;
 
         for(playlist_item* item=beg->next;item;item=item->next)
         {
-            if(item->upnp_class!=upnp_container)
+            if(item->type_info->upnp_class!=upnp_container)
             {
-                if(!what || item->upnp_class==what)
+                if(!what || item->type_info->upnp_class==what)
                 {
                     if(n>=index)
                     {
@@ -2028,8 +2065,8 @@ int dlna::playlist_browse(const char* req,FILE* fp,const char* date,const char* 
 
     int object_id=atoi(req);
 
-    fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/html; charset=\"utf-8\"\r\nConnection: close\r\n\r\n",
-        date,server_name);
+    fprintf(fp,"HTTP/1.1 200 OK\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: text/html; charset=\"utf-8\"\r\nConnection: close\r\n%s\r\n",
+        date,server_name,extra_hdrs);
 
     fprintf(fp,"<html><head><title>%s - Playlist</title></head>\n\n<body>\n",server_name);
 
@@ -2043,10 +2080,15 @@ int dlna::playlist_browse(const char* req,FILE* fp,const char* date,const char* 
         if(item->parent_id==object_id)
         {
 
-            if(item->upnp_class==upnp_container)
+            if(item->type_info->upnp_class==upnp_container)
                 fprintf(fp,"<a href='/p/%i'>",item->object_id);
             else
-                fprintf(fp,"<a href='%s'>",item->url);
+            {
+                if(!item->proxy)
+                    fprintf(fp,"<a href='%s'>",item->url);
+                else
+                    fprintf(fp,"<a href='http://%s:%i/pr/%i/stream.%s'>",dlna::mcast_grp.interface,dlna::http_port,item->object_id,item->type_info->file_ext);
+            }
 
             tmpl::print_to_xml(item->name,fp);
             fprintf(fp,"</a><br>\n");
@@ -2055,6 +2097,185 @@ int dlna::playlist_browse(const char* req,FILE* fp,const char* date,const char* 
 
 
     fprintf(fp,"</body>\n");
+
+    return 0;
+}
+
+
+int dlna::do_proxy(playlist_item* item,FILE* fp,const char* date,const char* server_name,const char* extra_hdrs)
+{
+    fprintf(fp,
+        "HTTP/1.1 200 OK\r\nPragma: no-cache\r\nCache-control: no-cache\r\nDate: %s\r\nServer: %s\r\nAccept-Ranges: none\r\n"
+        "Connection: close\r\nContent-Type: %s\r\n",date,server_name,item->type_info->http_mime_type);
+
+    if(item->type_info->upnp_class==upnp_audio)
+        fprintf(fp,"transferMode.dlna.org: Streaming\r\n");
+
+    fprintf(fp,"%s\r\n",extra_hdrs);
+
+    fflush(fp);
+
+    int fd=fileno(fp);
+
+    static const char udp_tag[] ="udp://@";
+    static const char rtp_tag[] ="rtp://@";
+    static const char http_tag[]="http://";
+
+    if(!strncmp(item->url,http_tag,sizeof(http_tag)-1))
+        return do_http_proxy(item->url+sizeof(http_tag)-1,fd);
+
+    if(verb_fp)
+        fprintf(verb_fp,"unknown protocol type: %s\n",item->url);
+
+    return -1;
+}
+
+int dlna::do_http_proxy(const char* url,int fd)
+{
+    sockaddr_in sin;
+    memset((char*)&sin,0,sizeof(sin));
+    sin.sin_family=AF_INET;
+
+    char temp[4096];
+    int n=snprintf(temp,sizeof(temp),"%s",url);
+    if(n==-1 || n>=sizeof(temp))
+        temp[sizeof(temp)-1]=0;
+
+    char* host=temp;
+
+    char* res=strchr(host,'/');
+    if(res)
+        { *res=0; res++; }
+    else
+        res=(char*)"";
+
+    char* port=strchr(host,':');
+    if(port)
+        { *port=0; port++; }
+    else
+        port=(char*)"80";
+
+    sin.sin_port=htons(atoi(port));
+    sin.sin_addr.s_addr=inet_addr(host);
+
+    if(sin.sin_addr.s_addr==INADDR_NONE)
+    {
+        hostent* he=gethostbyname(host);
+        if(!he)
+        {
+            if(verb_fp)
+                fprintf(verb_fp,"host is not found: %s\n",host);
+            return -2;
+        }
+        memcpy((char*)&sin.sin_addr.s_addr,he->h_addr,sizeof(sin.sin_addr.s_addr));
+    }
+
+    int sock=socket(PF_INET,SOCK_STREAM,0);
+
+    if(sock==-1)
+    {
+        if(verb_fp)
+            fprintf(verb_fp,"socket() fail\n");
+        return -3;
+    }
+
+    if(connect(sock,(sockaddr*)&sin,sizeof(sin)))
+    {
+        if(verb_fp)
+            fprintf(verb_fp,"can`t connect to %s:%s\n",host,port);
+        close(sock);
+        return -4;
+    }
+
+    int on=1;
+    setsockopt(sock,IPPROTO_TCP,TCP_NODELAY,&on,sizeof(on));
+
+    FILE* sfd=fdopen(sock,"a+");
+
+    if(!sfd)
+    {
+        if(verb_fp)
+            fprintf(verb_fp,"fdopen() fail\n");
+        close(sock);
+    }
+
+    if(verb_fp)
+        fprintf(verb_fp,"connected to %s:%s\n",host,port);
+
+    fprintf(sfd,"GET /%s HTTP/1.0\r\nConnection: close\r\n\r\n",res);
+    fflush(sfd);
+
+    int lineno=0;
+
+    int status_code=-1;
+
+    while(fgets(temp,sizeof(temp),sfd))
+    {
+        char* p=strpbrk(temp,"\r\n");
+        if(p)
+            *p=0;
+
+        if(!*temp)
+            break;
+
+        if(!lineno)
+        {
+            p=strchr(temp,' ');
+            if(p)
+            {
+                while(*p && *p==' ')
+                    p++;
+                char* p2=strchr(p,' ');
+                if(p2)
+                {
+                    *p2=0;
+                    status_code=atoi(p);
+                }
+            }
+        }
+
+        lineno++;
+    }
+
+    if(status_code!=200)
+    {
+        if(verb_fp)
+            fprintf(verb_fp,"status code: %i\n",status_code);
+
+        fclose(sfd);
+
+        return -5;
+    }
+
+    if(verb_fp)
+        fprintf(verb_fp,"streaming http://%s\n",url);
+
+    int brk=0;
+
+    size_t len;
+
+    while(!brk && (len=fread(temp,1,sizeof(temp),sfd))>0)
+    {
+        size_t l=0;
+
+        while(!brk && l<len)
+        {
+            ssize_t nn=send(fd,temp+l,len-l,0);
+
+            if(nn==-1)
+            {
+                if(verb_fp)
+                    fprintf(verb_fp,"client gone, break streaming\n");
+                brk=1;
+            }else
+                l+=nn;
+        }
+    }
+
+    fclose(sfd);
+
+    if(verb_fp)
+        fprintf(verb_fp,"disconnected\n");
 
     return 0;
 }
