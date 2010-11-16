@@ -26,14 +26,10 @@
     <res size="-1" duration="-1">    
     'EXT:' header to http responses
     setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,...)
-- XBox360 compatible (-x)
-    device name='Windows Media Connect Compatible (pShare)'
+- XBox360 compatible (-x) - Windows Media Connect as Twonky (fake Windows Media Player)
     start object id=100000
-    dev.xml => <serialNumber>xxx</serialNumber>
-    extra tags to dev.xml
-    'X-User-Agent: redsonic'
-    http://gxben.wordpress.com/2008/08/24/why-do-i-hate-dlna-protocol-so-much/ :(
-    http://www.twonkyvision.com/products/twonkyserver/compatibility.aspx - TwonkyServer works with other devices that aren't DLNA- or UPnP AV - compliant, such as the Xbox 360 !!!!
+    dev.xml => wmc.xml
+    object.container => object.container.storageFolder
 
 Playlist example:
 --------------------------

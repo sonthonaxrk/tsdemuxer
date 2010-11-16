@@ -1,4 +1,5 @@
 #include "tmpl.h"
+#include "pshare.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -96,7 +97,7 @@ namespace tmpl
     }
 
 
-    int get_file(const char* filename,FILE* dst,int tmpl,const char* date,const char* device_name,const char* extra_hdrs)
+    int get_file(const char* filename,FILE* dst,int tmpl)
     {
         while(*filename && *filename=='/')
             filename++;
@@ -105,13 +106,12 @@ namespace tmpl
 
         if(validate_file_name(filename) || !(fp=fopen(filename,"rb")))
         {
-            fprintf(dst,"HTTP/1.1 404 Not found\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nConnection: close\r\n%s\r\n",date,device_name,extra_hdrs);
+            pshare::print_http_error_hdrs(dst,"404 Not found",0);
             return -1;
         }
 
         int xml=0;
-        fprintf(dst,"HTTP/1.1 200 Ok\r\nPragma: no-cache\r\nDate: %s\r\nServer: %s\r\nContent-Type: %s\r\nConnection: close\r\n%s\r\n",
-            date,get_mime_type(filename,&xml),device_name,extra_hdrs);
+        pshare::print_http_hdrs(dst,get_mime_type(filename,&xml),0);
 
         int rc;
 
