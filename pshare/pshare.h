@@ -31,6 +31,7 @@ namespace pshare
         char* name;
         char* url;
         char* logo_url;
+        char* type_extras;
         const char* logo_dlna_profile;
         const mime* type_info;
         int proxy;
