@@ -8,7 +8,7 @@
     <device>
         <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
         <UDN>uuid:#DEV_UUID#</UDN>
-        <friendlyName>#DEV_FNAME#</friendlyName>
+        <friendlyName>PSHARE:Windows Media Connect</friendlyName>
         <manufacturer>Microsoft Corporation</manufacturer>
         <manufacturerURL>http://www.microsoft.com</manufacturerURL>
         <modelName>Windows Media Player Sharing</modelName>

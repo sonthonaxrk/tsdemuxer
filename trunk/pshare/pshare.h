@@ -19,6 +19,7 @@ namespace pshare
         const char* type;
         const char* dlna_type_extras;
         const char* http_mime_type;
+        int container;
     };
 
     struct playlist_item
@@ -43,6 +44,7 @@ namespace pshare
     extern const char upnp_video[];
     extern const char upnp_audio[];
     extern const char upnp_container[];
+    extern const char upnp_folder[];
 
     extern const char server_name[];
 

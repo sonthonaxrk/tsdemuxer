@@ -36,9 +36,69 @@
 /*
 'ContainerID' in Search
 'ContainerID' or 'ObjectID' in Browse
-object.container => object.container.storageFolder
+object.container => object.container.storageFolder for children containers for XBox 360 mode
 Browse(ContainerID=15) ?????????????
 if container id < playlist_items_offset then root
+wmc.xml - <friendlyName>#DEV_FNAME#</friendlyName>
+*/
+
+
+/*
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+   <s:Body>
+         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
+         <ContainerID>7</ContainerID>
+         <SearchCriteria>(upnp:class = &quot;object.container.album.musicAlbum&quot;)</SearchCriteria>
+         <Filter>dc:title,upnp:artist</Filter>
+         <StartingIndex>0</StartingIndex>
+         <RequestedCount>1000</RequestedCount>
+         <SortCriteria>+dc:title</SortCriteria>
+         </u:Search>
+   </s:Body>
+</s:Envelope>
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">^M
+   <s:Body>^M
+         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">^M
+         <ContainerID>4</ContainerID>^M
+         <SearchCriteria>(upnp:class derivedfrom &quot;object.item.audioItem&quot;)</SearchCriteria>^M
+         <Filter>dc:title,res,res@protection,res@duration,res@sampleFrequency,res@bitsPerSample,res@bitrate,res@nrAudioChannels,upnp:artist,upnp:artist@role,upnp:genr
+         <StartingIndex>0</StartingIndex>^M
+         <RequestedCount>1000</RequestedCount>^M
+         <SortCriteria>+dc:title</SortCriteria>^M
+               </u:Search>^M
+                  </s:Body>^M
+                  </s:Envelope>^M
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">^M
+   <s:Body>^M
+         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">^M
+         <ContainerID>6</ContainerID>^M
+         <SearchCriteria>(upnp:class = &quot;object.container.person.musicArtist&quot;)</SearchCriteria>^M
+         <Filter>dc:title</Filter>^M
+         <StartingIndex>0</StartingIndex>^M
+         <RequestedCount>1000</RequestedCount>^M
+         <SortCriteria>+dc:title</SortCriteria>^M
+               </u:Search>^M
+                  </s:Body>^M
+                  </s:Envelope>^M
+
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">^M
+   <s:Body>^M
+         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">^M
+         <ContainerID>4</ContainerID>^M
+         <SearchCriteria>(upnp:class derivedfrom &quot;object.item.audioItem&quot;)</SearchCriteria>^M
+         <Filter>dc:title,res,res@protection,res@duration,res@sampleFrequency,res@bitsPerSample,res@bitrate,res@nrAudioChannels,upnp:artist,upnp:artist@role,upnp:genr
+         <StartingIndex>0</StartingIndex>^M
+         <RequestedCount>1000</RequestedCount>^M
+         <SortCriteria>+dc:title</SortCriteria>^M
+               </u:Search>^M
+                  </s:Body>^M
+                  </s:Envelope>^M
+
+
 */
 
 namespace pshare
@@ -46,7 +106,8 @@ namespace pshare
     // upnp object classes
     const char upnp_video[]     = "object.item.videoItem";
     const char upnp_audio[]     = "object.item.audioItem.musicTrack";
-    const char upnp_container[] = "object.container.storageFolder";
+    const char upnp_container[] = "object.container";
+    const char upnp_folder[]    = "object.container.storageFolder";
 
     // upnp mime types
     const char upnp_avi[]       = "http-get:*:video/avi:";
@@ -98,29 +159,30 @@ namespace pshare
 
     const mime mime_type_list[]=
     {
-        {"mpg"  ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg},              // default
-        {"mpeg" ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg},
-        {"mpeg2",upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2},
-        {"m2v"  ,upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2},
-        {"ts"   ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t},
-        {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t},
-        {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t},
-        {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_none,http_mime_mp2p},
-        {"avi"  ,upnp_video,upnp_avi,dlna_extras_none,http_mime_avi},
-        {"asf"  ,upnp_video,upnp_asf,dlna_extras_none,http_mime_asf},
-        {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_none,http_mime_wmv},
-        {"mp4"  ,upnp_video,upnp_mp4,dlna_extras_none,http_mime_mp4},
-        {"mov"  ,upnp_video,upnp_mov,dlna_extras_none,http_mime_mov},
-        {"aac"  ,upnp_audio,upnp_aac,dlna_extras_none,http_mime_aac},
-        {"ac3"  ,upnp_audio,upnp_ac3,dlna_extras_radio_ac3,http_mime_ac3},
-        {"mp3"  ,upnp_audio,upnp_mp3,dlna_extras_radio_mp3,http_mime_mp3},
-        {"ogg"  ,upnp_audio,upnp_ogg,dlna_extras_none,http_mime_ogg},
-        {"wma"  ,upnp_audio,upnp_wma,dlna_extras_radio_wma,http_mime_wma},
-        {0,0,0,0}
+        {"mpg"  ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg,0},              // default
+        {"mpeg" ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg,0},
+        {"mpeg2",upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2,0},
+        {"m2v"  ,upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2,0},
+        {"ts"   ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t,0},
+        {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t,0},
+        {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t,0},
+        {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_none,http_mime_mp2p,0},
+        {"avi"  ,upnp_video,upnp_avi,dlna_extras_none,http_mime_avi,0},
+        {"asf"  ,upnp_video,upnp_asf,dlna_extras_none,http_mime_asf,0},
+        {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_none,http_mime_wmv,0},
+        {"mp4"  ,upnp_video,upnp_mp4,dlna_extras_none,http_mime_mp4,0},
+        {"mov"  ,upnp_video,upnp_mov,dlna_extras_none,http_mime_mov,0},
+        {"aac"  ,upnp_audio,upnp_aac,dlna_extras_none,http_mime_aac,0},
+        {"ac3"  ,upnp_audio,upnp_ac3,dlna_extras_radio_ac3,http_mime_ac3,0},
+        {"mp3"  ,upnp_audio,upnp_mp3,dlna_extras_radio_mp3,http_mime_mp3,0},
+        {"ogg"  ,upnp_audio,upnp_ogg,dlna_extras_none,http_mime_ogg,0},
+        {"wma"  ,upnp_audio,upnp_wma,dlna_extras_radio_wma,http_mime_wma,0},
+        {0,0,0,0,0}
     };
 
-    const mime mime_type_none         = {"","","",dlna_extras_none};
-    const mime mime_type_container    = {"",upnp_container,"",dlna_extras_none};
+    const mime mime_type_none         = {"","","",dlna_extras_none,http_mime_bin,0};
+    const mime mime_type_container    = {"",upnp_container,"",dlna_extras_none,http_mime_bin,1};
+    mime mime_type_folder             = {"",upnp_folder,"",dlna_extras_none,http_mime_bin,1};
 
     int xbox360=0;
 
@@ -538,6 +600,9 @@ int main(int argc,char** argv)
 
     if(pshare::xbox360)
         pshare::dev_desc=pshare::dev_desc_wmc;
+    else
+        pshare::mime_type_folder.upnp_class=pshare::upnp_container;
+        
 
     upnp::uuid_init();
 
@@ -597,7 +662,7 @@ int main(int argc,char** argv)
 
     pshare::playlist_load(playlist_filename);
 
-//pshare::upnp_search(stdout,0,"upnp:class derivedfrom \"object.item.videoItem.sas\" and @refID exists false","",20,10);
+//pshare::upnp_search(stdout,0,"upnp:class derivedfrom \"object.item.videoItem.sas\" and @refID exists false","",0,0);
 
     setsid();
 
@@ -1665,7 +1730,7 @@ int pshare::parse_playlist_file(const char* name)
         if(verb_fp)
             fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
 
-        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,&mime_type_container,0);
+        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,&mime_type_folder,0);
 
         char track_name[64]="";
         char track_url[256]="";
@@ -1781,7 +1846,7 @@ int pshare::parse_playlist_file(const char* name)
 
 int pshare::upnp_print_item(FILE* fp,playlist_item* item)
 {
-    if(item->type_info->upnp_class==upnp_container)
+    if(item->type_info->container)
         fprintf(fp,"&lt;container id=&quot;%i&quot; childCount=&quot;%i&quot; parentID=&quot;%i&quot; restricted=&quot;true&quot;&gt;",
             item->object_id,item->childs,item->parent_id);
     else
@@ -1823,7 +1888,7 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
     }
 #endif
 
-    if(item->type_info->upnp_class!=upnp_container)
+    if(!item->type_info->container)
     {
         fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->type_info->type,item->type_info->dlna_type_extras);
 
@@ -1842,7 +1907,7 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
 
 int pshare::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count)
 {
-    playlist_item def_item= { -1, object_id, 0, 0, (char*)"???", (char*)"", (char*)"", (char*)"", &mime_type_container, 0, 0, 0 };
+    playlist_item def_item= { -1, object_id, 0, 0, (char*)"???", (char*)"", (char*)"", (char*)"", &mime_type_folder, 0, 0, 0 };
 
     int num=0;
     int total_num=0;
@@ -1860,6 +1925,7 @@ int pshare::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filt
         playlist_item* item=playlist_find_by_id(object_id);
 
         upnp_print_item(fp,item?item:&def_item);
+//upnp_print_item(stdout,item?item:&def_item);
 
         num=total_num=1;
     }else
@@ -1919,6 +1985,7 @@ const char* pshare::search_object_type(const char* exp)
 
         while(*p && (*p==' ' || *p=='\t'))
             p++;
+
         if(!strncmp(p,derived_tag,sizeof(derived_tag)-1))
         {
             p+=sizeof(derived_tag)-1;
@@ -1973,13 +2040,13 @@ int pshare::upnp_search(FILE* fp,int object_id,const char* what,const char* filt
 
     playlist_item* beg=playlist_find_by_id(object_id);
 
-    if(beg && beg->type_info->upnp_class==upnp_container)
+    if(beg && beg->type_info->container)
     {
         int n=0;
 
         for(playlist_item* item=beg->next;item;item=item->next)
         {
-            if(item->type_info->upnp_class!=upnp_container)
+            if(!item->type_info->container)
             {
                 if(!what || item->type_info->upnp_class==what)
                 {
@@ -2039,7 +2106,7 @@ int pshare::playlist_browse(const char* req,FILE* fp)
         if(item->parent_id==object_id)
         {
 
-            if(item->type_info->upnp_class==upnp_container)
+            if(item->type_info->container)
                 fprintf(fp,"<a href='/p/%i'>",item->object_id);
             else
             {
