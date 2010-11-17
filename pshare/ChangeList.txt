@@ -29,7 +29,7 @@
 - XBox360 compatible (-x) - Windows Media Connect as Twonky (fake Windows Media Player)
     start object id=100000
     dev.xml => wmc.xml
-    object.container => object.container.storageFolder
+    object.container => object.container.storageFolder for child containers on XBox 360
 
 Playlist example:
 --------------------------
