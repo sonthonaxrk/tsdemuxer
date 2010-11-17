@@ -10,10 +10,13 @@
 - Playlists reload (SIGUSR1 or 'http://host:port/reload')
 - '#EXTLOGO:' record in m3u playlists supported. Examples: '#EXTLOGO: /def_logo.jpg' or '#EXTLOGO: http://host/def_logo.jpg' (JPEG for PS3)
 - '#EXTTYPE:' for force stream type selection: mpeg,mpeg2,ts,vob,avi,asf,wmv,mp4,mov,aac,ac3,mp3,ogg,wma
+- '#EXTTYPE:' optional DLNA profile after file type, example: '#EXTTYPE:mp3,DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000'
 - No images sharing now
 - Ignore track length from playlist
 - '-O2'
 - HTTP proxy for Internet radio (-DWITH_PROXY, 'PS3 - transferMode.dlna.org: Streaming')
+- '-e' for DLNA protocolInfo extend (DLNA_ORG.PN...)
+- remove size='-1' duration='-1'
 - Bug fixes:
     ulibc fstat() bugfix
     uuid from /dev/urandom (-DWITH_URANDOM)
@@ -26,10 +29,13 @@
     <res size="-1" duration="-1">    
     'EXT:' header to http responses
     setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,...)
+    trim playlist items
+    ContainerID in Search
 - XBox360 compatible (-x) - Windows Media Connect as Twonky (fake Windows Media Player)
-    start object id=100000
+    start object id=100 (playlist_items_offset)
     dev.xml => wmc.xml
     object.container => object.container.storageFolder for child containers on XBox 360
+    ContainerID or ObjectID in Browse
 
 Playlist example:
 --------------------------
@@ -39,7 +45,7 @@ Playlist example:
 http://192.168.1.1:4022/udp/234.5.2.1:20000
 #EXTINF:0,Channel 2 - Radio
 #EXTLOGO:http://host/logo.gif
-#EXTTYPE:mp3
+#EXTTYPE:mp3,DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000
 http://192.168.1.1:4022/udp/234.5.2.2:20000
 #EXTINF:0,Channel 3 - Radio
 http://192.168.1.1:4022/udp/234.5.2.3:20000/stream.mp3

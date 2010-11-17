@@ -24,82 +24,35 @@
 #include "tmpl.h"
 #include "mem.h"
 
+
+// TODO: proxy level: 0 - no proxy, 1 - multicast only, 2 - multicast and radio, 3 - all
+// TODO: profiles - XBox 360, PS3, generic (no DLNA_ORG.PN..., length, duration)
 // TODO: multicast to http proxy (as udpxy)
 // TODO: http proxy for radio
 // TODO: Build playlist from file system
 
 // PS3: only JPEG logos, no MP3 streaming (need proxy)
 
-// XBox360  - playlist as file, container type or attr?
+// XBox360
+//    Search?
+//    no video in video folder (Browse)
+//    Browse by category - (ContainerID=15 - video? ContainerID=4 - audio? ContainerID=16 - photo)
 
 
-/*
-'ContainerID' in Search
-'ContainerID' or 'ObjectID' in Browse
-object.container => object.container.storageFolder for children containers for XBox 360 mode
-Browse(ContainerID=15) ?????????????
-if container id < playlist_items_offset then root
-wmc.xml - <friendlyName>#DEV_FNAME#</friendlyName>
-*/
-
+// http://www.dlna.org/industry/certification/guidelines/ (IEC61883)
+// http://www.cybergarage.org/twiki/bin/view/Main/Windows7DLNA
+// http://msdn.microsoft.com/en-us/library/aa468340.aspx
+// http://msdn.microsoft.com/en-us/library/ee780971%28PROT.10%29.aspx
 
 /*
+size=&quot;-1&quot; duration=&quot;-1&quot;
 
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-   <s:Body>
-         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
-         <ContainerID>7</ContainerID>
-         <SearchCriteria>(upnp:class = &quot;object.container.album.musicAlbum&quot;)</SearchCriteria>
-         <Filter>dc:title,upnp:artist</Filter>
-         <StartingIndex>0</StartingIndex>
-         <RequestedCount>1000</RequestedCount>
-         <SortCriteria>+dc:title</SortCriteria>
-         </u:Search>
-   </s:Body>
-</s:Envelope>
+PS3 Radio???? size=0, size=-1, duration=0, duration=-1
 
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">^M
-   <s:Body>^M
-         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">^M
-         <ContainerID>4</ContainerID>^M
-         <SearchCriteria>(upnp:class derivedfrom &quot;object.item.audioItem&quot;)</SearchCriteria>^M
-         <Filter>dc:title,res,res@protection,res@duration,res@sampleFrequency,res@bitsPerSample,res@bitrate,res@nrAudioChannels,upnp:artist,upnp:artist@role,upnp:genr
-         <StartingIndex>0</StartingIndex>^M
-         <RequestedCount>1000</RequestedCount>^M
-         <SortCriteria>+dc:title</SortCriteria>^M
-               </u:Search>^M
-                  </s:Body>^M
-                  </s:Envelope>^M
-
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">^M
-   <s:Body>^M
-         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">^M
-         <ContainerID>6</ContainerID>^M
-         <SearchCriteria>(upnp:class = &quot;object.container.person.musicArtist&quot;)</SearchCriteria>^M
-         <Filter>dc:title</Filter>^M
-         <StartingIndex>0</StartingIndex>^M
-         <RequestedCount>1000</RequestedCount>^M
-         <SortCriteria>+dc:title</SortCriteria>^M
-               </u:Search>^M
-                  </s:Body>^M
-                  </s:Envelope>^M
-
-
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">^M
-   <s:Body>^M
-         <u:Search xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">^M
-         <ContainerID>4</ContainerID>^M
-         <SearchCriteria>(upnp:class derivedfrom &quot;object.item.audioItem&quot;)</SearchCriteria>^M
-         <Filter>dc:title,res,res@protection,res@duration,res@sampleFrequency,res@bitsPerSample,res@bitrate,res@nrAudioChannels,upnp:artist,upnp:artist@role,upnp:genr
-         <StartingIndex>0</StartingIndex>^M
-         <RequestedCount>1000</RequestedCount>^M
-         <SortCriteria>+dc:title</SortCriteria>^M
-               </u:Search>^M
-                  </s:Body>^M
-                  </s:Envelope>^M
-
+'-e' DLNA protocolInfo extend 
 
 */
+
 
 namespace pshare
 {
@@ -152,24 +105,27 @@ namespace pshare
 
 
     const char dlna_extras_none[]       = "*";
-//    const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=012000000000000000000000000000000";    // OP=00 - no seek, OP=01 - seek
-    const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
+    const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";             // OP=00 - no seek, OP=01 - seek; DLNA.ORG_FLAGS=012000000000000000000000000000000
     const char dlna_extras_radio_wma[]  = "DLNA.ORG_PN=WMAFULL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
     const char dlna_extras_radio_ac3[]  = "DLNA.ORG_PN=AC3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
+    const char dlna_extras_mpeg[]       = "DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";     // MPEG_PS_NTSC, MPEG1
+    const char dlna_extras_m2ts[]       = "DLNA.ORG_PN=MPEG_TS_HD_NA;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";   // MPEG_TS_SD_NA
+    const char dlna_extras_wmv[]        = "DLNA.ORG_PN=WMVHIGH_FULL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";    // WMVMED_FULL
+    
 
-    const mime mime_type_list[]=
+    mime mime_type_list[]=
     {
-        {"mpg"  ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg,0},              // default
-        {"mpeg" ,upnp_video,upnp_mpeg,dlna_extras_none,http_mime_mpeg,0},
-        {"mpeg2",upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2,0},
-        {"m2v"  ,upnp_video,upnp_mpeg2,dlna_extras_none,http_mime_mpeg2,0},
-        {"ts"   ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t,0},
-        {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t,0},
-        {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_none,http_mime_mp2t,0},
-        {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_none,http_mime_mp2p,0},
+        {"mpg"  ,upnp_video,upnp_mpeg,dlna_extras_mpeg,http_mime_mpeg,0},              // default
+        {"mpeg" ,upnp_video,upnp_mpeg,dlna_extras_mpeg,http_mime_mpeg,0},
+        {"mpeg2",upnp_video,upnp_mpeg2,dlna_extras_mpeg,http_mime_mpeg2,0},
+        {"m2v"  ,upnp_video,upnp_mpeg2,dlna_extras_mpeg,http_mime_mpeg2,0},
+        {"ts"   ,upnp_video,upnp_mp2t,dlna_extras_m2ts,http_mime_mp2t,0},
+        {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_m2ts,http_mime_mp2t,0},
+        {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_m2ts,http_mime_mp2t,0},
+        {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_mpeg,http_mime_mp2p,0},
         {"avi"  ,upnp_video,upnp_avi,dlna_extras_none,http_mime_avi,0},
         {"asf"  ,upnp_video,upnp_asf,dlna_extras_none,http_mime_asf,0},
-        {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_none,http_mime_wmv,0},
+        {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_wmv,http_mime_wmv,0},
         {"mp4"  ,upnp_video,upnp_mp4,dlna_extras_none,http_mime_mp4,0},
         {"mov"  ,upnp_video,upnp_mov,dlna_extras_none,http_mime_mov,0},
         {"aac"  ,upnp_audio,upnp_aac,dlna_extras_none,http_mime_aac,0},
@@ -182,9 +138,10 @@ namespace pshare
 
     const mime mime_type_none         = {"","","",dlna_extras_none,http_mime_bin,0};
     const mime mime_type_container    = {"",upnp_container,"",dlna_extras_none,http_mime_bin,1};
-    mime mime_type_folder             = {"",upnp_folder,"",dlna_extras_none,http_mime_bin,1};
+          mime mime_type_folder       = {"",upnp_container,"",dlna_extras_none,http_mime_bin,1};
 
     int xbox360=0;
+    int dlna_extend=0;
 
     const char upnp_mgrp[]="239.255.255.250:1900";
 
@@ -205,7 +162,7 @@ namespace pshare
     const char version_number[]="0.0.2";
     const char model_url[]="http://ps3muxer.org/pshare.html";
 
-    int playlist_items_offset=100;
+    int playlist_items_offset=1;
 
     char device_uuid[64]="";
 
@@ -223,12 +180,14 @@ namespace pshare
     int update_id=0;
 
 
-    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* url,const mime* type_info,const char* logo_url)
+    playlist_item* playlist_add(playlist_item* parent,const char* name,const char* url,const mime* type_info,const char* logo_url,const char* type_extras)
     {
         if(!url)
             url="";
         if(!logo_url)
             logo_url="";
+        if(!type_extras)
+            type_extras="";
         if(!type_info)
             type_info=&mime_type_none;
 
@@ -238,8 +197,9 @@ namespace pshare
         int name_len=strlen(name)+1;
         int url_len=strlen(url)+1;
         int logo_url_len=strlen(logo_url)+1;
+        int type_extras_len=strlen(type_extras)+1;
 
-        int len=name_len+url_len+logo_url_len+sizeof(playlist_item);
+        int len=name_len+url_len+logo_url_len+type_extras_len+sizeof(playlist_item);
         
         playlist_item* p=(playlist_item*)MALLOC(len);
         if(!p)
@@ -274,12 +234,14 @@ namespace pshare
         p->name=(char*)(p+1);
         p->url=p->name+name_len;
         p->logo_url=p->url+url_len;
+        p->type_extras=p->logo_url+logo_url_len;
         p->type_info=type_info;
         p->childs=0;
 
         strcpy(p->name,name);
         strcpy(p->url,url);
         strcpy(p->logo_url,logo_url);
+        strcpy(p->type_extras,type_extras);
         p->logo_dlna_profile="";
 
         {
@@ -295,6 +257,7 @@ namespace pshare
         p->name[name_len-1]=0;
         p->url[url_len-1]=0;
         p->logo_url[logo_url_len-1]=0;
+        p->type_extras[type_extras_len-1]=0;
 
         p->next=0;
 
@@ -400,7 +363,7 @@ namespace pshare
         if(playlist_root)
             playlist_free();
 
-        playlist_root=playlist_add(0,device_friendly_name,0,&mime_type_container,0);
+        playlist_root=playlist_add(0,device_friendly_name,0,&mime_type_container,0,0);
         parse_playlist(path);
         update_id++;
         if(update_id>4096)
@@ -499,7 +462,7 @@ int main(int argc,char** argv)
 
 
     int opt;
-    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:x?"))>=0)
+    while((opt=getopt(argc,argv,"dvli:u:t:p:n:hr:xe?"))>=0)
         switch(opt)
         {
         case 'd':
@@ -531,6 +494,9 @@ int main(int argc,char** argv)
         case 'x':
             pshare::xbox360=1;
             break;
+        case 'e':
+            pshare::dlna_extend=1;
+            break;
         case 'h':
         case '?':
             fprintf(stderr,"%s %s UPnP Playlist Browser\n",app_name,pshare::version_number);
@@ -541,8 +507,9 @@ int main(int argc,char** argv)
             fprintf(stderr,"http://code.google.com/p/tsdemuxer\n\n");
 
 
-            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-x] -i iface [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
+            fprintf(stderr,"USAGE: ./%s [-v] [-l] [-x] [-e] -i iface [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
             fprintf(stderr,"   -x          XBox 360 compatible mode\n");
+            fprintf(stderr,"   -e          DLNA protocolInfo extend (PS3, XBox 360)\n");
             fprintf(stderr,"   -v          Turn on verbose output\n");
             fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
@@ -599,10 +566,19 @@ int main(int argc,char** argv)
         pshare::http_port=0;
 
     if(pshare::xbox360)
+    {
+        pshare::playlist_items_offset=100;
         pshare::dev_desc=pshare::dev_desc_wmc;
-    else
-        pshare::mime_type_folder.upnp_class=pshare::upnp_container;
-        
+        pshare::mime_type_folder.upnp_class=pshare::upnp_folder;
+//        pshare::dlna_extend=1;
+    }
+
+    if(!pshare::dlna_extend)
+    {
+        for(int i=0;pshare::mime_type_list[i].file_ext;i++)
+            pshare::mime_type_list[i].dlna_type_extras=pshare::dlna_extras_none;
+    }
+
 
     upnp::uuid_init();
 
@@ -663,6 +639,11 @@ int main(int argc,char** argv)
     pshare::playlist_load(playlist_filename);
 
 //pshare::upnp_search(stdout,0,"upnp:class derivedfrom \"object.item.videoItem.sas\" and @refID exists false","",0,0);
+//pshare::upnp_search(stdout,0,"upnp:class derivedfrom \"object.item.audioItem.sas\" and @refID exists false","",0,0);
+//pshare::upnp_search(stdout,0,"(upnp:class derivedfrom \"object.item.audioItem\")","",0,0);
+//pshare::upnp_search(stdout,0,"(upnp:class = \"object.container.album.musicAlbum\")","",0,0);
+//pshare::upnp_search(stdout,0,"(upnp:class = \"object.item.videoItem.as\")","",0,0);
+//pshare::upnp_search(stdout,0,"*","",0,0);
 
     setsid();
 
@@ -1730,21 +1711,34 @@ int pshare::parse_playlist_file(const char* name)
         if(verb_fp)
             fprintf(verb_fp,"playlist: '%s' -> %s\n",playlist_name,name);
 
-        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,&mime_type_folder,0);
+        playlist_item* parent_item=playlist_add(playlist_root,playlist_name,0,&mime_type_folder,0,0);
 
         char track_name[64]="";
         char track_url[256]="";
         char logo_url[256]="";
         char file_type[64]="";
+        char file_type_ext[256]="";
         const mime* type_info=0;
 
         char buf[256];
         while(fgets(buf,sizeof(buf),fp))
         {
-            char* p=strpbrk(buf,"\r\n");
+            char* beg=buf;
+            while(*beg && (*beg==' ' || *beg=='\t'))
+                beg++;
+
+            char* p=strpbrk(beg,"\r\n");
             if(p)
                 *p=0;
-            p=buf;
+            else
+                p=beg+strlen(beg);
+
+            while(p>beg && (p[-1]==' ' || p[-1]=='\t'))
+                p--;
+            *p=0;
+
+            p=beg;
+
             if(!strncmp(p,"\xEF\xBB\xBF",3))    // skip BOM
                 p+=3;
 
@@ -1788,9 +1782,24 @@ int pshare::parse_playlist_file(const char* name)
                     while(*p && *p==' ')
                         p++;
 
+                    char* ext=strchr(p,',');
+                    if(ext)
+                    {
+                        *ext=0;
+                        ext++;
+                    }else
+                        ext=(char*)"";
+
                     int n=snprintf(file_type,sizeof(file_type),"%s",p);
                     if(n==-1 || n>=sizeof(file_type))
                         file_type[sizeof(file_type)-1]=0;
+
+                    if(*ext)
+                    {
+                        n=snprintf(file_type_ext,sizeof(file_type_ext),"%s",ext);
+                        if(n==-1 || n>=sizeof(file_type_ext))
+                            file_type_ext[sizeof(file_type_ext)-1]=0;
+                    }
                 }
             }else
             {
@@ -1825,15 +1834,17 @@ int pshare::parse_playlist_file(const char* name)
                     type_info=&mime_type_list[0];
 
                 if(verb_fp && upnp::debug)
-                    fprintf(verb_fp,"   name='%s', url='%s', mime=%s* (%s)\n",track_name,track_url,type_info->type,type_info->upnp_class);
+                    fprintf(verb_fp,"   name='%s', url='%s', mime='%s%s' (%s)\n",track_name,track_url,type_info->type,
+                        *file_type_ext?file_type_ext:type_info->dlna_type_extras,type_info->upnp_class);
 
-                playlist_item* item=playlist_add(parent_item,track_name,track_url,type_info,logo_url);
+                playlist_item* item=playlist_add(parent_item,track_name,track_url,type_info,logo_url,file_type_ext);
 
                 *track_name=0;
                 *track_url=0;
                 type_info=0;
                 *logo_url=0;
                 *file_type=0;
+                *file_type_ext=0;
             }
         }
 
@@ -1890,7 +1901,11 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
 
     if(!item->type_info->container)
     {
-        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->type_info->type,item->type_info->dlna_type_extras);
+//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;0&quot; duration=&quot;0:00:00&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; duration=&quot;0:00:00&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;0&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
 
         if(!item->proxy)
             tmpl::print_to_xml2(item->url,fp);
@@ -1907,7 +1922,7 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
 
 int pshare::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filter,int index,int count)
 {
-    playlist_item def_item= { -1, object_id, 0, 0, (char*)"???", (char*)"", (char*)"", (char*)"", &mime_type_folder, 0, 0, 0 };
+    playlist_item def_item= { -1, object_id, 0, 0, (char*)"???", (char*)"", (char*)"", (char*)"", (char*)"", &mime_type_folder, 0, 0, 0 };
 
     int num=0;
     int total_num=0;
@@ -1976,6 +1991,11 @@ const char* pshare::search_object_type(const char* exp)
     static const char audio_tag[]     = "object.item.audioItem";
     static const char image_tag[]     = "object.item.imageItem";
 
+    while(*exp && *exp==' ')
+        exp++;
+
+    if(!*exp || !strcmp(exp,"*"))
+        return "*";
 
     const char* p=strstr(exp,class_tag);
 
@@ -1986,10 +2006,17 @@ const char* pshare::search_object_type(const char* exp)
         while(*p && (*p==' ' || *p=='\t'))
             p++;
 
+        int ok=1;
+        
         if(!strncmp(p,derived_tag,sizeof(derived_tag)-1))
-        {
             p+=sizeof(derived_tag)-1;
+        else if(*p=='=')
+            p++;
+        else
+            ok=0;
 
+        if(ok)
+        {
             while(*p && (*p==' ' || *p=='\t'))
                 p++;
             if(*p=='\"')
@@ -2018,8 +2045,8 @@ const char* pshare::search_object_type(const char* exp)
             }
         }
     }
-            
-    return 0;
+
+    return "";
 }
 
 
@@ -2048,7 +2075,7 @@ int pshare::upnp_search(FILE* fp,int object_id,const char* what,const char* filt
         {
             if(!item->type_info->container)
             {
-                if(!what || item->type_info->upnp_class==what)
+                if(*what=='*' || item->type_info->upnp_class==what)
                 {
                     if(n>=index)
                     {
