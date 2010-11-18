@@ -41,6 +41,8 @@ namespace pshare
     };
 
     extern FILE* verb_fp;
+    extern int xbox360;
+    extern int dlna_extend;            
 
     extern const char upnp_video[];
     extern const char upnp_audio[];
