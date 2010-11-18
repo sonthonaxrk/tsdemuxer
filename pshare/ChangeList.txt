@@ -1,22 +1,22 @@
 0.0.2
-- Microsoft MediaPlayer 11 as client supported:
+- Microsoft Media Player 12 as client supported:
     X_MS_MediaReceiverRegistrar:1
     ConnectionManager:1
     ContentDirectory:1#GetSortCapabilities
     ContentDirectory:1#Search
     SUBSCRIBE, UNSUBSCRIBE
-- Internet Radio fix (protocolInfo="http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;..." for MP3 streams)
-- Artist name, actor and track number (-DNO_EXTRA_INFO for disable)
+- Artist name, actor and track number
 - Playlists reload (SIGUSR1 or 'http://host:port/reload')
-- '#EXTLOGO:' record in m3u playlists supported. Examples: '#EXTLOGO: /def_logo.jpg' or '#EXTLOGO: http://host/def_logo.jpg' (JPEG for PS3)
+- '#EXTLOGO:' for stream logo (JPEG for PS3). Examples: '#EXTLOGO: /def_logo.jpg' or '#EXTLOGO: http://host/def_logo.jpg'
 - '#EXTTYPE:' for force stream type selection: mpeg,mpeg2,ts,vob,avi,asf,wmv,mp4,mov,aac,ac3,mp3,ogg,wma
 - '#EXTTYPE:' optional DLNA profile after file type, example: '#EXTTYPE:mp3,DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000'
 - No images sharing now
 - Ignore track length from playlist
 - '-O2'
 - HTTP proxy for Internet radio (-DWITH_PROXY, 'PS3 - transferMode.dlna.org: Streaming')
-- '-e' for DLNA protocolInfo extend (DLNA_ORG.PN...)
-- remove size='-1' duration='-1'
+- '-e' for DLNA protocolInfo extend (DLNA_ORG.PN...), needed for radio on PS3
+- SD (MPEG2), 720p (MPEG2), 1080i (H.264/AVC) tested on Windows Media Player and PS3
+- MP3 Internet-radio tested on Windows Media Player and IconBit HDS4L
 - Bug fixes:
     ulibc fstat() bugfix
     uuid from /dev/urandom (-DWITH_URANDOM)
@@ -25,8 +25,7 @@
     '-i' now required
     playlists path must be absolute
     dlna:profileID="JPEG_TN" to upnp:albumArtURI for JPEG (use only JPEG for PS3)
-    protocolInfo extend for MP3 and WMA radio (PS3)
-    <res size="-1" duration="-1">    
+    <res size="0" ...>    
     'EXT:' header to http responses
     setsockopt(fd,IPPROTO_TCP,TCP_NODELAY,...)
     trim playlist items
