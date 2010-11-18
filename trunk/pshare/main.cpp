@@ -26,15 +26,13 @@
 
 
 // TODO: proxy level: 0 - no proxy, 1 - multicast only, 2 - multicast and radio, 3 - all
-// TODO: profiles - XBox 360, PS3, generic (no DLNA_ORG.PN..., length, duration)
 // TODO: multicast to http proxy (as udpxy)
 // TODO: http proxy for radio
 // TODO: Build playlist from file system
 
-// PS3: only JPEG logos, no MP3 streaming (need proxy)
+// PS3: only JPEG logos, no MP3 streaming (need proxy with 'transferMode.dlna.org: Streaming' ?)
 
 // XBox360
-//    Search?
 //    no video in video folder (Browse)
 //    Browse by category - (ContainerID=15 - video? ContainerID=4 - audio? ContainerID=16 - photo)
 
@@ -43,15 +41,6 @@
 // http://www.cybergarage.org/twiki/bin/view/Main/Windows7DLNA
 // http://msdn.microsoft.com/en-us/library/aa468340.aspx
 // http://msdn.microsoft.com/en-us/library/ee780971%28PROT.10%29.aspx
-
-/*
-size=&quot;-1&quot; duration=&quot;-1&quot;
-
-PS3 Radio???? size=0, size=-1, duration=0, duration=-1
-
-'-e' DLNA protocolInfo extend 
-
-*/
 
 
 namespace pshare
@@ -108,9 +97,9 @@ namespace pshare
     const char dlna_extras_radio_mp3[]  = "DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";             // OP=00 - no seek, OP=01 - seek; DLNA.ORG_FLAGS=012000000000000000000000000000000
     const char dlna_extras_radio_wma[]  = "DLNA.ORG_PN=WMAFULL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
     const char dlna_extras_radio_ac3[]  = "DLNA.ORG_PN=AC3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";
-    const char dlna_extras_mpeg[]       = "DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";     // MPEG_PS_NTSC, MPEG1
-    const char dlna_extras_m2ts[]       = "DLNA.ORG_PN=MPEG_TS_HD_NA;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";   // MPEG_TS_SD_NA
-    const char dlna_extras_wmv[]        = "DLNA.ORG_PN=WMVHIGH_FULL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000";    // WMVMED_FULL
+    const char dlna_extras_mpeg[]       = "DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";     // MPEG_PS_NTSC, MPEG1
+    const char dlna_extras_m2ts[]       = "DLNA.ORG_PN=MPEG_TS_HD_NA;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";   // MPEG_TS_SD_NA
+    const char dlna_extras_wmv[]        = "DLNA.ORG_PN=WMVHIGH_FULL;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";    // WMVMED_FULL
     
 
     mime mime_type_list[]=
@@ -1867,8 +1856,6 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
     tmpl::print_to_xml2(item->name,fp);
     fprintf(fp,"&lt;/dc:title&gt;&lt;upnp:class&gt;%s&lt;/upnp:class&gt;",item->type_info->upnp_class);
 
-
-#ifndef NO_EXTRA_INFO
     if(item->parent && *item->parent->name)
     {
         if(item->type_info->upnp_class==upnp_video)
@@ -1897,15 +1884,11 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
         tmpl::print_to_xml2(item->logo_url,fp);
         fprintf(fp,"&lt;/upnp:albumArtURI&gt;");
     }
-#endif
 
     if(!item->type_info->container)
     {
-//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;-1&quot; duration=&quot;-1&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
 //        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;0&quot; duration=&quot;0:00:00&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
-//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; duration=&quot;0:00:00&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
-//        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;0&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
-        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+        fprintf(fp,"&lt;res size=&quot;0&quot; protocolInfo=&quot;%s%s&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
 
         if(!item->proxy)
             tmpl::print_to_xml2(item->url,fp);
