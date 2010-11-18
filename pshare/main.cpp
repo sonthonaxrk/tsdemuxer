@@ -100,6 +100,7 @@ namespace pshare
     const char dlna_extras_mpeg[]       = "DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";     // MPEG_PS_NTSC, MPEG1
     const char dlna_extras_m2ts[]       = "DLNA.ORG_PN=MPEG_TS_HD_NA;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";   // MPEG_TS_SD_NA
     const char dlna_extras_wmv[]        = "DLNA.ORG_PN=WMVHIGH_FULL;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";    // WMVMED_FULL
+    const char dlna_extras_avi[]        = "DLNA.ORG_PN=AVI;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=01700000000000000000000000000000";             // PV_DIVX_DX50
     
 
     mime mime_type_list[]=
@@ -112,7 +113,7 @@ namespace pshare
         {"m2ts" ,upnp_video,upnp_mp2t,dlna_extras_m2ts,http_mime_mp2t,0},
         {"mts"  ,upnp_video,upnp_mp2t,dlna_extras_m2ts,http_mime_mp2t,0},
         {"vob"  ,upnp_video,upnp_mp2p,dlna_extras_mpeg,http_mime_mp2p,0},
-        {"avi"  ,upnp_video,upnp_avi,dlna_extras_none,http_mime_avi,0},
+        {"avi"  ,upnp_video,upnp_avi,dlna_extras_avi,http_mime_avi,0},
         {"asf"  ,upnp_video,upnp_asf,dlna_extras_none,http_mime_asf,0},
         {"wmv"  ,upnp_video,upnp_wmv,dlna_extras_wmv,http_mime_wmv,0},
         {"mp4"  ,upnp_video,upnp_mp4,dlna_extras_none,http_mime_mp4,0},
@@ -498,7 +499,7 @@ int main(int argc,char** argv)
 
             fprintf(stderr,"USAGE: ./%s [-v] [-l] [-x] [-e] -i iface [-u device_uuid] [-t mcast_ttl] [-p http_port] [-r www_root] [playlist]\n",app_name);
             fprintf(stderr,"   -x          XBox 360 compatible mode\n");
-            fprintf(stderr,"   -e          DLNA protocolInfo extend (PS3, XBox 360)\n");
+            fprintf(stderr,"   -e          DLNA protocolInfo extend (DLNA profiles)\n");
             fprintf(stderr,"   -v          Turn on verbose output\n");
             fprintf(stderr,"   -d          Turn on verbose output + debug messages\n");
             fprintf(stderr,"   -l          Turn on loopback multicast transmission\n");
@@ -559,7 +560,7 @@ int main(int argc,char** argv)
         pshare::playlist_items_offset=100;
         pshare::dev_desc=pshare::dev_desc_wmc;
         pshare::mime_type_folder.upnp_class=pshare::upnp_folder;
-//        pshare::dlna_extend=1;
+        pshare::dlna_extend=1;
     }
 
     if(!pshare::dlna_extend)
@@ -1885,9 +1886,14 @@ int pshare::upnp_print_item(FILE* fp,playlist_item* item)
         fprintf(fp,"&lt;/upnp:albumArtURI&gt;");
     }
 
+    if(verb_fp && upnp::debug)
+        fprintf(verb_fp," * '%s' ('%s')\n",item->name,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+
+
     if(!item->type_info->container)
     {
 //        fprintf(fp,"&lt;res protocolInfo=&quot;%s%s&quot; size=&quot;0&quot; duration=&quot;0:00:00&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
+//        fprintf(fp,"&lt;res duration=\"24:00:00.000\" protocolInfo=&quot;%s%s&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
         fprintf(fp,"&lt;res size=&quot;0&quot; protocolInfo=&quot;%s%s&quot;&gt;",item->type_info->type,*item->type_extras?item->type_extras:item->type_info->dlna_type_extras);
 
         if(!item->proxy)
@@ -1923,6 +1929,7 @@ int pshare::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filt
         playlist_item* item=playlist_find_by_id(object_id);
 
         upnp_print_item(fp,item?item:&def_item);
+
 //upnp_print_item(stdout,item?item:&def_item);
 
         num=total_num=1;
@@ -1953,6 +1960,8 @@ int pshare::upnp_browse(FILE* fp,int object_id,const char* flag,const char* filt
         }
     }
 
+    if(verb_fp)
+        fprintf(verb_fp,"returned %i, total %i\n",num,total_num);
 
     fprintf(fp,"&lt;/DIDL-Lite&gt;</Result>\n"
         "         <NumberReturned>%i</NumberReturned>\n"
@@ -2084,6 +2093,9 @@ int pshare::upnp_search(FILE* fp,int object_id,const char* what,const char* filt
             }
         }
     }
+
+    if(verb_fp)
+        fprintf(verb_fp,"returned %i, total %i\n",num,total_num);
 
     fprintf(fp,"&lt;/DIDL-Lite&gt;</Result>\n"
         "         <NumberReturned>%i</NumberReturned>\n"
