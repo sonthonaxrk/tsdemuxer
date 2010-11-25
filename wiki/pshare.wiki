@@ -8,7 +8,7 @@ This program is a light DLNA Media Server which provides ContentDirectory:1 serv
 Copyright (C) 2010 Anton Burdinuk
 
 clark15b@gmail.com<br>
-http://ps3muxer.org/pshare.html homepage<br>
+http://ps3muxer.org/pshare.html<br>
 http://code.google.com/p/tsdemuxer/downloads/list<br>
 
 <wiki:video url="http://www.youtube.com/watch?v=yBqF-WKL8tk&feature=player_embedded"/>
