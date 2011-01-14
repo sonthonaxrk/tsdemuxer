@@ -23,6 +23,8 @@ and if DLNA.ORG_OP=00, then all keys are disabled
 So, Range header is used to fast forward/reverse, but sometimes it is very slow. TimeSeekRange.DLNA.ORG header doesn’t work with directly steramed video files (PMS returns movie from beginning):
 */
 
+/* contentFeatures.dlna.org: DLNA.ORG_PN=MPEG_TS_SD_NA;DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=017000 00000000000000000000000000 */
+
 /*
 GET /get/0$0$1$0/00000.MTS HTTP/1.1
 TimeSeekRange.dlna.org: npt=1790.044-
