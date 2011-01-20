@@ -36,6 +36,8 @@
 //    no video in video folder (Browse)
 //    Browse by category - (ContainerID=15 - video? ContainerID=4 - audio? ContainerID=16 - photo)
 
+// WDTV Live: no video and audio
+// DLNA headers to stream proxy
 
 // http://www.dlna.org/industry/certification/guidelines/ (IEC61883)
 // http://www.cybergarage.org/twiki/bin/view/Main/Windows7DLNA
