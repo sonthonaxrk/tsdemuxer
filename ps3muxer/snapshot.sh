@@ -27,6 +27,6 @@ cp version.h $DST/
 cp rm.cpp $DST/
 cp ../LICENSE $DST/
 
-tar c $DST | gzip -c > $DST-129.tar.gz
+tar c $DST | gzip -c > $DST.tar.gz
 
 rm -rf $DST
