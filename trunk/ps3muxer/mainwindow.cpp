@@ -606,14 +606,15 @@ void MainWindow::startMuxing(bool delay)
             transcode_audio_track_num++;
         }else
         {
-            if(two_pass)
+            if(audio_track.ext_filename.length())
+                audio_track.filename=audio_track.ext_filename;
+            else
             {
-                audio_track.filename_temp=audio_track.filename=tmp_path+prefix+"_track_"+audio_track.track_id+".ac3";
-                tmp_files.push_back(audio_track.filename_temp);
-            }else
-            {
-                if(audio_track.ext_filename.length())
-                    audio_track.filename=audio_track.ext_filename;
+                if(two_pass)
+                {
+                    audio_track.filename_temp=audio_track.filename=tmp_path+prefix+"_track_"+audio_track.track_id+".ac3";
+                    tmp_files.push_back(audio_track.filename_temp);
+                }
             }
         }
     }
