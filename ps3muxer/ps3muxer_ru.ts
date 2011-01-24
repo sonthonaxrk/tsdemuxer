@@ -10,7 +10,7 @@
     </message>
     <message>
         <location filename="mainwindow.cpp" line="304"/>
-        <location filename="mainwindow.cpp" line="758"/>
+        <location filename="mainwindow.cpp" line="784"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -40,88 +40,96 @@
         <translation>Финальный M2TS файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="410"/>
+        <location filename="mainwindow.cpp" line="412"/>
         <source>Batch processing</source>
         <translation>Пакетная обработка</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="410"/>
+        <location filename="mainwindow.cpp" line="412"/>
         <source>%1 tasks will be processed, you are assured?</source>
         <translation>Пачка из %1 задач будет обработана, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="432"/>
-        <location filename="mainwindow.cpp" line="755"/>
+        <location filename="mainwindow.cpp" line="434"/>
+        <location filename="mainwindow.cpp" line="781"/>
         <source>Done</source>
         <translation>Успех</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="432"/>
+        <location filename="mainwindow.cpp" line="434"/>
         <source>The batch is empty</source>
         <translation>Пачка пуста</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="527"/>
+        <location filename="mainwindow.cpp" line="534"/>
         <source>No audio</source>
         <translation>Нет звука</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="527"/>
+        <location filename="mainwindow.cpp" line="534"/>
         <source>Audio track is not chosen, you are assured?</source>
         <translation>Не выбрана звуковая дорожка, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="535"/>
+        <location filename="mainwindow.cpp" line="542"/>
         <source>Unknown video</source>
         <translation>Неизвестное видео</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="535"/>
+        <location filename="mainwindow.cpp" line="542"/>
         <source>You have chosen %1 video track, PS3 will not show it, you are assured?</source>
         <translation>Вы выбрали %1 видео дорожку, PS3 скорее всего не сможет это показать, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="557"/>
+        <location filename="mainwindow.cpp" line="564"/>
         <source>Transcoding audio</source>
         <translation>Кодирование звука</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="557"/>
+        <location filename="mainwindow.cpp" line="564"/>
         <source>You have chosen %1 audio track, it will be converted, process will occupy approximately 15 minutes, you are assured?</source>
         <translation>Вы выбрали %1 звуковую дорожку, она будет перекодирована, процесс займет примерно 15 минут, Вы уверены?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="622"/>
+        <location filename="mainwindow.cpp" line="645"/>
+        <source>Extracting tracks</source>
+        <translation>Извлечение дорожек</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="646"/>
+        <source>Extracting tracks (approximately 3-5 min for 8Gb movie)...</source>
+        <translation>Извлечение дорожек (примерно 3-5 минут для 8Гб файла)...</translation>
+    </message>
+    <message>
         <source>Extracting audio tracks</source>
-        <translation>Извлечение звуковых дорожек</translation>
+        <translation type="obsolete">Извлечение звуковых дорожек</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="623"/>
         <source>Extracting audio tracks (approximately 3-5 min for 8Gb movie)...</source>
-        <translation>Извлечение звуковых дорожек (примерно 3-5 минут для 8Гб файла)...</translation>
+        <translation type="obsolete">Извлечение звуковых дорожек (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="747"/>
+        <location filename="mainwindow.cpp" line="773"/>
         <source>Remove file</source>
         <translation>Удаление файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="748"/>
+        <location filename="mainwindow.cpp" line="774"/>
         <source>Remove temp file &apos;%1&apos;...</source>
         <translation>Удаление временного файла &apos;%1&apos;...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="755"/>
+        <location filename="mainwindow.cpp" line="781"/>
         <source>The task number %1 is successfully added</source>
         <translation>Задача номер %1 успешно добавлена</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="758"/>
+        <location filename="mainwindow.cpp" line="784"/>
         <source>Unable to create meta file: %1</source>
         <translation>Ошибка создания метафайла: %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="782"/>
+        <location filename="mainwindow.cpp" line="808"/>
         <source>About</source>
         <translation>О программе...</translation>
     </message>
@@ -138,22 +146,22 @@
         <translation type="obsolete">Извлечение звуковой дорожки %1 (примерно 3-5 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="651"/>
+        <location filename="mainwindow.cpp" line="674"/>
         <source>Encoding audio track</source>
         <translation>Кодирование звуковой дорожки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="652"/>
+        <location filename="mainwindow.cpp" line="675"/>
         <source>Encoding audio track %1 to AC3 (approximately 10-20 min for 8Gb movie)...</source>
         <translation>Кодирование звуковой дорожки %1 в AC3 (примерно 10-20 минут для 8Гб файла)...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="718"/>
+        <location filename="mainwindow.cpp" line="744"/>
         <source>Remux M2TS</source>
         <translation>Формирование M2TS файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="719"/>
+        <location filename="mainwindow.cpp" line="745"/>
         <source>Muxing to MPEG2-TS stream (approximately 5 min for 8Gb movie)...
 %1</source>
         <translation>Формирование MPEG2-TS потока (примерно 5 минут для 8Гб файла)...
@@ -174,140 +182,150 @@
         <translation>Видео дорожки:</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="85"/>
-        <location filename="mainwindow.ui" line="160"/>
+        <location filename="mainwindow.ui" line="91"/>
+        <location filename="mainwindow.ui" line="172"/>
         <source>Track</source>
         <translation>Дорожка</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="90"/>
-        <location filename="mainwindow.ui" line="165"/>
+        <location filename="mainwindow.ui" line="96"/>
+        <location filename="mainwindow.ui" line="177"/>
         <source>delay (ms)</source>
         <translation>Задержка (мс)</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="95"/>
-        <location filename="mainwindow.ui" line="170"/>
+        <location filename="mainwindow.ui" line="101"/>
+        <location filename="mainwindow.ui" line="182"/>
         <source>lang</source>
         <translation>Язык</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="100"/>
+        <location filename="mainwindow.ui" line="106"/>
         <source>fps</source>
         <translation type="unfinished">Кадров в сек</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="105"/>
-        <location filename="mainwindow.ui" line="175"/>
+        <location filename="mainwindow.ui" line="111"/>
+        <location filename="mainwindow.ui" line="187"/>
         <source>codec</source>
         <translation>Кодек</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="115"/>
+        <location filename="mainwindow.ui" line="121"/>
         <source>Audio tracks:</source>
         <translation>Аудио дорожки:</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="185"/>
+        <location filename="mainwindow.ui" line="197"/>
         <source>Output:</source>
         <translation>Выход:</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="207"/>
+        <location filename="mainwindow.ui" line="219"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="229"/>
-        <location filename="mainwindow.ui" line="412"/>
+        <location filename="mainwindow.ui" line="241"/>
+        <location filename="mainwindow.ui" line="445"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="236"/>
-        <location filename="mainwindow.ui" line="420"/>
+        <location filename="mainwindow.ui" line="248"/>
+        <location filename="mainwindow.ui" line="453"/>
         <source>Clear</source>
         <translation>Очистить</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="256"/>
+        <location filename="mainwindow.ui" line="268"/>
         <source>FPS:</source>
         <translation type="unfinished">Частота кадров:</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="289"/>
+        <location filename="mainwindow.ui" line="301"/>
         <source>AC3 bitrate:</source>
         <translation>AC3 поток:</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="306"/>
+        <location filename="mainwindow.ui" line="318"/>
         <source>Split:</source>
         <translation>Разбиение:</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="456"/>
+        <location filename="mainwindow.ui" line="341"/>
+        <source>Processing:</source>
+        <translation>Обработка:</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="348"/>
+        <source>2-pass</source>
+        <translation>2 шага</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="489"/>
         <source>Add audio</source>
         <translation>Добавить звук</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="264"/>
-        <location filename="mainwindow.ui" line="314"/>
+        <location filename="mainwindow.ui" line="276"/>
+        <location filename="mainwindow.ui" line="326"/>
         <source>None</source>
         <translation>Нет</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="275"/>
+        <location filename="mainwindow.ui" line="287"/>
         <source>h.264 level 4.1</source>
         <translation>h.264 уровень 4.1</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="357"/>
-        <location filename="mainwindow.ui" line="425"/>
+        <location filename="mainwindow.ui" line="390"/>
+        <location filename="mainwindow.ui" line="458"/>
         <source>Start muxing</source>
         <translation>Старт</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="389"/>
+        <location filename="mainwindow.ui" line="422"/>
         <source>FIle</source>
         <translation>Файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="403"/>
+        <location filename="mainwindow.ui" line="436"/>
         <source>Help</source>
         <translation>Помощь</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="415"/>
+        <location filename="mainwindow.ui" line="448"/>
         <source>Ctrl+O</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="428"/>
+        <location filename="mainwindow.ui" line="461"/>
         <source>Ctrl+R</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="433"/>
+        <location filename="mainwindow.ui" line="466"/>
         <source>Quit</source>
         <translation>Выход</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="438"/>
+        <location filename="mainwindow.ui" line="471"/>
         <source>About</source>
         <translation type="unfinished">О программе</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="443"/>
+        <location filename="mainwindow.ui" line="476"/>
         <source>Add to batch</source>
         <translation>Добавить в пачку</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="446"/>
+        <location filename="mainwindow.ui" line="479"/>
         <source>Ctrl+A</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="451"/>
+        <location filename="mainwindow.ui" line="484"/>
         <source>Clear batch</source>
         <translation>Очистить пачку</translation>
     </message>
@@ -360,8 +378,8 @@
         <translation>Процесс</translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="226"/>
         <location filename="execwindow.ui" line="70"/>
+        <location filename="execwindow.cpp" line="226"/>
         <source>Abort</source>
         <translation>Прервать</translation>
     </message>
