@@ -403,8 +403,10 @@ void MainWindow::parseCmdParams(const QString& s,QStringList& lst)
 void MainWindow::on_pushButton_2_clicked()
 {
     if(!global_batch.size())
+    {
         startMuxing(false);
-    else
+        on_pushButton_3_clicked();
+    }else
     {
         addToBatch();
         QMessageBox mbox(QMessageBox::Question,tr("Batch processing"),tr("%1 tasks will be processed, you are assured?").arg(batch_size),QMessageBox::Yes|QMessageBox::No,this);
@@ -439,10 +441,15 @@ void MainWindow::startMuxing(bool delay)
     std::list<execCmd>      batch;
     std::list<std::string>  tmp_files;
 
+    int two_pass=0;
+
     int _video=ui->tableWidget->currentRow();
 
     if(_video==-1)
         return;
+
+    if(ui->checkBox_2->checkState()==Qt::Checked)
+        two_pass=1;
 
     // get tmp path
     std::string tmp_path=cfg["tmp_path"];
@@ -599,12 +606,25 @@ void MainWindow::startMuxing(bool delay)
             transcode_audio_track_num++;
         }else
         {
-            if(audio_track.ext_filename.length())
-                audio_track.filename=audio_track.ext_filename;
+            if(two_pass)
+            {
+                audio_track.filename_temp=audio_track.filename=tmp_path+prefix+"_track_"+audio_track.track_id+".ac3";
+                tmp_files.push_back(audio_track.filename_temp);
+            }else
+            {
+                if(audio_track.ext_filename.length())
+                    audio_track.filename=audio_track.ext_filename;
+            }
         }
     }
 
-    if(transcode_audio_track_num)
+    if(two_pass)
+    {
+        video_track.filename=tmp_path+prefix+"_track_"+video_track.track_id+".264";
+        tmp_files.push_back(video_track.filename);
+    }
+
+    if(transcode_audio_track_num || two_pass)
     {
         QStringList lst;
 
@@ -618,9 +638,12 @@ void MainWindow::startMuxing(bool delay)
                 lst<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(QString::fromLocal8Bit(audio_track.filename_temp.c_str()));
         }
 
+        if(video_track.filename.length())
+            lst<<QString("%1:%2").arg(video_track.track_id.c_str()).arg(QString::fromLocal8Bit(video_track.filename.c_str()));
+
         if(lst.size()>2)
-            batch.push_back(execCmd(tr("Extracting audio tracks"),
-                tr("Extracting audio tracks (approximately 3-5 min for 8Gb movie)..."),
+            batch.push_back(execCmd(tr("Extracting tracks"),
+                tr("Extracting tracks (approximately 3-5 min for 8Gb movie)..."),
                 cfg["mkvextract"].c_str(),lst));
 
 
@@ -628,7 +651,7 @@ void MainWindow::startMuxing(bool delay)
         {
             track_info& audio_track=*i;
 
-            if(audio_track.filename.length() && audio_track.filename_temp.length())
+            if(audio_track.filename.length() && audio_track.filename_temp.length() && audio_track.filename!=audio_track.filename_temp)
             {
                 lst.clear();
 
@@ -675,7 +698,10 @@ void MainWindow::startMuxing(bool delay)
 
         std::string fps=getFPS(ui->comboBox_2);
 
-        opts+=(vcc.length()?vcc:video_track.codec)+", \""+source_file_name+"\", insertSEI, contSPS, track="+video_track.track_id;
+        opts+=(vcc.length()?vcc:video_track.codec)+", \""+(video_track.filename.length()?video_track.filename:source_file_name)+"\", insertSEI, contSPS";
+
+        if(!video_track.filename.length())
+            opts+=", track="+video_track.track_id;
         if(video_track.lang.length())
             opts+=", lang="+video_track.lang;
         if(fps.length())
