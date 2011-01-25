@@ -177,9 +177,13 @@ void execWindow::onDataReady()
 
         bool show=true;
 
-        if(!strncmp(buf,"Progress: ",10))
+        static const char progess_tag[]="Progress: ";
+
+        char* p=strstr(buf,progess_tag);
+        
+        if(p)
         {
-            char* p=buf+10;
+            p+=sizeof(progess_tag)-1;
             char* p2=strchr(p,'%');
             if(p2)
                 *p2=0;
@@ -191,7 +195,7 @@ void execWindow::onDataReady()
             show=false;
         }else
         {
-            char* p=buf;
+            p=buf;
             char* p2=strstr(p,"% complete");
             if(p2)
             {
