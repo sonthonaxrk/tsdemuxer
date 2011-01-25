@@ -368,7 +368,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="execwindow.cpp" line="226"/>
+        <location filename="execwindow.cpp" line="230"/>
         <source>Abort action?</source>
         <translation>Отменить действие?</translation>
     </message>
@@ -379,7 +379,7 @@
     </message>
     <message>
         <location filename="execwindow.ui" line="70"/>
-        <location filename="execwindow.cpp" line="226"/>
+        <location filename="execwindow.cpp" line="230"/>
         <source>Abort</source>
         <translation>Прервать</translation>
     </message>
