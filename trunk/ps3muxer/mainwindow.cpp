@@ -629,6 +629,11 @@ void MainWindow::startMuxing(bool delay)
     {
         QStringList lst;
 
+        const std::string& mkvextract_args=cfg["mkvextract_args"];
+
+        if(mkvextract_args.length())
+            parseCmdParams(mkvextract_args.c_str(),lst);
+
         lst<<"tracks"<<QString::fromLocal8Bit((source_file_name.c_str()));
 
         for(std::list<track_info>::iterator i=audio_tracks.begin();i!=audio_tracks.end();++i)
