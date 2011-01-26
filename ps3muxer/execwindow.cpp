@@ -147,8 +147,12 @@ void execWindow::unescString(const char* buf,int len,QString& s)
     ss.reserve(len);
 
     for(int i=0;i<len;i++)
-        if(buf[i]>31)
-            ss+=buf[i];
+    {
+        int ch=((unsigned char*)buf)[i];
+
+        if(ch>31)
+            ss+=ch;
+    }
 
     s=QString::fromLocal8Bit(ss.c_str(),ss.length());
 }
@@ -179,11 +183,9 @@ void execWindow::onDataReady()
 
         static const char progess_tag[]="Progress: ";
 
-        char* p=strstr(buf,progess_tag);
-        
-        if(p)
+        if(!strncmp(buf,progess_tag,sizeof(progess_tag)-1))
         {
-            p+=sizeof(progess_tag)-1;
+            char* p=buf+sizeof(progess_tag)-1;
             char* p2=strchr(p,'%');
             if(p2)
                 *p2=0;
@@ -195,7 +197,7 @@ void execWindow::onDataReady()
             show=false;
         }else
         {
-            p=buf;
+            char* p=buf;
             char* p2=strstr(p,"% complete");
             if(p2)
             {
