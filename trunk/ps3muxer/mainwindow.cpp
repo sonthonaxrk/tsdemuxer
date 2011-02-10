@@ -629,6 +629,8 @@ void MainWindow::startMuxing(bool delay)
     {
         QStringList lst;
 
+        int extract_num=0;
+
         const std::string& mkvextract_args=cfg["mkvextract_args"];
 
         if(mkvextract_args.length())
@@ -641,13 +643,19 @@ void MainWindow::startMuxing(bool delay)
             track_info& audio_track=*i;
 
             if(audio_track.filename.length() && !audio_track.ext_filename.length())
+            {
                 lst<<QString("%1:%2").arg(audio_track.track_id.c_str()).arg(QString::fromLocal8Bit(audio_track.filename_temp.c_str()));
+                extract_num++;
+            }
         }
 
         if(video_track.filename.length())
+        {
             lst<<QString("%1:%2").arg(video_track.track_id.c_str()).arg(QString::fromLocal8Bit(video_track.filename.c_str()));
+            extract_num++;
+        }
 
-        if(lst.size()>2)
+        if(extract_num>0)
             batch.push_back(execCmd(tr("Extracting tracks"),
                 tr("Extracting tracks (approximately 3-5 min for 8Gb movie)..."),
                 cfg["mkvextract"].c_str(),lst));
