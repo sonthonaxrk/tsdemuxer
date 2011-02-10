@@ -1,5 +1,5 @@
 Package: ps3muxer
-Version: 1.29-ubuntu1
+Version: 1.30-ubuntu1
 Section: video
 Architecture: amd64
 Depends: libqtgui4, libqtcore4, libstdc++6, ffmpeg, mkvtoolnix, ia32-libs
