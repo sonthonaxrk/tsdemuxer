@@ -18,14 +18,19 @@ namespace ebml
         virtual const char* what(void) const throw() {return _what.c_str();}
     };
 
+    enum { timecode_limit=60000 };
 
     class file
     {
     protected:
         FILE* fp;
         u_int32_t cluster_timecode;
+
+        u_int32_t track_id;
+        std::string track_codec;
+        std::string track_lang;
     public:
-        file(void):fp(0),cluster_timecode(0) {}
+        file(void):fp(0),cluster_timecode(0),track_id(0) {}
         ~file(void) { close(); }
 
         int open(const char* filename) throw();
