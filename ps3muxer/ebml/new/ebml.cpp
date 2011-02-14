@@ -7,6 +7,9 @@ namespace ebml
     int file::open(const char* filename) throw()
     {
         cluster_timecode=0;
+        track_id=0;
+        track_codec.clear();
+        track_lang.clear();
 
         return (fp=fopen64(filename,"rb"))?0:-1;
     }
@@ -154,9 +157,12 @@ namespace ebml
                 if(fread((char*)&timecode,1,sizeof(timecode),fp)!=sizeof(timecode))
                     throw(exception("parse(): can't read block timecode"));
 
-                timecode=ntohs(timecode);
+                timecode=cluster_timecode+ntohs(timecode);
 
-                fprintf(stdout,"track=%llu, timecode=%i\n",track,cluster_timecode+timecode);
+                fprintf(stdout,"track=%llu, timecode=%i\n",track,timecode);
+
+                if(timecode>timecode_limit)
+                    return -1;
             }
             break;
         case 0xa0:              // container
@@ -167,27 +173,27 @@ namespace ebml
         case 0xae:
         case 0x1f43b675:
             while(tell()<next_pos && !(rc=parse(depth+1)));
+
+            if(tag==0xae)
+            {
+                fprintf(stdout,"track %i,%s,%s\n",track_id,track_codec.c_str(),track_lang.c_str());
+                track_id=0;
+                track_codec.clear();
+                track_lang.clear();
+            }
+
             break;
         case 0xe7:              // cluster timecode (uint)
             cluster_timecode=getint(len);
             break;
         case 0x86:              // codec (string)
-            {
-                std::string s=getstring(len);
-                fprintf(stdout,"codec='%s'\n",s.c_str());
-            }
+            track_codec=getstring(len);
             break;
         case 0xd7:              // track number (uint)
-            {
-                u_int32_t track=getint(len);
-                fprintf(stdout,"track=%i\n",track);
-            }
+            track_id=getint(len);
             break;
         case 0x22b59c:          // language (string)
-            {
-                std::string s=getstring(len);
-                fprintf(stdout,"lang='%s'\n",s.c_str());
-            }
+            track_lang=getstring(len);
             break;
         }
 
