@@ -3,11 +3,14 @@
 
 #include <stdexcept>
 #include <string>
+#include <map>
 #include <stdio.h>
 #include <sys/types.h>
 
 namespace ebml
 {
+    enum { timecode_limit=60000, max_reframes=30 };
+
     class exception : public std::exception
     {
     protected:
@@ -18,7 +21,38 @@ namespace ebml
         virtual const char* what(void) const throw() {return _what.c_str();}
     };
 
-    enum { timecode_limit=60000 };
+    class frames_cache
+    {
+    protected:
+        u_int32_t frames[max_reframes];
+
+        int nframes;
+    public:
+        frames_cache(void) { clear(); }
+
+        void clear(void);
+
+        u_int32_t insert(u_int32_t n);
+
+    };
+
+    enum track_type { tt_unk=0, tt_video=1, tt_audio=2, tt_sub=3 };
+
+    struct track
+    {
+        u_int32_t id;
+        std::string codec;
+        std::string lang;
+        int type;
+        float fps;              // only for type=tt_video
+        
+
+        u_int32_t start_timecode;
+
+        frames_cache frames;
+
+        track(void):id(0),start_timecode(-1),fps(0),type(tt_unk) { frames.clear(); }
+    };
 
     class file
     {
@@ -29,12 +63,7 @@ namespace ebml
         u_int32_t track_id;
         std::string track_codec;
         std::string track_lang;
-    public:
-        file(void):fp(0),cluster_timecode(0),track_id(0) {}
-        ~file(void) { close(); }
-
-        int open(const char* filename) throw();
-        void close(void) throw();
+        u_int32_t track_duration;
 
         u_int64_t tell(void) throw(std::exception);
         void seek(u_int64_t offset,int whence) throw(std::exception);
@@ -43,7 +72,16 @@ namespace ebml
         std::string getstring(int len) throw(std::exception);
         u_int32_t getint(int len) throw(std::exception);
 
-        int parse(int depth=0) throw(std::exception);
+        int parse(std::map<u_int32_t,track>& dst,int depth) throw(std::exception);
+    public:
+        file(void):fp(0),cluster_timecode(0),track_id(0),track_duration(0) {}
+        ~file(void) { close(); }
+
+        int open(const char* filename) throw();
+        void close(void) throw();
+
+        int parse(std::map<u_int32_t,track>& dst) throw(std::exception);
+
     };
 }
 

@@ -1,15 +1,66 @@
 #include "ebml.h"
 #include <arpa/inet.h>
-
+#include <string.h>
 
 namespace ebml
 {
+    void frames_cache::clear(void)
+    {
+        memset((char*)frames,0,sizeof(frames));
+        nframes=0;
+    }
+
+    u_int32_t frames_cache::insert(u_int32_t n)
+    {
+        if(!nframes)
+            frames[0]=n;
+        else
+        {
+            if(nframes<max_reframes)
+            {
+                int i;
+                for(i=nframes;i>0;i--)
+                {
+                    if(frames[i-1]<n)
+                    {
+                        frames[i]=n;
+                        break;
+                    }else
+                        frames[i]=frames[i-1];
+                }
+                if(!i)
+                    frames[0]=n;
+            }else
+            {
+                int i;
+                for(i=0;i<max_reframes-1;i++)
+                {
+                    if(frames[i+1]>n)
+                    {
+                        frames[i]=n;
+                        break;
+                    }else
+                        frames[i]=frames[i+1];
+                }
+                if(i>=max_reframes-1)
+                    frames[max_reframes-1]=n;
+            }
+        }
+        nframes++;
+
+        if(nframes>=max_reframes)
+            return frames[1]-frames[0];
+
+        return 0;
+    }
+
     int file::open(const char* filename) throw()
     {
         cluster_timecode=0;
         track_id=0;
         track_codec.clear();
         track_lang.clear();
+        track_duration=0;
 
         return (fp=fopen64(filename,"rb"))?0:-1;
     }
@@ -130,7 +181,7 @@ namespace ebml
     }
 
 
-    int file::parse(int depth) throw(std::exception)
+    int file::parse(std::map<u_int32_t,track>& dst,int depth) throw(std::exception)
     {
         u_int32_t tag=gettag();
 
@@ -159,7 +210,13 @@ namespace ebml
 
                 timecode=cluster_timecode+ntohs(timecode);
 
-                fprintf(stdout,"track=%llu, timecode=%i\n",track,timecode);
+                ebml::track& t=dst[track];
+
+                if(t.start_timecode==-1)
+                    t.start_timecode=timecode;
+
+                if(t.type==tt_video)
+                    t.frames.insert(timecode);
 
                 if(timecode>timecode_limit)
                     return -1;
@@ -172,14 +229,26 @@ namespace ebml
         case 0x1654ae6b:
         case 0xae:
         case 0x1f43b675:
-            while(tell()<next_pos && !(rc=parse(depth+1)));
+            while(tell()<next_pos && !(rc=parse(dst,depth+1)));
 
             if(tag==0xae)
             {
-                fprintf(stdout,"track %i,%s,%s\n",track_id,track_codec.c_str(),track_lang.c_str());
-                track_id=0;
-                track_codec.clear();
-                track_lang.clear();
+                track& t=dst[track_id];
+                t.id=track_id; track_id=0;
+                t.codec.swap(track_codec); track_codec.clear();
+                t.lang.swap(track_lang); track_lang.clear();
+
+                const char* p=t.codec.c_str();
+                if(!strncmp(p,"V_",2))
+                    t.type=tt_video;
+                else if(!strncmp(p,"A_",2))
+                    t.type=tt_audio;
+                else if(!strncmp(p,"S_",2))
+                    t.type=tt_sub;
+
+                if(t.type==tt_video)
+                    t.fps=1000000000./track_duration;
+                track_duration=0;
             }
 
             break;
@@ -195,11 +264,21 @@ namespace ebml
         case 0x22b59c:          // language (string)
             track_lang=getstring(len);
             break;
+        case 0x23e383:          // frame length
+            track_duration=getint(len);
+            break;
         }
 
         seek(next_pos,SEEK_SET);
 
         return rc;
+    }
+
+    int file::parse(std::map<u_int32_t,track>& dst) throw(std::exception)
+    {
+        while(!parse(dst,0));
+
+        return 0;
     }
 
 }
@@ -212,7 +291,16 @@ int main(void)
     {
         try
         {
-            while(!mkv.parse());
+            std::map<u_int32_t,ebml::track> tracks;
+
+            mkv.parse(tracks);
+
+            for(std::map<u_int32_t,ebml::track>::const_iterator i=tracks.begin();i!=tracks.end();++i)
+            {
+                const ebml::track& t=i->second;
+                printf("track %i: codec=%s, lang=%s, delay=%i, fps=%f\n",t.id,t.codec.c_str(),t.lang.c_str(),t.start_timecode,t.fps);
+
+            }
         }
         catch(const std::exception& e)
         {
@@ -223,3 +311,4 @@ int main(void)
     }
     return 0;
 }
+
