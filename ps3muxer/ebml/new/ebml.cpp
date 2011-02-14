@@ -298,8 +298,12 @@ int main(void)
             for(std::map<u_int32_t,ebml::track>::const_iterator i=tracks.begin();i!=tracks.end();++i)
             {
                 const ebml::track& t=i->second;
-                printf("track %i: codec=%s, lang=%s, delay=%i, fps=%f\n",t.id,t.codec.c_str(),t.lang.c_str(),t.start_timecode,t.fps);
+                printf("track %i: codec=%s, lang=%s, delay=%i",t.id,t.codec.c_str(),t.lang.c_str(),t.start_timecode);
 
+                if(t.type==ebml::tt_video)
+                    printf(", fps=%f",t.fps);
+
+                printf("\n");
             }
         }
         catch(const std::exception& e)
