@@ -1,6 +1,17 @@
 #include "ebml.h"
-#include <arpa/inet.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <arpa/inet.h>
+#else
+#include <windows.h>
+
+#define fopen64 fopen
+#define fseeko64 _fseeki64
+#define ftello64 _ftelli64
+
+#endif
+
 
 namespace ebml
 {
@@ -219,6 +230,7 @@ namespace ebml
                 if(t.type==tt_video)
                 {
                     u_int32_t duration=t.frames.insert(timecode);
+                    fprintf(stderr,"%i\n",duration);
                 }
 */
 
@@ -313,7 +325,7 @@ int main(int argc,char** argv)
                 printf("track %i: codec=%s, lang=%s, delay=%i",t.id,t.codec.c_str(),t.lang.c_str(),t.start_timecode);
 
                 if(t.type==ebml::tt_video)
-                    printf(", fps=%f",t.fps);
+                    printf(", fps=%.3f",t.fps);
 
                 printf("\n");
             }
