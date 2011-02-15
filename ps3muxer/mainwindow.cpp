@@ -23,7 +23,6 @@ MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     : QMainWindow(parent), ui(new Ui::MainWindowClass)
 {
     ui->setupUi(this);
-    ebml::init();
 
     batch_size=0;
 
@@ -217,19 +216,15 @@ void MainWindow::on_pushButton_clicked()
 
         try
         {
-            ebml::stream stream(path.toLocal8Bit().data());
+            ebml::file stream;
+            if(stream.open(path.toLocal8Bit().data()))
+                throw(ebml::exception(std::string("file is not found: ")+path.toLocal8Bit().data()));
 
-            ebml::doc m;
+            std::map<u_int32_t,ebml::track> tracks;
 
-            ebml::parse(&stream,m);
+            stream.parse(tracks);
 
-            if(strcasecmp(m.doc_type.c_str(),"matroska"))
-                throw(ebml::exception("not a matroska"));
-
-//            if(m.version!=1 && m.read_version!=1)
-//                throw(ebml::exception("unknown matroska version"));
-
-            for(std::map<u_int32_t,ebml::track>::const_iterator i=m.tracks.begin();i!=m.tracks.end();++i)
+            for(std::map<u_int32_t,ebml::track>::const_iterator i=tracks.begin();i!=tracks.end();++i)
             {
                 const ebml::track& t=i->second;
 
@@ -237,11 +232,11 @@ void MainWindow::on_pushButton_clicked()
 
                 const codec& cc=codecs[t.codec];
 
-                lst<<QString("%1").arg(t.id)<<QString("%1").arg(t.timecode==-1?0:t.timecode)<<t.lang.c_str();
+                lst<<QString("%1").arg(t.id)<<QString("%1").arg(t.start_timecode==-1?0:t.start_timecode)<<t.lang.c_str();
 
                 if(cc.type==1)
                 {
-                    QString fps=QString("%1").arg(1000000000./t.duration);
+                    QString fps=QString("%1").arg(t.fps);
                     lst<<fps;
                     setFPS(ui->comboBox_2,fps);
                 }

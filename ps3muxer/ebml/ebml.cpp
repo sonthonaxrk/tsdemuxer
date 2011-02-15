@@ -215,10 +215,12 @@ namespace ebml
                 if(t.start_timecode==-1)
                     t.start_timecode=timecode;
 
+/*
                 if(t.type==tt_video)
                 {
                     u_int32_t duration=t.frames.insert(timecode);
                 }
+*/
 
                 if(timecode>timecode_limit)
                     return -1;
