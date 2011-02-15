@@ -203,12 +203,12 @@ namespace ebml
             {
                 u_int64_t track=getlen();
 
-                u_int16_t timecode=0;
+                u_int16_t tc=0;
 
-                if(fread((char*)&timecode,1,sizeof(timecode),fp)!=sizeof(timecode))
+                if(fread((char*)&tc,1,sizeof(tc),fp)!=sizeof(tc))
                     throw(exception("parse(): can't read block timecode"));
 
-                timecode=cluster_timecode+ntohs(timecode);
+                u_int32_t timecode=cluster_timecode+ntohs(tc);
 
                 ebml::track& t=dst[track];
 
@@ -216,7 +216,9 @@ namespace ebml
                     t.start_timecode=timecode;
 
                 if(t.type==tt_video)
-                    t.frames.insert(timecode);
+                {
+                    u_int32_t duration=t.frames.insert(timecode);
+                }
 
                 if(timecode>timecode_limit)
                     return -1;
@@ -283,11 +285,19 @@ namespace ebml
 
 }
 
-int main(void)
+#ifdef MKVTRACKS
+int main(int argc,char** argv)
 {
+    fprintf(stderr,"mkvtracks 2.00 Simple MKV parser\n\nCopyright (C) 2011 Anton Burdinuk\n\nclark15b@gmail.com\nhttp://code.google.com/p/tsdemuxer\n\n");
+    if(argc<2)
+    {
+        fprintf(stderr,"USAGE: ./mkvtracks filename.mkv\n");
+        return 0;
+    }
+
     ebml::file mkv;
 
-    if(!mkv.open("../../samples/Watchmen.2009.BluRay.720p.x264.DTS.Rus-WiKi.mkv"))
+    if(!mkv.open(argv[1]))
     {
         try
         {
@@ -312,7 +322,9 @@ int main(void)
         }
 
         mkv.close();
-    }
+    }else
+        fprintf(stderr,"file is not found: %s\n",argv[1]);
+        
     return 0;
 }
-
+#endif
