@@ -5,11 +5,15 @@
 #include <arpa/inet.h>
 #else
 #include <windows.h>
-
 #define fopen64 fopen
 #define fseeko64 _fseeki64
 #define ftello64 _ftelli64
+#endif
 
+#if __APPLE__ & __MACH__
+#define fopen64 fopen
+#define fseeko64 fseeko
+#define ftello64 ftello
 #endif
 
 
