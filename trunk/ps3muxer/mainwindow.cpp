@@ -9,6 +9,7 @@
 
 #ifdef _WIN32
 #define os_slash    '\\'
+#include <windows.h>
 #else
 #define os_slash    '/'
 #endif
@@ -18,6 +19,11 @@ static const char conf_path[]="ps3muxer_win32.cfg";
 #else
 static const char conf_path[]="ps3muxer.cfg";
 #endif
+
+#ifdef _MSC_VER
+inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpiA(s1,s2); }
+#endif
+
 
 MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     : QMainWindow(parent), ui(new Ui::MainWindowClass)

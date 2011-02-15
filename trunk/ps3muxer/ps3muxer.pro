@@ -22,4 +22,5 @@ RESOURCES += ps3muxer.qrc
 win32 {
     RC_FILE = ps3muxer.rc
     DEFINES += _CRT_SECURE_NO_WARNINGS
+    LIBS += Ws2_32.lib
 }
