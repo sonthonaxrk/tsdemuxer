@@ -828,5 +828,5 @@ void MainWindow::on_tableWidget_2_itemSelectionChanged()
 }
 void MainWindow::aboutBox()
 {
-    QMessageBox::about(this,tr("About"),QString("<b>%1</b><br><br>Copyright (C) 2009 %2. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>%3</a></font>").arg(MyAppVerName).arg(MyAppPublisher).arg(MyAppURL));
+    QMessageBox::about(this,tr("About"),QString("<b>%1</b><br><br>Copyright (C) 2011 %2. All rights reserved.<br><font size=-1><br>E-Mail: <a href='mailto:clark15b@gmail.com'>clark15b@gmail.com</a><br>Web: <a href='http://ps3muxer.org'>%3</a></font>").arg(MyAppVerName).arg(MyAppPublisher).arg(MyAppURL));
 }
