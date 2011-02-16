@@ -76,6 +76,7 @@ namespace ebml
         track_codec.clear();
         track_lang.clear();
         track_duration=0;
+        track_compression=-1;
 
         return (fp=fopen64(filename,"rb"))?0:-1;
     }
@@ -249,6 +250,9 @@ namespace ebml
         case 0x1654ae6b:
         case 0xae:
         case 0x1f43b675:
+        case 0x6d80:
+        case 0x6240:
+        case 0x5034:
             while(tell()<next_pos && !(rc=parse(dst,depth+1)));
 
             if(tag==0xae)
@@ -257,6 +261,7 @@ namespace ebml
                 t.id=track_id; track_id=0;
                 t.codec.swap(track_codec); track_codec.clear();
                 t.lang.swap(track_lang); track_lang.clear();
+                t.compression=track_compression; track_compression=-1;
 
                 const char* p=t.codec.c_str();
                 if(!strncmp(p,"V_",2))
@@ -286,6 +291,9 @@ namespace ebml
             break;
         case 0x23e383:          // frame length
             track_duration=getint(len);
+            break;
+        case 0x4254:            // compression alg
+            track_compression=getint(len);
             break;
         }
 
@@ -330,6 +338,8 @@ int main(int argc,char** argv)
 
                 if(t.type==ebml::tt_video)
                     printf(", fps=%.3f",t.fps);
+                if(t.compression!=-1)
+                    printf(", compression=%i",t.compression);
 
                 printf("\n");
             }

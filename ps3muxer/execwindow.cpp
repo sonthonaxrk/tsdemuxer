@@ -17,7 +17,7 @@ execWindow::execWindow(QWidget *parent, const QString& info) :
     connect(m_proc,SIGNAL(readyReadStandardOutput()),this,SLOT(onDataReady()) );
 
     if(info.isEmpty())
-        m_ui->plainTextEdit->appendHtml(tr("<font color=gray>Sony PlayStation3 HD Movie Muxer<br>Copyright (C) 2009 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
+        m_ui->plainTextEdit->appendHtml(tr("<font color=gray>Sony PlayStation3 HD Movie Muxer<br>Copyright (C) 2011 Anton Burdinuk<br>clark15b@gmail.com<br>http://code.google.com/p/tsdemuxer<br>---------------------------------------------------<br><br></font>"));
     else
         m_ui->plainTextEdit->appendHtml(info);
 }

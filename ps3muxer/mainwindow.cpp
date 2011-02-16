@@ -230,6 +230,8 @@ void MainWindow::on_pushButton_clicked()
 
             stream.parse(tracks);
 
+            int compressed=0;
+
             for(std::map<u_int32_t,ebml::track>::const_iterator i=tracks.begin();i!=tracks.end();++i)
             {
                 const ebml::track& t=i->second;
@@ -253,7 +255,12 @@ void MainWindow::on_pushButton_clicked()
                     addRow(ui->tableWidget,lst);
                 else if(cc.type==2)
                     addRow(ui->tableWidget_2,lst);
+
+                if(t.compression!=-1)
+                    compressed++;
             }
+
+            ui->checkBox_2->setChecked(compressed?true:false);
 
             if(ui->tableWidget->rowCount()>0)
                 ui->tableWidget->setCurrentCell(0,0);
@@ -357,6 +364,7 @@ void MainWindow::on_pushButton_3_clicked()
     ui->label_5->clear();
     ui->label_6->clear();
     ui->comboBox_2->setCurrentIndex(0);
+    ui->checkBox_2->setChecked(false);
 }
 
 void MainWindow::on_pushButton_4_clicked()
