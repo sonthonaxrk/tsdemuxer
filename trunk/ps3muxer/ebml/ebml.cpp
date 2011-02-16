@@ -5,6 +5,9 @@
 #include <arpa/inet.h>
 #else
 #include <windows.h>
+#endif
+
+#ifdef _MSC_VER
 #define fopen64 fopen
 #define fseeko64 _fseeki64
 #define ftello64 _ftelli64
