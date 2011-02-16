@@ -36,16 +36,7 @@ Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:Ad
 Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
 
 [Files]
-Source: ..\ps3muxer\ps3muxer.exe; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\QtGui4.dll; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\mkvtracks.exe; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\rm.exe; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\ps3muxer_ru.qm; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\ps3muxer_win32.cfg; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\QtCore4.dll; DestDir: {app}; Flags: ignoreversion
-Source: ..\ps3muxer\ffmpeg\*; DestDir: {app}\ffmpeg; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\ps3muxer\mkvtoolnix\*; DestDir: {app}\mkvtoolnix; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\ps3muxer\tsmuxer\*; DestDir: {app}\tsmuxer; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\ps3muxer\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
