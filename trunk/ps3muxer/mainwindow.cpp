@@ -25,6 +25,20 @@ inline int strcasecmp(const char* s1,const char* s2) { return lstrcmpiA(s1,s2); 
 #endif
 
 
+/*
+ TODO: wrap DTS to LPCM (optional)
+
+http://ps3mediaserver.org/forum/viewtopic.php?f=11&t=7673
+http://lists.mplayerhq.hu/pipermail/mplayer-dvb/2001-December/000224.html
+http://forum.doom9.org/archive/index.php/t-28517.html
+
+
+ TODO: reencode to multichannel LPCM
+
+http://forums.afterdawn.com/thread_view.cfm/704460 
+ 
+*/
+
 MainWindow::MainWindow(QWidget *parent,const QString& cmd)
     : QMainWindow(parent), ui(new Ui::MainWindowClass)
 {
