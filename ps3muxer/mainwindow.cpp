@@ -35,7 +35,10 @@ http://forum.doom9.org/archive/index.php/t-28517.html
 
  TODO: reencode to multichannel LPCM
 
+ffmpeg -acodec pcm_s24le -ar 48000 
+
 http://forums.afterdawn.com/thread_view.cfm/704460 
+http://wiki.flexion.org/ConvertingMKV.html
  
 */
 
