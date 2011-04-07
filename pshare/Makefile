@@ -1,4 +1,5 @@
 MIPSEL  = /usr/local/toolchain-mipsel_gcc3.4.6/mipsel-linux/bin
+MIPS    = /usr/local/toolchain-mips_gcc4.1.2/mips-linux/bin
 
 all:
 	gcc -fno-exceptions -fno-rtti -O2 -DWITH_LIBUUID -o pshare main.cpp upnp.cpp soap.cpp tmpl.cpp mem.cpp proxy.cpp common.cpp -luuid
