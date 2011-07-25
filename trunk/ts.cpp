@@ -190,7 +190,7 @@ int ts::file::read(char* p,int l)
 bool ts::demuxer::validate_type(u_int8_t type)
 {
     if(av_only)
-        return strchr("\x01\x02\x80\x1b\xea\x81\x06\x83\x03\x04",type)?true:false;
+        return strchr("\x01\x02\x80\x1b\xea\x81\x06\x83\x03\x04\x82\x86\x8a",type)?true:false;
 
     return true;
 }
@@ -215,15 +215,19 @@ int ts::demuxer::get_stream_type(u_int8_t type)
     case 0x03:
     case 0x04:
         return stream_type::mpeg2_audio;
+    case 0x82:
+    case 0x86:
+    case 0x8a:
+        return stream_type::dts_audio;
     }
     return stream_type::data;
 }
 
 const char* ts::demuxer::get_stream_ext(u_int8_t type_id)
 {
-    static const char* list[7]= { "sup", "m2v", "264", "vc1", "ac3", "m2a", "pcm" };
+    static const char* list[8]= { "sup", "m2v", "264", "vc1", "ac3", "m2a", "pcm", "dts" };
 
-    if(type_id<0 || type_id>=7)
+    if(type_id<0 || type_id>=8)
         type_id=0;
 
     return list[type_id];
