@@ -121,6 +121,20 @@ int ts::scan_dir(const char* path,std::list<std::string>& l)
 
         while((d=readdir(dir)))
         {
+            if (d->d_type == DT_UNKNOWN) {
+                char p[512];
+
+                if (snprintf(p, sizeof(p), "%s/%s", path, d->d_name) > 0) {
+                    struct stat st;
+
+                    if (stat(p, &st) != -1) {
+                        if (S_ISREG(st.st_mode))
+                            d->d_type = DT_REG;
+                        else if (S_ISLNK(st.st_mode))
+                            d->d_type = DT_LNK;
+                    }
+                }
+            }
             if(*d->d_name!='.' && (d->d_type==DT_REG || d->d_type==DT_LNK))
             {
                 char p[512];
