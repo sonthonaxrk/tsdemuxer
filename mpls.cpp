@@ -136,7 +136,8 @@ int mpls::parse(const char* filename,std::list<int>& playlist,std::map<int,std::
                     if(p+66>p2)
                         break;
 
-                    if(!memcmp(p+44,"CA",2))
+                    // CA or DA
+                    if((p[44] == 'C' || p[44] == 'D') && p[45] == 'A')
                     {
                         char tmp[64];
 
