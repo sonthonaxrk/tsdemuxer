@@ -1,2 +1,0 @@
-all:
-	cl /EHsc tsdemux.cpp mpls.cpp getopt.c
