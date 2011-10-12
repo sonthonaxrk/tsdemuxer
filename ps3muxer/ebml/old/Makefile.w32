@@ -1,2 +1,0 @@
-all:
-	cl -I. /EHsc mkvtracks.cpp ebml.cpp
