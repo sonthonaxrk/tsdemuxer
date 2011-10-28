@@ -22,7 +22,7 @@ HEADERS  += mainwindow.h\
 FORMS    += mainwindow.ui\
         execwindow.ui
 
-TRANSLATIONS += tsDemuxGUI_ru.ts
+TRANSLATIONS += tsDemuxGUI_ru.ts tsDemuxGUI_it.ts
 
 system(lupdate tsDemuxGUI.pro)
 system(lrelease tsDemuxGUI.pro)
