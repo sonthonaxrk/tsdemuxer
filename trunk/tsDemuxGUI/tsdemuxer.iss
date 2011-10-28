@@ -30,6 +30,7 @@ InternalCompressLevel=ultra64
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
+Name: italiano; MessagesFile: compiler:Languages\Italian.isl
 Name: russian; MessagesFile: compiler:Languages\Russian.isl
 
 [Tasks]

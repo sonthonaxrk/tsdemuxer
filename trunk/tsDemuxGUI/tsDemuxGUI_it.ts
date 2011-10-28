@@ -1,31 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="ru_RU">
+<TS version="2.0" language="it_IT">
 <context>
     <name>MainWindow</name>
     <message>
         <source>MPLS source file</source>
-        <translation type="obsolete">Исходный MPLS файл</translation>
+        <translation type="obsolete">Sorgente file MPLS</translation>
     </message>
     <message>
         <source>source directory</source>
-        <translation type="obsolete">Исходная директория</translation>
+        <translation type="obsolete">Cartella sorgente</translation>
     </message>
     <message>
         <source>source files</source>
-        <translation type="obsolete">Исходные файлы</translation>
+        <translation type="obsolete">File sorgenti</translation>
     </message>
     <message>
         <source>demux target directory</source>
-        <translation type="obsolete">Финальная директория</translation>
+        <translation type="obsolete">Cartella destinazione demux</translation>
+    </message>
+    <message>
+        <source>&lt;font color=gray&gt;tsDemuxerGUI&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</source>
+        <translation type="obsolete">&lt;font color=gray&gt;tsDemuxerGUI&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</translation>
     </message>
     <message>
         <source>Demuxing</source>
-        <translation type="obsolete">Извлечение</translation>
+        <translation type="obsolete">Demuxing</translation>
     </message>
     <message>
         <source>Demuxing...</source>
-        <translation type="obsolete">Извлечение элементарных потоков...</translation>
+        <translation type="obsolete">Demuxing...</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.cpp" line="229"/>
@@ -174,54 +178,58 @@
 <context>
     <name>MainWindowClass</name>
     <message>
+        <source>tsDemuxGUI - clark15b@doom9</source>
+        <translation type="obsolete">tsDemuxGUI - clark15b@doom9</translation>
+    </message>
+    <message>
         <source>Clip</source>
-        <translation type="obsolete">Клип</translation>
+        <translation type="obsolete">Ritaglia</translation>
     </message>
     <message>
         <source>Desc</source>
-        <translation type="obsolete">Описание</translation>
+        <translation type="obsolete">Descrizione</translation>
     </message>
     <message>
         <source>Open AVCHD/BD</source>
-        <translation type="obsolete">Открыть MPLS</translation>
+        <translation type="obsolete">Apri AVCHD/BD</translation>
     </message>
     <message>
         <source>Add Files</source>
-        <translation type="obsolete">Добавить файлы</translation>
+        <translation type="obsolete">Aggiungi file</translation>
     </message>
     <message>
         <source>Up</source>
-        <translation type="obsolete">Вверх</translation>
+        <translation type="obsolete">Su</translation>
     </message>
     <message>
         <source>Down</source>
-        <translation type="obsolete">Вниз</translation>
+        <translation type="obsolete">Giù</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="obsolete">Удалить</translation>
+        <translation type="obsolete">Rimuovi</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="248"/>
         <location filename="../ps3muxer/mainwindow.ui" line="453"/>
         <source>Clear</source>
-        <translation>Очистить</translation>
+        <translation>Azzera</translation>
     </message>
     <message>
         <source>join elementary streams</source>
-        <translation type="obsolete">склеить потоки</translation>
+        <translation type="obsolete">Unisci flussi elementari</translation>
     </message>
     <message>
         <source>demux to PES streams</source>
-        <translation type="obsolete">извлеч PES</translation>
+        <translation type="obsolete">demuxa in flussi PES</translation>
     </message>
     <message>
         <source>unknown streams</source>
-        <translation type="obsolete">неизвестные потоки</translation>
+        <translation type="obsolete">Flussi sconosciuti</translation>
     </message>
     <message>
         <source>Channel:</source>
-        <translation type="obsolete">Канал:</translation>
+        <translation type="obsolete">Canale:</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="14"/>
@@ -270,12 +278,12 @@
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="197"/>
         <source>Output:</source>
-        <translation>Выход:</translation>
+        <translation>Destinazione:</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="219"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="241"/>
@@ -362,111 +370,115 @@
     </message>
     <message>
         <source>Start</source>
-        <translation type="obsolete">Начать</translation>
+        <translation type="obsolete">Avvia</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="obsolete">Файл</translation>
+        <translation type="obsolete">File</translation>
     </message>
     <message>
         <source>Open AVCHD/Blu-Ray</source>
-        <translation type="obsolete">Открыть AVCHD/Blu-Ray</translation>
+        <translation type="obsolete">Apri AVCHD/Blu-Ray</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="448"/>
         <source>Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+O</translation>
     </message>
     <message>
         <source>Open AVCHD/Blu-Ray folder</source>
         <oldsource>Open AVCHD/BD folder</oldsource>
-        <translation type="obsolete">Открыть AVCHD/Blu-Ray папку</translation>
+        <translation type="obsolete">Apri cartella AVCHD/Blu-Ray</translation>
     </message>
     <message>
         <source>Add Folder</source>
         <oldsource>Open Folder</oldsource>
-        <translation type="obsolete">Добавить папку</translation>
+        <translation type="obsolete">Aggiungi cartella</translation>
     </message>
     <message>
         <source>Add folder</source>
-        <translation type="obsolete">Добавить папку</translation>
+        <translation type="obsolete">Aggiungi cartella</translation>
     </message>
     <message>
         <source>Add files</source>
-        <translation type="obsolete">Добавить файлы</translation>
+        <translation type="obsolete">Aggiungi file</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="466"/>
         <source>Quit</source>
-        <translation>Выход</translation>
+        <translation>Esci</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="obsolete">Старт</translation>
+        <translation type="obsolete">Esegui</translation>
     </message>
     <message>
         <location filename="../ps3muxer/mainwindow.ui" line="461"/>
         <source>Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+R</translation>
     </message>
 </context>
 <context>
     <name>execWindow</name>
     <message>
+        <source>&lt;font color=gray&gt;Sony PlayStation3 HD Movie Muxer&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</source>
+        <translation type="obsolete">&lt;font color=gray&gt;Sony PlayStation3 HD Movie Muxer&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</translation>
+    </message>
+    <message>
         <location filename="../ps3muxer/execwindow.cpp" line="20"/>
         <source>&lt;font color=gray&gt;Sony PlayStation3 HD Movie Muxer&lt;br&gt;Copyright (C) 2011 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;font color=gray&gt;Sony PlayStation3 HD Movie Muxer&lt;br&gt;Copyright (C) 2009 Anton Burdinuk&lt;br&gt;clark15b@gmail.com&lt;br&gt;http://code.google.com/p/tsdemuxer&lt;br&gt;---------------------------------------------------&lt;br&gt;&lt;br&gt;&lt;/font&gt; {3 ?} {2011 ?} {15b?}</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="72"/>
         <source>&lt;font color=gray&gt;Total time: %1 sec&lt;/font&gt;</source>
-        <translation>&lt;font color=gray&gt;Полное время: %1 sec&lt;/font&gt;</translation>
+        <translation>&lt;font color=gray&gt;Tempo totale: %1 sec&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="80"/>
         <source>&lt;font color=blue&gt;%1&lt;/font&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;font color=blue&gt;%1&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="116"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Execute error (%1)&lt;/b&gt;&lt;/font&gt;</source>
-        <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка времени исполнения (%1)&lt;/b&gt;&lt;/font&gt;</translation>
+        <translation>&lt;font color=red&gt;&lt;b&gt;Errore esecuzione (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="128"/>
         <source>&lt;font color=red&gt;&lt;b&gt;Crash&lt;/b&gt;&lt;/font&gt;</source>
-        <translation>&lt;font color=red&gt;&lt;b&gt;Аварийное завершение программы&lt;/b&gt;&lt;/font&gt;</translation>
+        <translation>&lt;font color=red&gt;&lt;b&gt;Crash programma&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="135"/>
         <source>&lt;font color=red&gt;&lt;b&gt;FAIL (%1)&lt;/b&gt;&lt;/font&gt;</source>
-        <translation>&lt;font color=red&gt;&lt;b&gt;Ошибка (%1)&lt;/b&gt;&lt;/font&gt;</translation>
+        <translation>&lt;font color=red&gt;&lt;b&gt;FALLITO (%1)&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="139"/>
         <source>&lt;font color=green&gt;&lt;b&gt;OK&lt;/b&gt;&lt;/font&gt;</source>
-        <translation>&lt;font color=green&gt;&lt;b&gt;Успех&lt;/b&gt;&lt;/font&gt;</translation>
+        <translation>&lt;font color=green&gt;&lt;b&gt;OK&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.cpp" line="232"/>
         <source>Abort action?</source>
-        <translation>Отменить действие?</translation>
+        <translation>Interrompere l&apos;operazione?</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.ui" line="14"/>
         <source>Process</source>
-        <translation>Процесс</translation>
+        <translation>Processo</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.ui" line="70"/>
         <location filename="../ps3muxer/execwindow.cpp" line="232"/>
         <source>Abort</source>
-        <translation>Отмена</translation>
+        <translation>Interrompi</translation>
     </message>
     <message>
         <location filename="../ps3muxer/execwindow.ui" line="80"/>
         <source>Close</source>
-        <translation>Закрыть</translation>
+        <translation>Chiudi</translation>
     </message>
 </context>
 </TS>
