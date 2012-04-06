@@ -645,7 +645,7 @@ static int lua_m3u_scan(lua_State* L)
 
                     lua_pushinteger(L,idx++);
 
-                    lua_getfield(L,LUA_GLOBALSINDEX,"m3u");
+                    lua_getglobal(L,"m3u");
                     lua_getfield(L,-1,"scan");
                     lua_remove(L,-2);
                     lua_pushstring(L,track_url);

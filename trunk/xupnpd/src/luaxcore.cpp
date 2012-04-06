@@ -618,6 +618,8 @@ namespace core
 
         while((fd=accept(l->fd,(sockaddr*)&sin,&sin_len))>=0)
         {
+            fcntl(fd,F_SETFL,fcntl(fd,F_GETFL,0)&(~O_NONBLOCK));
+
             char name[64];
             int n=snprintf(name,sizeof(name),"%s",l->name);
             if(n<0 || n>=sizeof(name))
