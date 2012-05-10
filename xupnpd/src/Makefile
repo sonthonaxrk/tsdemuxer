@@ -6,7 +6,7 @@ SRC     = main.cpp soap.cpp mem.cpp mcast.cpp luaxlib.cpp luaxcore.cpp luajson.c
 x86:
 	make -C $(LUA) CC=gcc a
 	gcc -O2 -c -o md5.o md5c.c
-	gcc $(CFLAGS) -DWITH_LIBUUID -o xupnpd $(SRC) md5.o -llua -ldl -lm -luuid
+	gcc $(CFLAGS) -DWITH_LIBUUID -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -o xupnpd $(SRC) md5.o -llua -ldl -lm -luuid
 	strip xupnpd
 
 x86_bsd:
