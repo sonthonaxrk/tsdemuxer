@@ -35,10 +35,10 @@
 // TODO: sendurl alarm?
 // TODO: XBox 360
 // TODO: RTSP/RTP, RTMP, MMS
-// !!! TODO: RTP to builtin udpxy
+// TODO: RTP to builtin udpxy
 // http://www.gupnp.org
-// !!! TODO: YouTube max-count>50
-// TODO: multicast with 2 devices over internal proxy?
+// TODO: YouTube max-count>50
+// TODO: sort(files)
 
 namespace core
 {
