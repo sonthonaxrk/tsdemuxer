@@ -711,7 +711,10 @@ namespace core
                                 lua_pop(L,1);
 
                             alarm(0);                               // reset read timer
+
+                            fseek(fp,0,SEEK_END);                   // Solaris fix
                         }
+
                         if(lua_pcall(L,4,0,0))
                         {
                             if(!detached)
