@@ -39,6 +39,8 @@
 // http://www.gupnp.org
 // TODO: YouTube max-count>50
 // TODO: sort(files)
+// TODO: ivi.ru feeds fail
+// TODO: get_file_length_by_url
 
 namespace core
 {
@@ -1999,6 +2001,99 @@ static int lua_http_download(lua_State* L)
     return 2;
 }
 
+static int lua_http_get_length(lua_State* L)
+{
+    const char* s=lua_tostring(L,1);
+
+    int len=0;
+    char location[512]="";
+
+    if(s)
+    {
+        core::url_data url;
+        if(!lua_http_get_url_data(s,&url))
+        {
+            alarm(core::http_timeout);
+
+            FILE* fp=core::connect(url.host,url.port);
+            if(fp)
+            {
+                fprintf(fp,
+                    "HEAD %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n",
+                        url.urn,url.vhost,core::user_agent);
+
+                fflush(fp);
+                int status=0;
+                int content_length=-1;
+
+                int n;
+                char tmp[1024];
+                int idx=0;
+
+                while(fgets(tmp,sizeof(tmp),fp))
+                {
+                    char* p=strpbrk(tmp,"\r\n");
+                    if(p)
+                        *p=0;
+                    if(!*tmp)
+                        break;
+
+                    if(!idx)
+                    {
+                        char* pp=strchr(tmp,' ');
+                        if(pp)
+                        {
+                            while(*pp && *pp==' ')
+                                pp++;
+                            char* pp2=strchr(pp,' ');
+                            if(pp2)
+                                *pp2=0;
+                            status=atoi(pp);
+                        }
+                    }else
+                    {
+                        char* pp=strchr(tmp,':');
+                        if(pp)
+                        {
+                            *pp=0;
+                            pp++;
+                            while(*pp && *pp==' ')
+                                pp++;
+
+                            if(!strcasecmp(tmp,"Content-Length"))
+                                content_length=atoi(pp);
+                            else if(!strcasecmp(tmp,"Location"))
+                            {
+                                int n=snprintf(location,sizeof(location),"%s",pp);
+                                if(n==-1 || n>=sizeof(location))
+                                    location[sizeof(location)-1]=0;
+                            }
+                        }
+                    }
+                    idx++;
+                }
+
+                if(content_length>0)
+                    len=content_length;
+
+                fclose(fp);
+            }
+
+            alarm(0);
+        }
+    }
+
+    lua_pushinteger(L,len);
+
+    if(*location)
+        lua_pushstring(L,location);
+    else
+        lua_pushnil(L);
+
+    return 2;
+}
+
+
 static int lua_http_timeout(lua_State* L)
 {
     int t=lua_tointeger(L,1);
@@ -2064,6 +2159,7 @@ int luaopen_luaxcore(lua_State* L)
         {"flush",lua_http_flush},
         {"notify",lua_http_notify},
         {"download",lua_http_download},
+        {"get_length",lua_http_get_length},
         {"timeout",lua_http_timeout},
         {"user_agent",lua_http_user_agent},
         {0,0}

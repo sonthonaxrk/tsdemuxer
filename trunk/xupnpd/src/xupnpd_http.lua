@@ -161,6 +161,24 @@ function plugin_download(url)
     return nil
 end
 
+function plugin_get_length(url)
+    local len,location
+
+    location=url
+
+    for i=1,5,1 do
+        len,location=http.get_length(location)
+
+        if not location then
+            return len
+        else
+            if cfg.debug>0 then print('Redirect #'..i..' to: '..location) end
+        end
+    end
+
+    return 0
+end
+
 function http_handler(what,from,port,msg)
 
     if not msg or not msg.reqline then return end

@@ -101,6 +101,14 @@ function youtube_updatefeed(feed,friendly_name)
                     end
 
                     dfd:write('#EXTINF:0 logo=',logo,' ,',title,'\n',url,'\n')
+
+--                    dfd:write('#EXTINF:0 logo=',logo)
+--                    local real_url=youtube_get_video_url(url)
+--                    if real_url~=nil then
+--                        local len=plugin_get_length(real_url)
+--                        if len>0 then dfd:write(' length=',len) end
+--                    end
+--                    dfd:write(' ,',title,'\n',url,'\n')
                 end
 
                 dfd:close()
