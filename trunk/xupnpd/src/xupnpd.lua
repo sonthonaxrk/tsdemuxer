@@ -71,6 +71,9 @@ cfg.default_mime_type='mpeg'
 -- feeds update interval (seconds, 0 - disabled)
 cfg.feeds_update_interval=0
 
+-- fetch file length when feed update (slow!!!)
+cfg.feeds_fetch_length=false
+
 -- playlist (m3u file path or path with alias
 playlist=
 {
@@ -85,16 +88,16 @@ feeds=
     { 'vimeo',          'channel/hdxs',         'HD Xtreme sports' },
     { 'vimeo',          'channel/mtb',          'Mountain Bike Channel' },
     { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
-    { 'gametrailers',   'ps3/review',           'GT - PS3 - Review' },
-    { 'gametrailers',   'ps3/preview',          'GT - PS3 - Preview' },
-    { 'gametrailers',   'ps3/gameplay',         'GT - PS3 - Gameplay' },
-    { 'giantbomb',      'all',                  'GiantBomb - All' },
-    { 'ag',             'videos',               'AG - New' },
-    { 'ivi',            'new',                  'IVI - New' },
+--    { 'gametrailers',   'ps3/review',           'GT - PS3 - Review' },
+--    { 'gametrailers',   'ps3/preview',          'GT - PS3 - Preview' },
+--    { 'gametrailers',   'ps3/gameplay',         'GT - PS3 - Gameplay' },
+--    { 'giantbomb',      'all',                  'GiantBomb - All' },
+--    { 'ag',             'videos',               'AG - New' },
+--    { 'ivi',            'new',                  'IVI - New' },
 }
 
 -- log ident, pid file end www root
-cfg.version='1.0-rc8'
+cfg.version='1.0-rc9'
 cfg.log_ident=arg[1] or 'xupnpd'
 cfg.pid_file='/var/run/'..cfg.log_ident..'.pid'
 cfg.www_root='./www/'

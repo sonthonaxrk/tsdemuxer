@@ -31,7 +31,7 @@ function ivi_updatefeed(feed,friendly_name)
             feed_url='http://www.ivi.ru/videos/all/all/all/by_new/?year_from='..(year-1)..'&year_to='..year
             scroll=true
         else
-            feed_url='http://www.ivi.ru/watch/'..tfeed[1]..'/'
+            feed_url='http://www.ivi.ru/watch/'..tfeed[1]
         end
     end
 
@@ -54,19 +54,17 @@ function ivi_updatefeed(feed,friendly_name)
 
                 if feed_data then
                     if not scroll then
---                        for logo,name,urn in string.gmatch(feed_data,'<li>%s*<img src="(.-)"%s+alt="(.-)"%s*/>%s*<strong>%s*<a href="(.-)">') do
-                        for logo,name,urn in string.gmatch(feed_data,'<li itemprop="episodes" itemscope itemtype="http://schema.org/TVEpisode">%s*<img src="(.-)"%s+alt="(.-)"%s*itemprop="image"%s*/>%s*<strong>%s*<a href="(.-)"%sitemprop="url">') do
+                        for logo,name,urn in string.gmatch(feed_data,'<li itemprop="episodes" itemscope itemtype="http://schema.org/TVEpisode">%s*<img src="(.-)"%s+alt="(.-)"%s*itemprop="image"%s*/>%s*<strong>%s*<a href="(.-)" itemprop="url">') do
                             dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru',urn,'\n')
                         end
                     else
                         local n=0
 
-                        for urn,logo,name in string.gmatch(feed_data,'<span class="image">%s*<a href="(.-)">.-src="(.-)"%s*/>.-<h3>(.-)</h3>') do
-                            if string.find(urn,'/%d+$') then
-                                dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru',urn,'\n')
-                            end
+                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/(%w+)"%s*>%s*<img alt="" src="(.-)"%s*/>.-<h3>(.-)</h3>') do
+                            dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru/watch/',id,'\n')
                             n=n+1
                         end
+
                         if n<1 then scroll=false end
                     end
 
