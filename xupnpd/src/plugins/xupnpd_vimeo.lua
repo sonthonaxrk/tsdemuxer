@@ -24,7 +24,17 @@ function vimeo_updatefeed(feed,friendly_name)
                 dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=vimeo\n')
 
                 for i,j in ipairs(x) do
-                    dfd:write('#EXTINF:0 logo=',j.thumbnail_medium,' ,',j.title,'\n',j.url,'\n')
+                    if cfg.feeds_fetch_length==false then
+                        dfd:write('#EXTINF:0 logo=',j.thumbnail_medium,' ,',j.title,'\n',j.url,'\n')
+                    else
+                        dfd:write('#EXTINF:0 logo=',j.thumbnail_medium)
+                        local real_url=vimeo_get_video_url(j.url)
+                        if real_url~=nil then
+                            local len=plugin_get_length(real_url)
+                            if len>0 then dfd:write(' length=',len) end
+                        end
+                        dfd:write(' ,',j.title,'\n',j.url,'\n')
+                    end
                 end
                 dfd:close()
 
@@ -46,9 +56,25 @@ end
 -- send '\r\n' before data
 function vimeo_sendurl(vimeo_url,range)
 
-    local url=nil
-
     if plugin_sendurl_from_cache(vimeo_url,range) then return end
+
+    local url=vimeo_get_video_url(vimeo_url)
+
+    if url==nil then
+        if cfg.debug>0 then print('Vimeo clip '..vimeo_id..' is not found') end
+
+        plugin_sendfile('www/corrupted.mp4')
+    else
+        if cfg.debug>0 then print('Vimeo Real URL: '..url) end
+
+        plugin_sendurl(vimeo_url,url,range)
+    end
+
+end
+
+function vimeo_get_video_url(vimeo_url)
+
+    local url=nil
 
     local vimeo_id=string.match(vimeo_url,'.+/(%w+)$')
 
@@ -61,21 +87,13 @@ function vimeo_sendurl(vimeo_url,range)
         if sig and ts then
             url=string.format('http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=hd&codecs=H264&type=moogaloop_local&embed_location=',vimeo_id,sig,ts)
         end
-    else
-        if cfg.debug>0 then print('Vimeo clip '..vimeo_id..' is not found') end
     end
 
-    if url then
-        if cfg.debug>0 then print('Vimeo Real URL: '..url) end
+    return url
 
-        plugin_sendurl(vimeo_url,url,range)
-    else
-        if cfg.debug>0 then print('Vimeo Real URL is not found') end
-
-        plugin_sendfile('www/corrupted.mp4')
-    end
 end
 
 plugins['vimeo']={}
 plugins.vimeo.sendurl=vimeo_sendurl
 plugins.vimeo.updatefeed=vimeo_updatefeed
+plugins.vimeo.getvideourl=vimeo_get_video_url
