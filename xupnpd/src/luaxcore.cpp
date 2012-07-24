@@ -53,7 +53,7 @@ namespace core
         char host[128];
         char vhost[128];
         int port;
-        char urn[512];
+        char urn[1024];
         char auth[256];
     };
 
@@ -1510,7 +1510,7 @@ FILE* core::connect(const char* s,int port)
 
 static int lua_http_get_url_data(const char* url,core::url_data* d)
 {
-    char tmp[1024];
+    char tmp[2048];
 
     *d->host=0;
     *d->vhost=0;
