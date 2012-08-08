@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <signal.h>
@@ -877,6 +876,14 @@ static int lua_util_xmlencode(lua_State* L)
 
 static int lua_util_urlencode(lua_State* L)
 {
+    static const unsigned char t[256]=
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    };
+
     const unsigned char* s=(unsigned char*)lua_tostring(L,1);
 
     if(!s)
@@ -886,10 +893,10 @@ static int lua_util_urlencode(lua_State* L)
 
     while(*s)
     {
-        if(!isalnum(*s))
-            { char tmp[8]; int n=sprintf(tmp,"%%%.2X",(int)*s); b.add(tmp,n); }
-        else
+        if(t[*s])
             b.add(*s);
+        else
+            { char tmp[8]; int n=sprintf(tmp,"%%%.2X",(int)*s); b.add(tmp,n); }
         s++;
     }
 
