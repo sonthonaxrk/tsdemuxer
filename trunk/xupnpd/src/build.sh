@@ -2,9 +2,9 @@
 
 make clean; make x86
 
-make clean; make mipsel_ddwrt
+make clean; make bcm947xx_ddwrt
 
-make clean; make mipsel
+make clean; make bcm947xx
 
 make clean; make ar71xx
 
