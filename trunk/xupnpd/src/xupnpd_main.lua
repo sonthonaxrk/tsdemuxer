@@ -247,6 +247,7 @@ events['sys_gc']=sys_gc
 events['subscribe']=subscribe
 events['unsubscribe']=unsubscribe
 events['update_feeds']=update_feeds
+events['update_playlists']=function(what,sec) reload_playlist() core.timer(cfg.playlists_update_interval,what) end
 events['status']=set_child_status
 events['config']=function() load_plugins(cfg.config_path,'config') cache={} cache_size=0 end
 events['remove_feed']=function(id) table.remove(feeds,tonumber(id)) end
@@ -266,6 +267,10 @@ http.user_agent(cfg.user_agent)
 -- start feeds update system
 if cfg.feeds_update_interval>0 then
     core.timer(3,'update_feeds')
+end
+
+if cfg.playlists_update_interval>0 then
+    core.timer(cfg.playlists_update_interval,'update_playlists')
 end
 
 core.mainloop()
