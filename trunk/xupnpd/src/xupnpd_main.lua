@@ -239,6 +239,20 @@ function set_child_status(pid,status)
     end
 end
 
+function get_drive_state(drive)
+    local s
+
+    local f=io.popen('/sbin/hdparm -C '..drive..' 2>/dev/null | grep -i state','r')
+
+    if f then
+        s=f:read('*a')
+        f:close()
+    end
+
+    return string.match(s,'drive state is:%s+(.+)%s+')
+end
+
+
 -- event handlers
 events['SIGUSR1']=reload_playlist
 events['reload']=reload_playlist
@@ -247,11 +261,18 @@ events['sys_gc']=sys_gc
 events['subscribe']=subscribe
 events['unsubscribe']=unsubscribe
 events['update_feeds']=update_feeds
-events['update_playlists']=function(what,sec) reload_playlist() core.timer(cfg.playlists_update_interval,what) end
 events['status']=set_child_status
 events['config']=function() load_plugins(cfg.config_path,'config') cache={} cache_size=0 end
 events['remove_feed']=function(id) table.remove(feeds,tonumber(id)) end
 events['add_feed']=function(plugin,feed,name) table.insert(feeds,{[1]=plugin,[2]=feed,[3]=name}) end
+
+events['update_playlists']=
+function(what,sec)
+--    if get_drive_state('/dev/sda')=='active/idle' then
+        reload_playlist()
+--    end
+    core.timer(cfg.playlists_update_interval,what)
+end
 
 
 if cfg.embedded==true then print=function () end end
