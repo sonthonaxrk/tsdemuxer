@@ -9,6 +9,7 @@
 -- 83 - 480p  (MP4,h.264/AVC) hq stereo3d
 -- 84 - 720p  (MP4,h.264/AVC) hd stereo3d
 -- 85 - 1080p (MP4,h.264/AVC) hd stereo3d
+
 cfg.youtube_fmt=22
 cfg.youtube_region='*'
 
@@ -151,7 +152,6 @@ function youtube_get_video_url(youtube_url)
 
     local clip_page=plugin_download(youtube_url)
     if clip_page then
---        local stream_map=util.urldecode(string.match(clip_page,'url_encoded_fmt_stream_map=(.-)&amp;'))
         local stream_map=util.urldecode(string.match(clip_page,'url_encoded_fmt_stream_map=(.-)\\u0026amp;'))
         clip_page=nil
 
@@ -171,10 +171,10 @@ function youtube_get_video_url(youtube_url)
                     end
                 end
                 if item['itag']==tostring(fmt) then
-                    url=item['url']
+                    url=item['url']..'&signature='..item['sig']
                     break
                 elseif item['itag']=="18" then
-                    url_18=item['url']
+                    url_18=item['url']..'&signature='..item['sig']
                 end
                 --print('\n')
             end
