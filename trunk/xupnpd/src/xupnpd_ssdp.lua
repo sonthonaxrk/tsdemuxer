@@ -9,13 +9,13 @@ function ssdp_msg(nt,usn,nts)
     return string.format(
         'NOTIFY * HTTP/1.1\r\n'..
         'HOST: 239.255.255.250:1900\r\n'..
-        'CACHE-CONTROL: max-age=1800\r\n'..
+        'CACHE-CONTROL: max-age=%s\r\n'..
         'LOCATION: %s\r\n'..
         'NT: %s\r\n'..
         'NTS: %s\r\n'..
         'Server: %s\r\n'..
         'USN: %s\r\n\r\n',
-        ssdp_location,nt,nts,ssdp_server,usn
+        cfg.ssdp_max_age,ssdp_location,nt,nts,ssdp_server,usn
         )
 end
 
@@ -67,14 +67,14 @@ function ssdp_handler(what,from,msg)
         if resp then
             ssdp.send(string.format(
                 'HTTP/1.1 200 OK\r\n'..
-                'CACHE-CONTROL: max-age=1800\r\n'..
+                'CACHE-CONTROL: max-age=%s\r\n'..
                 'DATE: %s\r\n'..
                 'EXT:\r\n'..
                 'LOCATION: %s\r\n'..
                 'Server: %s\r\n'..
                 'ST: %s\r\n'..
                 'USN: %s::%s\r\n\r\n',
-                os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_location,ssdp_server,st,ssdp_uuid2,st),from)
+                cfg.ssdp_max_age,os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_location,ssdp_server,st,ssdp_uuid2,st),from)
         end
     end
 end
@@ -102,6 +102,6 @@ ssdp_init(ssdp_msg_alive,'ssdp:alive')
 ssdp_init(ssdp_msg_byebye,'ssdp:byebye')
 
 ssdp_alive()
-core.timer(15,"ssdp_timer")
+core.timer(cfg.ssdp_notify_interval,"ssdp_timer")
 
 table.insert(atexit,ssdp_byebye)

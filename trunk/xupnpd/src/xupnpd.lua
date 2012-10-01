@@ -6,6 +6,12 @@ cfg.ssdp_interface='lo'
 -- 'cfg.ssdp_loop' enables multicast loop (if player and server in one host)
 cfg.ssdp_loop=1
 
+-- SSDP announcement interval
+cfg.ssdp_notify_interval=15
+
+-- SSDP announcement age
+cfg.ssdp_max_age=1800
+
 -- HTTP port for incoming connections
 cfg.http_port=4044
 
