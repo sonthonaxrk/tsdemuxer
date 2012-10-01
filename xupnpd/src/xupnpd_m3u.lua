@@ -40,6 +40,11 @@ function playlist_new_folder(parent,name)
     return child
 end
 
+function playlist_sort_elements(pls)
+    if cfg.sort_files~=true or pls==nil or pls.elements==nil then return end
+    table.sort(pls.elements,function(a,b) return string.lower(a.name)<string.lower(b.name) end)
+end
+
 function playlist_fix_sub_tree(pls)
     for i,j in ipairs(pls.elements) do
 --        j.id=i
@@ -94,14 +99,14 @@ function reload_playlists()
 
         if type(j)=='table' then
 
-            if string.find(j[1],'%.m3u$') then pls=m3u.parse(j[1]) else pls=m3u.scan(j[1]) end
+            if string.find(j[1],'%.m3u$') then pls=m3u.parse(j[1]) else pls=m3u.scan(j[1]) playlist_sort_elements(pls) end
 
             if pls then
                 if j[2] then pls.name=j[2] end
                 if j[3] then pls.acl=j[3] end
             end
         else
-            if string.find(j,'%.m3u$') then pls=m3u.parse(j) else pls=m3u.scan(j) end
+            if string.find(j,'%.m3u$') then pls=m3u.parse(j) else pls=m3u.scan(j) playlist_sort_elements(pls) end
         end
 
         if pls then
