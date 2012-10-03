@@ -60,7 +60,7 @@ cfg.dlna_notify=true
 cfg.group=true
 
 -- sort files
-cfg.sort_files=false
+cfg.sort_files=true
 
 -- Device name
 cfg.name='UPnP-IPTV'
@@ -88,7 +88,7 @@ cfg.feeds_fetch_length=false
 playlist=
 {
     { './playlists/mozhay.m3u',             'Mozhay.tv' },
---    { './localmedia', 'Local Media Files', '127.0.0.1;192.168.1.1' }
+    { './localmedia', 'Local Media Files', '127.0.0.1;192.168.1.1' }
 }
 
 -- feeds list (plugin, feed name, feed type)
