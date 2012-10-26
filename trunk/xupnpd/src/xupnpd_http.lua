@@ -103,34 +103,56 @@ function get_soap_method(s)
     return string.sub(s,i+1)
 end
 
-
 function plugin_sendurl_from_cache(url,range)
     local c=cache[url]
 
-    if c and c.value then
-        if cfg.debug>0 then print('Cache URL: '..c.value) end
-        if http.sendurl(c.value,1,range)==0 then return false end
-        return true
+    if c==nil or c.value==nil then return false end
+
+    if cfg.debug>0 then print('Cache URL: '..c.value) end
+
+    local rc,location,l
+
+    location=c.value
+
+    for i=1,5,1 do
+        rc,l=http.sendurl(location,1,range)
+
+        if l then
+            location=l
+            core.sendevent('store',url,location)
+            if cfg.debug>0 then print('Redirect #'..i..' to: '..location) end
+        else
+            if rc~=0 then return true end
+
+            if cfg.debug>0 then print('Retry #'..i..' location: '..location) end
+        end
     end
 
     return false
 end
 
 function plugin_sendurl(url,real_url,range)
-    local rc,location
+    local rc,location,l
 
     location=real_url
 
-    for i=1,5,1 do
-        core.sendevent('store',url,location)
-        rc,location=http.sendurl(location,1,range)
+    core.sendevent('store',url,real_url)
 
-        if not location then
-            break
-        else
+    for i=1,5,1 do
+        rc,l=http.sendurl(location,1,range)
+
+        if l then
+            location=l
+            core.sendevent('store',url,location)
             if cfg.debug>0 then print('Redirect #'..i..' to: '..location) end
+        else
+            if rc~=0 then return true end
+
+            if cfg.debug>0 then print('Retry #'..i..' location: '..location) end
         end
     end
+
+    return false
 end
 
 function plugin_sendfile(path)
