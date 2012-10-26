@@ -31,16 +31,10 @@
 #include "compat.h"
 
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
-// TODO: sendfile
-// TODO: sendurl alarm?
 // TODO: XBox 360
-// TODO: RTSP/RTP, RTMP, MMS
-// TODO: RTP to builtin udpxy
-// http://www.gupnp.org
 // TODO: YouTube max-count>50
-// TODO: sort(files)
 // TODO: ivi.ru feeds fail
-// TODO: get_file_length_by_url
+// TODO: length to m3u when feed update
 
 namespace core
 {
@@ -1589,7 +1583,7 @@ static int lua_http_sendurl(lua_State* L)
     const char* range=lua_gettop(L)>2?lua_tostring(L,3):0;
 
     int rc=0;
-    char location[512]="";
+    char location[1024]="";
 
     if(!s || !core::http_client_fp)
     {
@@ -1628,9 +1622,10 @@ static int lua_http_sendurl(lua_State* L)
 
     int status=0;
 
-    char tmp[1024];
+    enum { buf_size=16384 };
+    char* tmp=(char*)malloc(buf_size);
 
-    while(fgets(tmp,sizeof(tmp),fp))
+    while(fgets(tmp,buf_size,fp))
     {
         char* p=strpbrk(tmp,"\r\n");
         if(p)
@@ -1693,6 +1688,10 @@ static int lua_http_sendurl(lua_State* L)
             lua_pushstring(L,location);
         else
             lua_pushnil(L);
+
+        if(tmp)
+            free(tmp);
+
         return 2;
     }else
         rc=1;
@@ -1706,11 +1705,21 @@ static int lua_http_sendurl(lua_State* L)
 
     int dfd=fileno(core::http_client_fp);
 
-    while((n=fread(tmp,1,sizeof(tmp),fp))>0)
-        if(write(dfd,tmp,n)!=n)
-            break;
-        else
-            alarm(core::http_timeout);
+    while((n=fread(tmp,1,buf_size,fp))>0)
+    {
+        int ll=0;
+        while(ll<n)
+        {
+            int nn=write(dfd,tmp+ll,n-ll);
+            if(nn<1)
+                break;
+            else
+            {
+                ll+=nn;
+                alarm(core::http_timeout);
+            }
+        }
+    }
 
     alarm(0);
 
@@ -1718,6 +1727,9 @@ static int lua_http_sendurl(lua_State* L)
 
     lua_pushinteger(L,rc);
 
+    if(tmp);
+        free(tmp);
+    
     return 1;
 }
 
@@ -1858,7 +1870,7 @@ static int lua_http_download(lua_State* L)
         post_data="";
 
     int len=0;
-    char location[512]="";
+    char location[1024]="";
 
     FILE* dfp=0;
 
@@ -2006,7 +2018,7 @@ static int lua_http_get_length(lua_State* L)
     const char* s=lua_tostring(L,1);
 
     int len=0;
-    char location[512]="";
+    char location[1024]="";
 
     if(s)
     {
