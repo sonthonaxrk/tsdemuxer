@@ -39,6 +39,8 @@
 namespace core
 {
     int http_timeout=15;
+    int http_sendurl_buf_size=16384;
+    int http_sendurl_wait_all=0;
 
     char user_agent[256]="xupnpd";
 
@@ -1576,6 +1578,25 @@ static int lua_http_get_url_data(const char* url,core::url_data* d)
     return 0;
 }
 
+static size_t lua_http_read_chunk(char* ptr,size_t size,FILE* fp)
+{
+    size_t l=0;
+
+    while(l<size)
+    {
+        size_t n=fread(ptr+l,1,size-l,fp);
+        if(!n)
+            break;
+        else
+            l+=n;
+
+        if(!core::http_sendurl_wait_all)
+            break;
+    }
+
+    return l;
+}
+
 static int lua_http_sendurl(lua_State* L)
 {
     const char* s=lua_tostring(L,1);
@@ -1622,10 +1643,9 @@ static int lua_http_sendurl(lua_State* L)
 
     int status=0;
 
-    enum { buf_size=16384 };
-    char* tmp=(char*)malloc(buf_size);
+    char* tmp=(char*)malloc(core::http_sendurl_buf_size);
 
-    while(fgets(tmp,buf_size,fp))
+    while(fgets(tmp,core::http_sendurl_buf_size,fp))
     {
         char* p=strpbrk(tmp,"\r\n");
         if(p)
@@ -1696,7 +1716,7 @@ static int lua_http_sendurl(lua_State* L)
     }else
         rc=1;
     
-    int n;
+    size_t n;
 
     if(extra_headers>0)
         fprintf(core::http_client_fp,"\r\n");
@@ -1705,20 +1725,19 @@ static int lua_http_sendurl(lua_State* L)
 
     int dfd=fileno(core::http_client_fp);
 
-    while((n=fread(tmp,1,buf_size,fp))>0)
+    while((n=lua_http_read_chunk(tmp,core::http_sendurl_buf_size,fp))>0)
     {
-        int ll=0;
+        size_t ll=0;
+
         while(ll<n)
         {
-            int nn=write(dfd,tmp+ll,n-ll);
-            if(nn<1)
+            ssize_t nn=write(dfd,tmp+ll,n-ll);
+            if(!nn || nn==(ssize_t)-1)
                 break;
             else
-            {
                 ll+=nn;
-                alarm(core::http_timeout);
-            }
         }
+        alarm(core::http_timeout);
     }
 
     alarm(0);
@@ -2118,6 +2137,20 @@ static int lua_http_timeout(lua_State* L)
     return 0;
 }
 
+static int lua_http_sendurl_buffer_size(lua_State* L)
+{
+    int size=lua_tointeger(L,1);
+    int all=lua_tointeger(L,2);
+
+    if(size>0)
+        core::http_sendurl_buf_size=size;
+
+    if(all>=0)
+        core::http_sendurl_wait_all=all>0?1:0;
+
+    return 0;
+}
+
 static int lua_http_user_agent(lua_State* L)
 {
     const char* s=lua_tostring(L,1);
@@ -2173,6 +2206,7 @@ int luaopen_luaxcore(lua_State* L)
         {"download",lua_http_download},
         {"get_length",lua_http_get_length},
         {"timeout",lua_http_timeout},
+        {"sendurl_buffer_size",lua_http_sendurl_buffer_size},
         {"user_agent",lua_http_user_agent},
         {0,0}
     };
