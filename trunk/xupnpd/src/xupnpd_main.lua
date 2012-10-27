@@ -2,6 +2,8 @@
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
+http.sendurl_buffer_size(65536,1);
+
 if cfg.daemon==true then core.detach() end
 
 core.openlog(cfg.log_ident,cfg.log_facility)
