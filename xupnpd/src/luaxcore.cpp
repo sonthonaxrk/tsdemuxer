@@ -30,10 +30,11 @@
 #include <ctype.h>
 #include "compat.h"
 
+// TODO: prerender dev.xml tamplate for Content-Length
+// TODO: ivi.ru feeds fail
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 // TODO: XBox 360
 // TODO: YouTube max-count>50
-// TODO: ivi.ru feeds fail
 // TODO: length to m3u when feed update
 
 namespace core

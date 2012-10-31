@@ -2,7 +2,7 @@
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
-http.sendurl_buffer_size(65536,1);
+http.sendurl_buffer_size(32768,1);
 
 if cfg.daemon==true then core.detach() end
 
