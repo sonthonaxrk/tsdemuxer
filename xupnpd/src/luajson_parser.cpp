@@ -237,7 +237,7 @@ int libjson::lua_json_parse(lua_State* L,const unsigned char* p,size_t l)
 
 	    break;
 	case json_st::st_string:
-	    if(ch=='\\' && p[i+1]=='\"') { i++; break; }
+	    if(ch=='\\') { i++; break; }
 	    else if(ch!='\"') break;
 
 	    tok.push_string(p+i);
