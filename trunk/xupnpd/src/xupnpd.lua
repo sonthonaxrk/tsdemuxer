@@ -98,6 +98,7 @@ feeds=
     { 'vimeo',          'channel/hdxs',         'HD Xtreme sports' },
     { 'vimeo',          'channel/mtb',          'Mountain Bike Channel' },
     { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
+--    { 'dreambox',       'http://192.168.0.1:8001/','Dreambox1' },
 --    { 'gametrailers',   'ps3/review',           'GT - PS3 - Review' },
 --    { 'gametrailers',   'ps3/preview',          'GT - PS3 - Preview' },
 --    { 'gametrailers',   'ps3/gameplay',         'GT - PS3 - Gameplay' },
