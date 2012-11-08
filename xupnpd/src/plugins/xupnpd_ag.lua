@@ -89,5 +89,8 @@ function ag_sendurl(ag_url,range)
 end
 
 plugins['ag']={}
+plugins.ag.name="AG.ru"
+plugins.ag.desc="<i>channel</i>"..
+"<br/><b>AG.ru channels</b>: videos, videos/top100pop, videos/top100best, videos/selected_by_ag"
 plugins.ag.sendurl=ag_sendurl
 plugins.ag.updatefeed=ag_updatefeed

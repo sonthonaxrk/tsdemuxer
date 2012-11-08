@@ -83,6 +83,16 @@ http_templ=
 
 dofile('xupnpd_soap.lua')
 
+function compile_templates()
+    local path=cfg.tmp_path..'xupnpd-cache'
+
+    os.execute('mkdir -p '..path)
+
+    for i,fname in ipairs(http_templ) do
+        http.compile_template(cfg.www_root..fname,path..fname,http_vars)
+    end
+end
+
 function http_send_headers(err,ext,len)
     http.send(
         string.format(
@@ -457,15 +467,15 @@ function http_handler(what,from,port,msg)
             if f.type=='none' then http_send_headers(404) return end
             if f.type~='file' then http_send_headers(403) return end
 
-            local tmpl=false
+            local tmpl_name=nil
 
             for i,fname in ipairs(http_templ) do
-                if f.url==fname then tmpl=true break end
+                if f.url==fname then tmpl_name=cfg.tmp_path..'xupnpd-cache'..fname break end
             end
 
             local len=nil
 
-            if not tmpl then len=f.length end
+            if not tmpl_name then len=f.length else len=util.getflen(tmpl_name) end
 
             http.send(
                 string.format(
@@ -476,15 +486,16 @@ function http_handler(what,from,port,msg)
                 http.send(string.format('Content-Length: %s\r\n',len))
             end
 
-            if tmpl then
-                http.send('Pragma: no-cache\r\nCache-control: no-cache\r\n')
-            end
-
             http.send('\r\n')
 
             if head~=true then
                 if cfg.debug>0 then print(from..' FILE '..f.path) end
-                if tmpl then http.sendtfile(f.path,http_vars) else http.sendfile(f.path) end
+
+                if tmpl_name~=nil then
+                    if len then http.sendfile(tmpl_name) else http.sendtfile(f.path,http_vars) end
+                else
+                    http.sendfile(f.path)
+                end
             end
         end
     else
@@ -493,6 +504,8 @@ function http_handler(what,from,port,msg)
 
     http.flush()
 end
+
+compile_templates()
 
 events["http"]=http_handler
 

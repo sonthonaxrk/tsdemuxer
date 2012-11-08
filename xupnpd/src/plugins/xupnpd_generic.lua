@@ -41,5 +41,7 @@ function generic_sendurl(generic_url,range)
 end
 
 plugins['generic']={}
+plugins.generic.name="Generic"
+plugins.generic.desc="<i>m3u_url</i>"
 plugins.generic.sendurl=generic_sendurl
 plugins.generic.updatefeed=generic_updatefeed

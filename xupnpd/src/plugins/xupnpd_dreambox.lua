@@ -64,4 +64,6 @@ function dreambox_updatefeed(feed,friendly_name)
 end
 
 plugins['dreambox']={}
+plugins.dreambox.name="DreamBox"
+plugins.dreambox.desc=" url (example: <i>http://192.168.0.1:8001/</i>)"
 plugins.dreambox.updatefeed=dreambox_updatefeed
