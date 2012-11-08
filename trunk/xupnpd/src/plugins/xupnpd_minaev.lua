@@ -88,5 +88,7 @@ function minaev_sendurl(minaev_url,range)
 end
 
 plugins['minaev']={}
+plugins.minaev.name="MinaevLive"
+plugins.minaev.desc="archive"
 plugins.minaev.sendurl=minaev_sendurl
 plugins.minaev.updatefeed=minaev_updatefeed

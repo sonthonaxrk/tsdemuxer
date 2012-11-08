@@ -57,6 +57,8 @@ function arjlover_sendurl(arjlover_url,range)
 end
 
 plugins['arjlover']={}
+plugins.arjlover.name="arjlover.net"
+plugins.arjlover.desc="multiki, film, filmiki"
 plugins.arjlover.sendurl=arjlover_sendurl
 plugins.arjlover.updatefeed=arjlover_updatefeed
 

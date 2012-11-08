@@ -188,6 +188,9 @@ function youtube_get_video_url(youtube_url)
 end
 
 plugins['youtube']={}
+plugins.youtube.name="YouTube"
+plugins.youtube.desc="<i>username</i>, favorites/<i>username</i>, playlist/<i>username</i>/<i>playlistname</i>, channel/<i>channelname</i>, search/<i>search_string</i>"..
+"<br/><b>YouTube channels</b>: top_rated, top_favorites, most_viewed, most_recent, recently_featured"
 plugins.youtube.sendurl=youtube_sendurl
 plugins.youtube.updatefeed=youtube_updatefeed
 plugins.youtube.getvideourl=youtube_get_video_url

@@ -330,6 +330,9 @@ function vk_api_request_auth(redirect_url)
 end
 
 plugins['vkontakte']={}
+plugins.vkontakte.name="VKontakte"
+plugins.vkontakte.desc="my, group/<i>group_id</i>, group/<i>group_id</i>/<i>album_id</i>, user/<i>user_id</i>, user/<i>user_id</i>/<i>album_id</i>, search/<i>search_order</i>/<i>search_string</i>, search_hd/<i>search_order</i>/<i>search_string</i>"..
+"<br/>(<a onclick='window.open(this.href,\'newwin\',\'width=450,scrollbars=yes,toolbar=no,menubar=no\'); return false;' href='/ui/vk_status'>view groups, friends and plugin help</a>)"
 plugins.vkontakte.sendurl=vk_sendurl
 plugins.vkontakte.updatefeed=vk_updatefeed
 plugins.vkontakte.vk_api_request_auth=vk_api_request_auth

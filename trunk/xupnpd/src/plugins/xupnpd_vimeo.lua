@@ -94,6 +94,8 @@ function vimeo_get_video_url(vimeo_url)
 end
 
 plugins['vimeo']={}
+plugins.vimeo.name="Vimeo"
+plugins.vimeo.desc="<i>username</i>, channel/<i>channelname</i>, group/<i>groupname</i>, album/<i>album_id</i>"
 plugins.vimeo.sendurl=vimeo_sendurl
 plugins.vimeo.updatefeed=vimeo_updatefeed
 plugins.vimeo.getvideourl=vimeo_get_video_url

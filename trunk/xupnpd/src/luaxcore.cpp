@@ -30,7 +30,6 @@
 #include <ctype.h>
 #include "compat.h"
 
-// TODO: prerender dev.xml tamplate for Content-Length
 // TODO: ivi.ru feeds fail
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 // TODO: XBox 360
@@ -1377,18 +1376,10 @@ static int lua_http_sendfile(lua_State* L)
     return 0;
 }
 
-static int lua_http_sendtfile(lua_State* L)
+static int lua_tmpl_process(lua_State* L,FILE* sfp,FILE* dfp)
 {
-    const char* s=lua_tostring(L,1);
-
-    if(!s || !core::http_client_fp)
+    if(!sfp || !dfp)
         return 0;
-
-    FILE* fp=fopen(s,"r");
-    if(!fp)
-        return 0;
-
-//printf("%i\n",lua_gettop(L));
 
     int st=0;
 
@@ -1397,7 +1388,7 @@ static int lua_http_sendtfile(lua_State* L)
 
     for(;;)
     {
-        int ch=fgetc(fp);
+        int ch=fgetc(sfp);
 
         if(ch==EOF)
             break;
@@ -1408,17 +1399,17 @@ static int lua_http_sendtfile(lua_State* L)
             if(ch=='$')
                 st=1;
             else
-                fputc(ch,core::http_client_fp);
+                fputc(ch,dfp);
             break;
         case 1:
             if(ch=='{')
                 st=2;
             else
             {
-                fputc('$',core::http_client_fp);
+                fputc('$',dfp);
                 if(ch!='$')
                 {
-                    fputc(ch,core::http_client_fp);
+                    fputc(ch,dfp);
                     st=0;
                 }
             }
@@ -1428,7 +1419,7 @@ static int lua_http_sendtfile(lua_State* L)
             {
                 var[nvar]=0;
 
-                lua_getfield(L,2,var);
+                lua_getfield(L,-1,var);
 
                 if(lua_type(L,-1)==LUA_TFUNCTION)
                 {
@@ -1445,7 +1436,7 @@ static int lua_http_sendtfile(lua_State* L)
                 if(!p)
                     p="";
 
-                fprintf(core::http_client_fp,"%s",p);
+                fprintf(dfp,"%s",p);
 
                 lua_pop(L,1);
 
@@ -1459,11 +1450,54 @@ static int lua_http_sendtfile(lua_State* L)
             break;
         }
     }
-//printf("%i\n",lua_gettop(L));
+
+    return 0;
+}
+
+
+static int lua_http_sendtfile(lua_State* L)
+{
+    const char* s=lua_tostring(L,1);
+
+    if(!s || !core::http_client_fp)
+        return 0;
+
+    FILE* fp=fopen(s,"r");
+    if(!fp)
+        return 0;
+
+    int rc=lua_tmpl_process(L,fp,core::http_client_fp);
 
     fclose(fp);
 
-    return 0;
+    return rc;
+}
+
+static int lua_http_compile_template(lua_State* L)
+{
+    const char* s=lua_tostring(L,1);
+    const char* d=lua_tostring(L,2);
+
+    if(!s || !d)
+        return 0;
+
+    FILE* sfp=fopen(s,"r");
+    if(!sfp)
+        return 0;
+
+    FILE* dfp=fopen(d,"w");
+    if(!dfp)
+    {
+        fclose(sfp);
+        return 0;
+    }
+
+    int rc=lua_tmpl_process(L,sfp,dfp);
+
+    fclose(sfp);
+    fclose(dfp);
+
+    return rc;
 }
 
 FILE* core::connect(const char* s,int port)
@@ -2200,6 +2234,7 @@ int luaopen_luaxcore(lua_State* L)
         {"send",lua_http_send},
         {"sendfile",lua_http_sendfile},
         {"sendtfile",lua_http_sendtfile},
+        {"compile_template",lua_http_compile_template},
         {"sendurl",lua_http_sendurl},
         {"sendmcasturl",lua_http_sendmcasturl},
         {"flush",lua_http_flush},

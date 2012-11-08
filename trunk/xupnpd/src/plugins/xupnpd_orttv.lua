@@ -76,5 +76,7 @@ function orttv_sendurl(orttv_url,range)
 end
 
 plugins['orttv']={}
+plugins.orttv.name="1tv"
+plugins.orttv.desc="'<b>si</b>' parameter from 1tv.ru url<br/>example: http://www.1tv.ru/sprojects/si=<b>5685</b>"
 plugins.orttv.sendurl=orttv_sendurl
 plugins.orttv.updatefeed=orttv_updatefeed

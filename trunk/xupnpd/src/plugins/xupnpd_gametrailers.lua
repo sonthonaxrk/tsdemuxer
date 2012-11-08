@@ -120,5 +120,8 @@ function gametrailers_sendurl(gametrailers_page_url,range)
 end
 
 plugins['gametrailers']={}
+plugins.gametrailers.name="GameTrailers"
+plugins.gametrailers.desc="<i>platform</i>/<i>type</i>"..
+"<br/><b>GameTrailers platforms</b>: all, ps3, xb360, wii, pc, psv, psp, ds, gba, ps2, gc, xbox, classic, mob.<br/><b>GameTrailers types</b>: all, review, preview, interview, gameplay, feature"
 plugins.gametrailers.sendurl=gametrailers_sendurl
 plugins.gametrailers.updatefeed=gametrailers_updatefeed

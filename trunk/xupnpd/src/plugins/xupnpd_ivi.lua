@@ -145,6 +145,9 @@ function ivi_sendurl(ivi_url,range)
 end
 
 plugins['ivi']={}
+plugins.ivi.name="ivi.ru"
+plugins.ivi.desc="new, <i>serial_name</i> or genre/<i>genre</i>"..
+"<br/><b>genres</b>: arthouse, boeviki, voennye, detective, detskiy, documentary, drama, comedy, korotkometrazhki, melodramy, zolotaya_klassika, adventures, sovetskoe_kino, thriller, horror, fantastika, erotika"
 plugins.ivi.sendurl=ivi_sendurl
 plugins.ivi.updatefeed=ivi_updatefeed
 
