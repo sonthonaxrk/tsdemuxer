@@ -235,19 +235,48 @@ function ui_config()
     http_vars.youtube_region=cfg.youtube_region
     http_vars.ivi_fmt=cfg.ivi_fmt
     http_vars.ag_fmt=cfg.ag_fmt
-    local vk_name=plugins.vkontakte.vk_get_name()
-    if vk_name then
-        http_vars.vk_auth_link='You are signed as <b>'..vk_name..'</b> <a class="btn btn-info" href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>'
-    else
-        http_vars.vk_auth_link='<a class="btn btn-info" href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">VKontakte sign-in</a>'
+
+    for plugin_name,plugin in pairs(plugins) do
+        if plugin.ui_vars then
+            for i,var in ipairs(plugin.ui_vars) do
+                http_vars[ var[1] ]=var[2]
+            end
+        end
     end
+
+
     http.sendtfile(cfg.ui_path..'ui_config.html',http_vars)
+
+    http.send('<script>\n')
+    http.send('function set_select_value(id,value)\n')
+    http.send('    { var obj=document.getElementById(id); for(i=0;i<obj.length;i++) { if(obj.options[i].value==value) { obj.options[i].selected=true; break; } } }\n')
+    http.send('function set_input_value(id,value)\n')
+    http.send('    { var obj=document.getElementById(id); if(obj) { obj.value=value } }\n')
+                        
+    for plugin_name,plugin in pairs(plugins) do
+        if plugin.ui_config_vars then
+            for i,var in ipairs(plugin.ui_config_vars) do
+                http.send(string.format('set_%s_value("%s","%s");\n',var[1],var[2],cfg[ var[2] ]))
+            end
+        end
+    end
+
+    http.send('</script>\n')
+
 end
 
 function ui_apply()
     local f=io.open(cfg.config_path..'common.lua','w')
     if f then
-        f:write('cfg.youtube_fmt="',ui_args.youtube_q or '18','"\ncfg.ivi_fmt="',ui_args.ivi_q or 'MP4-lo','"\ncfg.ag_fmt="',ui_args.ag_q or 'MP4-lo','"\ncfg.youtube_region="',ui_args.youtube_r or '*','"\n')
+
+        for plugin_name,plugin in pairs(plugins) do
+            if plugin.ui_config_vars then
+                for i,var in ipairs(plugin.ui_config_vars) do
+                    f:write(string.format('cfg.%s="%s"\n',var[2],ui_args[ var[2] ]))
+                end
+            end
+        end
+
         f:close()
         core.sendevent('config')
     end

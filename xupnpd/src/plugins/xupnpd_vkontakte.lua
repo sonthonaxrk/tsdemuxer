@@ -325,8 +325,7 @@ function get_sort_order(label)
 end
 
 function vk_api_request_auth(redirect_url)
-    return 'http://oauth.vk.com/authorize?client_id='..vk_app_id..'&scope='..vk_app_scope..'&response_type=token&redirect_uri='..
-        util.urlencode(redirect_url..'/ui/vk_landing')
+    return 'http://oauth.vk.com/authorize?client_id='..vk_app_id..'&scope='..vk_app_scope..'&response_type=token&redirect_uri='..util.urlencode(redirect_url..'/ui/vk_landing')
 end
 
 function ui_vk_landing()
@@ -402,4 +401,22 @@ plugins.vkontakte.ui_actons=
     ['vk_landing']      = { 'xupnpd - vkontakte sign-in redirect', ui_vk_landing },
     ['vk_update']       = { 'xupnpd - vkontakte sign-in result', ui_vk_update },
     ['vk_status']       = { 'xupnpd - vkontakte status', ui_vk_status }
+}
+
+plugins.vkontakte.ui_vars=
+{
+    { "vk_auth_link",
+        function()
+            local s
+
+            local vk_name=plugins.vkontakte.vk_get_name()
+            if vk_name then
+                s='You are signed as <b>'..vk_name..'</b> <a class="btn btn-info" href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>'
+            else
+                s='<a class="btn btn-info" href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">VKontakte sign-in</a>'
+            end
+
+            return s..' <a class="btn btn-info" onclick="window.open(this.href,\'newwin\',\'width=450,scrollbars=yes,toolbar=no,menubar=no\'); return false;" href="/ui/vk_status">status and help</a>'
+        end
+    }
 }
