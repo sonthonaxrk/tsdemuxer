@@ -1,14 +1,15 @@
 <h3>Config</h3>
+
 <h4>VKontakte</h4>
 
 ${vk_auth_link}
+<br/><br/>
 
-<a class="btn btn-info" onclick="window.open(this.href,'newwin','width=450,scrollbars=yes,toolbar=no,menubar=no'); return false;" href="/ui/vk_status">status and help</a></a><br /><br />
 <h4>YouTube</h4>
 <form method=get action="/ui/apply">
 
 YouTube quality:<br/>
-<select name=youtube_q id=youtube_q>
+<select name=youtube_fmt id=youtube_fmt>
 <option value=18>360p</option>
 <option selected value=22>720p</option>
 <option value=37>1080p</option>
@@ -18,7 +19,7 @@ YouTube quality:<br/>
 
 <br/><br/>
 YouTube region:<br/>
-<select name=youtube_r id=youtube_r>
+<select name=youtube_region id=youtube_region>
 <option selected value="*">*</option>
 <option value=AU>AU</option>
 <option value=BR>BR</option>
@@ -45,7 +46,7 @@ YouTube region:<br/>
 <h4>ivi.ru</h4>
 
 ivi.ru quality:<br/>
-<select name=ivi_q id=ivi_q>
+<select name=ivi_fmt id=ivi_fmt>
 <option value="MP4-lo">Low</option>
 <option selected value="MP4-hi">High</option>
 </select>
@@ -54,7 +55,7 @@ ivi.ru quality:<br/>
 <h4>AG.ru</h4>
 
 AG.ru quality:<br/>
-<select name=ag_q id=ag_q>
+<select name=ag_fmt id=ag_fmt>
 <option selected value="MP4-lo">Standart</option>
 <option value="MP4-hi">VIP</option>
 </select>
@@ -64,22 +65,3 @@ AG.ru quality:<br/>
 <input class="btn btn-primary" type=submit value=Apply>
 <a class='btn btn-info' href='/ui'>Back</a>
 </form>
-
-<script>
-    function set_select_selected(id,value)
-    {
-        var z=document.getElementById(id)
-        for(i=0;i<z.length;i++)
-        {
-            if(z.options[i].value==value)
-            {
-                z.options[i].selected=true;
-                break;
-            }
-        }
-    }
-    set_select_selected('youtube_q','${youtube_fmt}');
-    set_select_selected('youtube_r','${youtube_region}');
-    set_select_selected('ivi_q','${ivi_fmt}');
-    set_select_selected('ag_q','${ag_fmt}');
-</script>

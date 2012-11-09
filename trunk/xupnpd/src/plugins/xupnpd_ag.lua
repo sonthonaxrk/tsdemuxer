@@ -94,3 +94,8 @@ plugins.ag.desc="<i>channel</i>"..
 "<br/><b>AG.ru channels</b>: videos, videos/top100pop, videos/top100best, videos/selected_by_ag"
 plugins.ag.sendurl=ag_sendurl
 plugins.ag.updatefeed=ag_updatefeed
+
+plugins.ag.ui_config_vars=
+{
+    { "select", "ag_fmt" },
+}

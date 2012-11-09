@@ -151,6 +151,11 @@ plugins.ivi.desc="new, <i>serial_name</i> or genre/<i>genre</i>"..
 plugins.ivi.sendurl=ivi_sendurl
 plugins.ivi.updatefeed=ivi_updatefeed
 
+plugins.ivi.ui_config_vars=
+{
+    { "select", "ivi_fmt" }
+}
+
 --ivi_updatefeed('luntik','Лунтик')
 --ivi_updatefeed('genre/horror','Horrors')
 --ivi_updatefeed('new','new')

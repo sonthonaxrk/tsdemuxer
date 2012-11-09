@@ -194,3 +194,11 @@ plugins.youtube.desc="<i>username</i>, favorites/<i>username</i>, playlist/<i>us
 plugins.youtube.sendurl=youtube_sendurl
 plugins.youtube.updatefeed=youtube_updatefeed
 plugins.youtube.getvideourl=youtube_get_video_url
+
+plugins.youtube.ui_config_vars=
+{
+    { "select", "youtube_fmt" },
+    { "select", "youtube_region" }
+--    { "input", "cfg_and_form_input_variable_name" }
+--    { "select", "cfg_and_form_select_variable_name" }
+}
