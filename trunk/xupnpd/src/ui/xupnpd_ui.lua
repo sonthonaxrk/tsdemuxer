@@ -256,61 +256,6 @@ function ui_apply()
     http.send('<br/><a class="btn btn-info" href="/ui/config">Back</a>')
 end
 
-function ui_vk_landing()
-    http.send("<script>location.href = document.URL.replace('vk_landing', 'vk_update').replace('#', '?');</script>")
-end
-
-function ui_vk_update()
-    local f=io.open(cfg.config_path..'vkontakte.lua','w')
-    if f then
-        if ui_args.access_token and ui_args.secret and ui_args.user_id then
-            f:write('cfg.vk_api_access_token="',ui_args.access_token,'"\ncfg.vk_api_secret="',ui_args.secret,
-                '"\ncfg.vk_api_user_id="',ui_args.user_id,'"\n')
-            http.send('<h3>VKontakte sign-in OK</h3>')
-        else
-            f:write('cfg.vk_api_access_token=""\ncfg.vk_api_secret=""\ncfg.vk_api_user_id=""\n')
-            http.send('<h3>VKontakte sign-in FAILED</h3>')
-            http.send('Error: '..util.urldecode(ui_args.error)..'<br />Error description: '..util.urldecode(ui_args.error_description)..'<br />')
-        end
-        f:close()
-        core.sendevent('config')
-    else
-        http.send('<h3>Error opening config file</h3>')
-    end
-    http.send('<br/><a class="btn btn-info" href="/ui/config">Back</a>')
-end
-
-function ui_vk_status()
-    http.send('<h3>VKontakte Status</h3>')
-    local vk_name=plugins.vkontakte.vk_get_name()
-    if vk_name then
-        http.send('You are signed as <b>'..vk_name..'</b> <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>')
-        http.send('<h4>Groups</h4>')
-        http.send('<table class="table" width="400"><tr><th width="300">group name</th><th>groip id</th></tr>')
-        local vk_groups=plugins.vkontakte.vk_get_groups()
-        if vk_groups then
-            for group_id,group_name in pairs(vk_groups) do
-                http.send(string.format('<tr><td><a href="http://vkontakte.ru/club%s">%s</a></td><td>%s</td></tr>',group_id,group_name,group_id))
-            end
-        end
-        http.send('</table>')
-        http.send('<h4>Firiends</h4>')
-        http.send('<table class="table" width="400"><tr><th width="300">friend name</th><th>user id</th></tr>')
-        local vk_friends=plugins.vkontakte.vk_get_friends()
-        if vk_friends then
-            for user_id,user_name in pairs(vk_friends) do
-                http.send(string.format('<tr><td><a href="http://vkontakte.ru/id%s">%s</a></td><td>%s</td></tr>',user_id,user_name,user_id))
-            end
-        end
-        http.send('</table>')
-    else
-        http.send('You are not signed in. ')
-        http.send('<a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in</a>')
-    end
-
-    http.send('<br/><br/><a class="btn btn-primary" href="/ui/vk_status">Refresh</a>')
-end
-
 function ui_status()
     http.send('<h3>Status</h3>')
     http.send('<br/><table class="table">')
@@ -447,13 +392,18 @@ ui_actions=
     ['kill']            = { 'xupnpd - kill', ui_kill },
     ['upload']          = { 'xupnpd - upload', ui_upload },
     ['apply']           = { 'xupnpd - apply', ui_apply },
-    ['vk_landing']      = { 'xupnpd - vkontakte sign-in redirect', ui_vk_landing },
-    ['vk_update']       = { 'xupnpd - vkontakte sign-in result', ui_vk_update },
-    ['vk_status']       = { 'xupnpd - vkontakte status', ui_vk_status },
     ['fhelp']           = { 'xupnpd - feeds help', ui_fhelp }
 }
 
 function ui_handler(args,data,ip,url)
+    for plugin_name,plugin in pairs(plugins) do
+        if plugin.ui_actons then
+            for act_name,act in pairs(plugin.ui_actons) do
+                ui_actions[act_name]=act
+            end
+        end
+    end
+
     local action=string.match(url,'^/ui/(.+)$')
 
     if action=='style' then
