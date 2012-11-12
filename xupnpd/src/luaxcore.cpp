@@ -510,6 +510,12 @@ namespace core
                 }
                 if(*pp1)
                 {
+                    if(nn==2)
+                    {
+                        while(*pp1 && pp1[1]=='/')
+                            pp1++;
+                    }
+
                     lua_pushinteger(L,nn++);
                     lua_pushstring(L,pp1);
                     lua_rawset(L,-3);
