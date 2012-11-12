@@ -231,11 +231,6 @@ function ui_reload_feeds()
 end
 
 function ui_config()
-    http_vars.youtube_fmt=cfg.youtube_fmt
-    http_vars.youtube_region=cfg.youtube_region
-    http_vars.ivi_fmt=cfg.ivi_fmt
-    http_vars.ag_fmt=cfg.ag_fmt
-
     for plugin_name,plugin in pairs(plugins) do
         if plugin.ui_vars then
             for i,var in ipairs(plugin.ui_vars) do
@@ -256,7 +251,7 @@ function ui_config()
     for plugin_name,plugin in pairs(plugins) do
         if plugin.ui_config_vars then
             for i,var in ipairs(plugin.ui_config_vars) do
-                http.send(string.format('set_%s_value("%s","%s");\n',var[1],var[2],cfg[ var[2] ]))
+                http.send(string.format('set_%s_value("%s","%s");\n',var[1],var[2],tostring(cfg[ var[2] ])))
             end
         end
     end
@@ -272,7 +267,12 @@ function ui_apply()
         for plugin_name,plugin in pairs(plugins) do
             if plugin.ui_config_vars then
                 for i,var in ipairs(plugin.ui_config_vars) do
-                    f:write(string.format('cfg.%s="%s"\n',var[2],ui_args[ var[2] ]))
+                    local v=ui_args[ var[2] ]
+                    if var[3]=="int" or var[3]=="bool" then
+                        f:write(string.format('cfg.%s=%s\n',var[2],v))
+                    else
+                        f:write(string.format('cfg.%s="%s"\n',var[2],v))
+                    end
                 end
             end
         end
@@ -297,7 +297,7 @@ function ui_status()
 
     http.send('</table>')
 
-    http.send('<br/><a class="btn btn-primary" href="/ui/status">Refresh</a> <a class="btn btn-info" href="/ui">Back</a>')
+    http.send('<br/><a class="btn btn-primary" href="/ui/status">Refresh</a> <a class="btn btn-info" href="/ui/restart">Restart</a> <a class="btn btn-info" href="/ui">Back</a>')
 end
 
 function ui_kill()
@@ -402,6 +402,14 @@ function ui_api_call(args)
     end
 end
 
+function ui_restart()
+    if core.restart(cfg.pid_file,"./xupnpd") then http.send('<h3>Attempt to restart...</h3>') else http.send('<h3>Unable to restart.</h3>') end
+
+    http.send('<br/><form method=get action="/ui"><input class="btn btn-primary" type=submit value=OK></form>')
+
+    http.send('<script>setTimeout("document.forms[0].submit()",3000)</script>')
+end
+
 ui_actions=
 {
     ['main']            = { 'xupnpd', ui_main },
@@ -421,7 +429,8 @@ ui_actions=
     ['kill']            = { 'xupnpd - kill', ui_kill },
     ['upload']          = { 'xupnpd - upload', ui_upload },
     ['apply']           = { 'xupnpd - apply', ui_apply },
-    ['fhelp']           = { 'xupnpd - feeds help', ui_fhelp }
+    ['fhelp']           = { 'xupnpd - feeds help', ui_fhelp },
+    ['restart']         = { 'xupnpd - restart', ui_restart }
 }
 
 function ui_handler(args,data,ip,url)
@@ -465,3 +474,28 @@ function ui_handler(args,data,ip,url)
 
     http.sendtfile(cfg.ui_path..'ui_template.html',http_vars)
 end
+
+
+plugins["ui"]={}
+plugins.ui.ui_config_vars=
+{
+    { "input",  "ssdp_interface" },
+    { "input",  "ssdp_notify_interval", "int" },
+    { "input",  "ssdp_max_age", "int" },
+    { "input",  "http_port", "int" },
+    { "input",  "mcast_interface" },
+    { "select", "proxy", "int" },
+    { "input",  "user_agent" },
+    { "input",  "http_timeout", "int" },
+    { "select", "dlna_extras", "bool" },
+    { "select", "xbox360", "bool" },
+    { "select", "wdtv", "bool" },
+    { "select", "dlna_notify", "bool"},
+    { "select", "group", "bool" },
+    { "select", "sort_files", "bool" },
+    { "input",  "name" },
+    { "input",  "uuid" },
+    { "input",  "default_mime_type" },
+    { "input",  "feeds_update_interval", "int" },
+    { "input",  "playlists_update_interval", "int" }
+}

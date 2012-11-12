@@ -17,6 +17,7 @@ function orttv_updatefeed(feed,friendly_name)
     local tmp_m3u_path=cfg.tmp_path..feed_name..'.m3u'
 
     local feed_data=http.download(feed_url)
+
     if feed_data then
         local dfd=io.open(tmp_m3u_path,'w+')
         if dfd then
@@ -80,3 +81,5 @@ plugins.orttv.name="1tv"
 plugins.orttv.desc="'<b>si</b>' parameter from 1tv.ru url<br/>example: http://www.1tv.ru/sprojects/si=<b>5685</b>"
 plugins.orttv.sendurl=orttv_sendurl
 plugins.orttv.updatefeed=orttv_updatefeed
+
+--orttv_updatefeed("5685")

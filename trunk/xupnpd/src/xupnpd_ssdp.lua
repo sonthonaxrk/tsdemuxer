@@ -93,7 +93,7 @@ else
     ssdp_location=www_location..'/dev.xml'
 end
 
-if not cfg.uuid then ssdp_uuid=core.uuid() else ssdp_uuid=cfg.uuid end
+if not cfg.uuid or cfg.uuid=='' then ssdp_uuid=core.uuid() else ssdp_uuid=cfg.uuid end
 
 ssdp_uuid2='uuid:'..ssdp_uuid
 ssdp_server='eXtensible UPnP agent'
