@@ -356,7 +356,7 @@ function ui_vk_status()
     http.send('<h3>VKontakte Status</h3>')
     local vk_name=plugins.vkontakte.vk_get_name()
     if vk_name then
-        http.send('You are signed as <b>'..vk_name..'</b> <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>')
+        http.send('You are signed as <b>'..vk_name..'</b> - <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>.')
         http.send('<h4>Groups</h4>')
         http.send('<table class="table" width="400"><tr><th width="300">group name</th><th>groip id</th></tr>')
         local vk_groups=plugins.vkontakte.vk_get_groups()
@@ -376,8 +376,8 @@ function ui_vk_status()
         end
         http.send('</table>')
     else
-        http.send('You are not signed in. ')
-        http.send('<a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in</a>')
+        http.send('You are not signed in - ')
+        http.send('<a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in</a>.')
     end
 
     http.send('<br/><br/><a class="btn btn-primary" href="/ui/vk_status">Refresh</a>')
@@ -411,12 +411,12 @@ plugins.vkontakte.ui_vars=
 
             local vk_name=plugins.vkontakte.vk_get_name()
             if vk_name then
-                s='You are signed as <b>'..vk_name..'</b> <a class="btn btn-info" href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>'
+                s='You are signed as <b>'..vk_name..'</b>, <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>,'
             else
-                s='<a class="btn btn-info" href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">VKontakte sign-in</a>'
+                s='You are not signed in - <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in</a>,'
             end
 
-            return s..' <a class="btn btn-info" onclick="window.open(this.href,\'newwin\',\'width=450,scrollbars=yes,toolbar=no,menubar=no\'); return false;" href="/ui/vk_status">status and help</a>'
+            return s..' <a onclick="window.open(this.href,\'newwin\',\'width=450,scrollbars=yes,toolbar=no,menubar=no\'); return false;" href="/ui/vk_status">status and help</a>.'
         end
     }
 }

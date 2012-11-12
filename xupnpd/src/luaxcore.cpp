@@ -42,6 +42,8 @@ namespace core
     int http_sendurl_buf_size=16384;
     int http_sendurl_wait_all=0;
 
+    time_t start_time=0;
+
     char user_agent[256]="xupnpd";
 
     struct url_data
@@ -1117,6 +1119,8 @@ static int lua_core_sendevent(lua_State* L)
 static int lua_core_mainloop(lua_State* L)
 {
     using namespace core;
+
+    start_time=time(0);
 
     if(__sig_quit)
         return 0;
@@ -2207,6 +2211,109 @@ static int lua_http_user_agent(lua_State* L)
 }
 
 
+static int lua_core_readpidfile(const char* path)
+{
+    FILE* fp=fopen(path,"r");
+    if(!fp)
+        return -1;
+
+    int pid=0;
+    int rc=fscanf(fp,"%i",&pid);
+
+    fclose(fp);
+
+    if(rc>0 && pid>0)
+        return pid;
+
+    return -1;    
+}
+
+static int lua_core_restart(lua_State* L)
+{
+    const char* pidfile=lua_tostring(L,1);
+    const char* cmd=lua_tostring(L,2);
+
+    if(pidfile && *pidfile && cmd && *cmd)
+    {
+        int main_pid=lua_core_readpidfile(pidfile);
+
+        if(main_pid>0)
+        {
+            pid_t pid=fork();
+
+            if(!pid)
+            {
+                close(fileno(core::http_client_fp));
+
+                signal(SIGHUP,SIG_IGN);
+                signal(SIGPIPE,SIG_IGN);
+                signal(SIGINT,SIG_IGN);
+                signal(SIGQUIT,SIG_IGN);
+                signal(SIGTERM,SIG_IGN);
+                signal(SIGALRM,SIG_IGN);
+                signal(SIGUSR1,SIG_IGN);
+                signal(SIGUSR2,SIG_IGN);
+                signal(SIGCHLD,SIG_IGN);
+
+                for(int i=0;i<3;i++)
+                    close(i);
+
+                sleep(1);
+
+                if(!kill(main_pid,SIGTERM))
+                {
+                    for(int i=0;i<5;i++)
+                    {
+                        main_pid=lua_core_readpidfile(pidfile);
+                        if(main_pid<0)
+                            break;
+
+                        sleep(1);
+                    }
+
+                    if(main_pid<0)
+                        int rc=system(cmd);
+
+                    exit(0);
+                }
+            }else if(pid>0)
+            {
+                lua_pushboolean(L,1);
+
+                return 1;
+            }
+        }
+    }
+
+    lua_pushboolean(L,0);
+
+    return 1;
+}
+
+static int lua_core_uptime(lua_State* L)
+{
+    time_t uptime=time(0)-core::start_time;
+
+    int days=uptime/86400;
+    uptime%=86400;
+
+    int hours=uptime/3600;
+    uptime%=3600;
+
+    int minutes=uptime/60;
+    uptime%=60;
+
+    char buf[256];
+    int n=snprintf(buf,sizeof(buf),"%i days, %i:%.2i:%.2i",days,hours,minutes,(int)uptime);
+    if(n==-1 || n>=sizeof(buf))
+        n=sizeof(buf)-1;
+
+    lua_pushlstring(L,buf,n);
+
+    return 1;
+}
+
+
 int luaopen_luaxcore(lua_State* L)
 {
     mcast::uuid_init();
@@ -2223,6 +2330,8 @@ int luaopen_luaxcore(lua_State* L)
         {"uuid",lua_core_uuid},
         {"sendevent",lua_core_sendevent},
         {"mainloop",lua_core_mainloop},
+        {"restart",lua_core_restart},
+        {"uptime",lua_core_uptime},
         {0,0}
     };
 

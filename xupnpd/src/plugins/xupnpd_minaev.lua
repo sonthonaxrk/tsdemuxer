@@ -3,7 +3,7 @@
 function minaev_updatefeed(feed,friendly_name)
     local rc=false
 
-    local feed_url='http://www.minaevlive.ru/'..feed
+    local feed_url='http://www.minaevlive.ru/'..feed..'/'
     local feed_name='minaev_'..string.gsub(feed,'/','_')
     local feed_m3u_path=cfg.feeds_path..feed_name..'.m3u'
     local tmp_m3u_path=cfg.tmp_path..feed_name..'.m3u'
@@ -15,7 +15,7 @@ function minaev_updatefeed(feed,friendly_name)
         if dfd then
             dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=minaev\n')
 
-            local pattern=string.format('<h2><a href="(/%s/%%w+)">(.-)</a></h2>',feed)
+            local pattern=string.format('<h2>%%s*<a href="(/%s/%%w+/)">(.-)</a>%%s*</h2>',feed)
 
             for u,name in string.gmatch(feed_data,pattern) do
                 local url=string.format('http://www.minaevlive.ru%s',u)
@@ -92,3 +92,5 @@ plugins.minaev.name="MinaevLive"
 plugins.minaev.desc="archive"
 plugins.minaev.sendurl=minaev_sendurl
 plugins.minaev.updatefeed=minaev_updatefeed
+
+--minaev_updatefeed('archive')

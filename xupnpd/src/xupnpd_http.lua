@@ -73,6 +73,7 @@ http_vars['url']='http://xupnpd.org'
 http_vars['uuid']=ssdp_uuid
 http_vars['interface']=ssdp.interface()
 http_vars['port']=cfg.http_port
+http_vars['uptime']=core.uptime
 
 http_templ=
 {

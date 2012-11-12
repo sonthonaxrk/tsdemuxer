@@ -197,7 +197,7 @@ plugins.youtube.getvideourl=youtube_get_video_url
 
 plugins.youtube.ui_config_vars=
 {
-    { "select", "youtube_fmt" },
+    { "select", "youtube_fmt", "int" },
     { "select", "youtube_region" }
 --    { "input", "cfg_and_form_input_variable_name" }
 --    { "select", "cfg_and_form_select_variable_name" }
