@@ -280,7 +280,7 @@ function http_handler(what,from,port,msg)
                                 '<s:Body><u:%sResponse xmlns:u=\"%s\">%s</u:%sResponse></s:Body></s:Envelope>',                                                            
                                     func_name,s.schema,soap.serialize_vector(r),func_name)
 
-                        http_send_headers(200,'xml',resp:len())
+                        http_send_headers(200,'xml',resp:len())         -- resp:len() for Sansung TV (VideoLAN 1.0.6 broken, nil is needed)
 
                         http.send(resp)
 
@@ -309,7 +309,7 @@ function http_handler(what,from,port,msg)
                    '</s:Body>'..
                 '</s:Envelope>'
 
-                http_send_headers(200,'xml',resp:len())
+                http_send_headers(200,'xml',resp:len())                 -- resp:len() for Sansung TV (VideoLAN 1.0.6 broken, nil is needed)
 
                 http.send(resp)
 
@@ -387,7 +387,7 @@ function http_handler(what,from,port,msg)
 
                 if pls.plugin then
                     http.send('Accept-Ranges: bytes\r\n')
-                    http.flush()        -- PS3 YouTube network error fix?
+                    http.flush()
                     plugins[pls.plugin].sendurl(pls.url,msg.range)
                 else
                     http.send('Accept-Ranges: none\r\n\r\n')
@@ -397,6 +397,25 @@ function http_handler(what,from,port,msg)
                         http.sendurl(pls.url)
                     end
                 end
+            end
+
+        elseif f.url=='/logo' then
+
+            local pls=find_playlist_object(f.args['s'] or '')
+
+            if not pls or not pls.logo then http_send_headers(404) return end
+
+            http.send(string.format(
+                'HTTP/1.1 200 OK\r\nDate: %s\r\nServer: %s\r\nConnection: close\r\nContent-Type: %s\r\nEXT:\r\n',
+                os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,http_mime['jpg']))
+
+
+            if head==true then
+                http.send('\r\n')
+            else
+                if cfg.debug>0 then print(from..' LOGO '..pls.logo) end
+
+                http.sendurl(pls.logo,1)
             end
 
         elseif f.url=='/stream' then
