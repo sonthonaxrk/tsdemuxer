@@ -1128,9 +1128,9 @@ static int lua_core_mainloop(lua_State* L)
     setsid();
 
     if(socketpair(PF_LOCAL,SOCK_STREAM,0,__sig_pipe))
-        return luaL_error(L,"socketpair fail, cna't create signal pipe");
+        return luaL_error(L,"socketpair fail, can't create signal pipe");
     if(socketpair(PF_LOCAL,SOCK_DGRAM,0,__event_pipe))
-        return luaL_error(L,"socketpair fail, cna't create event pipe");
+        return luaL_error(L,"socketpair fail, can't create event pipe");
 
 
     struct sigaction action;
