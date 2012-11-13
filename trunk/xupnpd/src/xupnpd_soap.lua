@@ -9,8 +9,10 @@ services.msr={}
 
 function playlist_item_to_xml(id,parent_id,pls)
     local logo=''
+    local objid=util.urlencode(pls.objid)
 
-    if pls.logo then logo=string.format('<upnp:albumArtURI dlna:profileID=\"JPEG_TN\">%s</upnp:albumArtURI>',util.xmlencode(pls.logo)) end
+--    if pls.logo then logo=string.format('<upnp:albumArtURI dlna:profileID=\"JPEG_TN\">%s</upnp:albumArtURI>',util.xmlencode(pls.logo)) end
+    if pls.logo then logo=string.format('<upnp:albumArtURI dlna:profileID=\"JPEG_TN\">%s</upnp:albumArtURI>',www_location..'/logo?s='..objid) end       -- for Samsung TV
 
     if pls.elements then
         return string.format(
@@ -32,7 +34,7 @@ function playlist_item_to_xml(id,parent_id,pls)
 
             if cfg.xbox360==true then s='/s/' end
 
-            url=www_location..s..util.urlencode(pls.objid)
+            url=www_location..s..objid
         else
             if cfg.proxy>0 then
                 if cfg.proxy>1 or pls.mime[1]==2 then
@@ -40,7 +42,7 @@ function playlist_item_to_xml(id,parent_id,pls)
 
                     if cfg.xbox360==true then s='/p/' end
 
-                    url=www_location..s..util.urlencode(pls.objid)
+                    url=www_location..s..objid
                 end
             end
         end
