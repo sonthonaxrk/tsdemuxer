@@ -61,7 +61,7 @@ function vimeo_sendurl(vimeo_url,range)
     local url=vimeo_get_video_url(vimeo_url)
 
     if url==nil then
-        if cfg.debug>0 then print('Vimeo clip '..vimeo_id..' is not found') end
+        if cfg.debug>0 then print('Vimeo clip '..vimeo_url..' is not found') end
 
         plugin_sendfile('www/corrupted.mp4')
     else

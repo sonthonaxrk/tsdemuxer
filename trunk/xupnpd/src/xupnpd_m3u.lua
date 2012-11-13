@@ -206,7 +206,7 @@ function find_playlist_object(s)
 
     for i in string.gmatch(s,'([^/]+)') do
         if not pls then
-            if i~='0' then return nil else pls=playlist_data end
+            if string.match(i,'^[0-9]$') then pls=playlist_data else return nil end
         else
             if not pls.elements then return nil end            
             pls=pls.elements[tonumber(i)]
