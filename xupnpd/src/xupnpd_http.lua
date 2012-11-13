@@ -256,8 +256,6 @@ function http_handler(what,from,port,msg)
 
             if cfg.debug>0 then print(from..' SOAP '..(msg.soapaction or '')) end
 
-            http_send_headers(200,'xml')
-
             local err=true
 
             local s=services[ f.args['s'] ]
@@ -282,6 +280,8 @@ function http_handler(what,from,port,msg)
                                 '<s:Body><u:%sResponse xmlns:u=\"%s\">%s</u:%sResponse></s:Body></s:Envelope>',                                                            
                                     func_name,s.schema,soap.serialize_vector(r),func_name)
 
+                        http_send_headers(200,'xml',resp:len())
+
                         http.send(resp)
 
                         if cfg.debug>2 then print(resp) end
@@ -292,7 +292,7 @@ function http_handler(what,from,port,msg)
             end
 
             if err==true then
-                http.send(
+                local resp=
                 '<?xml version=\"1.0\" encoding=\"utf-8\"?>'..
                 '<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">'..
                    '<s:Body>'..
@@ -308,7 +308,10 @@ function http_handler(what,from,port,msg)
                       '</s:Fault>'..
                    '</s:Body>'..
                 '</s:Envelope>'
-                )
+
+                http_send_headers(200,'xml',resp:len())
+
+                http.send(resp)
 
                 if cfg.debug>0 then print('upnp error 501') end
 
