@@ -30,7 +30,8 @@
 #include <ctype.h>
 #include "compat.h"
 
-// TODO: ivi.ru feeds fail
+// TODO: check plugins
+// TODO: AVI with PS3
 // TODO: LG (device profiles?)
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 // TODO: XBox 360
