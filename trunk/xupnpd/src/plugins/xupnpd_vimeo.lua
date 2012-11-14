@@ -1,4 +1,4 @@
--- Copyright (C) 2011 Anton Burdinuk
+-- Copyright (C) 2011-2012 Anton Burdinuk
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
@@ -81,7 +81,7 @@ function vimeo_get_video_url(vimeo_url)
     local clip_page=plugin_download(vimeo_url)
 
     if clip_page then
-        local sig,ts=string.match(clip_page,'"signature":"(%w+)","timestamp":(%w+),')
+        local ts,sig=string.match(clip_page,'"timestamp":(%w+),"signature":"(%w+)",')
         clip_page=nil
 
         if sig and ts then

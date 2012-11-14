@@ -1,3 +1,9 @@
+/* 
+ * Copyright (C) 2011-2012 Anton Burdinuk
+ * clark15b@gmail.com
+ * https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
+*/
+
 #ifndef __COMPAT_H
 #define __COMPAT_H
 
