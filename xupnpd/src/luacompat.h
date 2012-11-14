@@ -1,3 +1,9 @@
+/* 
+ * Copyright (C) 2011-2012 Anton Burdinuk
+ * clark15b@gmail.com
+ * https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
+*/
+
 #ifndef __LUA_COMPAT_H
 #define __LUA_COMPAT_H
 

@@ -1,4 +1,4 @@
--- Copyright (C) 2011 Anton Burdinuk
+-- Copyright (C) 2011-2012 Anton Burdinuk
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
@@ -22,8 +22,8 @@ function ag_updatefeed(feed,friendly_name)
         if dfd then
             dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=ag\n')
 
-            for game,id,name in string.gmatch(feed_data,'href=/files/videos/([%w_]+)/%w+#(%w+)>(.-)</a>') do
-                local url=string.format('http://www.ag.ru/files/videos/%s/%s/flash',game,id)
+            for game,id,name in string.gmatch(feed_data,'href=/games/([%w_-]+)/videos#([%w_-]+)>(.-)</a>') do
+                local url=string.format('http://www.ag.ru/games/%s/videos/%s/',game,id)
                 dfd:write('#EXTINF:0,',util.win1251toUTF8(name),'\n',url,'\n')
             end
 
@@ -99,3 +99,5 @@ plugins.ag.ui_config_vars=
 {
     { "select", "ag_fmt" },
 }
+
+--ag_updatefeed('videos')
