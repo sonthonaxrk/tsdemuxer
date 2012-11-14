@@ -47,7 +47,7 @@ embedded:
 	export STAGING_DIR
 	make -C $(LUA) CC=$(SDK)/gcc a
 	$(SDK)/gcc -O2 -c -o md5.o md5c.c
-	$(SDK)/gcc $(CFLAGS) -DWITH_URANDOM -o xupnpd-$(TARGET) $(SRC) md5.o -lm -llua -ldl
+	$(SDK)/gcc $(CFLAGS) -DWITH_URANDOM -o xupnpd-$(TARGET) $(SRC) md5.o -llua -lm -ldl
 	$(SDK)/strip xupnpd-$(TARGET)
 
 clean:

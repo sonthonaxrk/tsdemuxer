@@ -31,6 +31,7 @@
 #include "compat.h"
 
 // TODO: ivi.ru feeds fail
+// TODO: LG (device profiles?)
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 // TODO: XBox 360
 // TODO: YouTube max-count>50

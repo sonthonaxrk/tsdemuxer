@@ -74,7 +74,7 @@ cfg.cache_size=8
 -- url cache item ttl (sec)
 cfg.cache_ttl=900
 
--- default mime type (mpeg, mpeg1, mpeg2, ts)
+-- default mime type (mpeg, mpeg_ts, mpeg1, mpeg2, ts, ...)
 cfg.default_mime_type='mpeg'
 
 -- feeds update interval (seconds, 0 - disabled)
