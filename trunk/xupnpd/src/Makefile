@@ -1,8 +1,16 @@
 LUA     = lua-5.1.4
 #LUA     = lua-5.2.0
+STATIC  = false
+
 CFLAGS  = -fno-exceptions -fno-rtti -O2 -I$(LUA) -L$(LUA)
 SRC     = main.cpp soap.cpp mem.cpp mcast.cpp luaxlib.cpp luaxcore.cpp luajson.cpp luajson_parser.cpp
 STAGING_DIR = /home/shocker/staff/openwrt/staging_dir
+LUAMYCFLAGS = -DLUA_USE_LINUX
+
+ifeq ($(STATIC),true)
+CFLAGS+=-static
+LUAMYCFLAGS+=-static
+endif
 
 x86:
 	make -C $(LUA) CC=gcc a
@@ -45,7 +53,7 @@ dreambox:
 embedded:
 	export PATH
 	export STAGING_DIR
-	make -C $(LUA) CC=$(SDK)/gcc a
+	make -C $(LUA) CC=$(SDK)/gcc a MYCFLAGS='$(LUAMYCFLAGS)'
 	$(SDK)/gcc -O2 -c -o md5.o md5c.c
 	$(SDK)/gcc $(CFLAGS) -DWITH_URANDOM -o xupnpd-$(TARGET) $(SRC) md5.o -llua -lm -ldl
 	$(SDK)/strip xupnpd-$(TARGET)
