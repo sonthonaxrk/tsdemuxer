@@ -52,11 +52,11 @@ function ui_download(name)
     for i,j in ipairs(pls.elements) do
         local url=j.url or ''
         if j.path then
-            url=www_location..'/stream?s='..util.urlencode(j.objid)
+            url=string.format('%s/stream/%s.%s',www_location,j.objid,j.type)
         else
             if cfg.proxy>0 then
                 if cfg.proxy>1 or pls.mime[1]==2 then
-                    url=www_location..'/proxy?s='..util.urlencode(j.objid)
+                    url=string.format('%s/proxy/%s.%s',www_location,j.objid,j.type)
                 end
             end
         end
@@ -131,9 +131,34 @@ function ui_fhelp()
         if plugin.name and plugin.desc then
             http.send(string.format('<b>%s</b>: ',plugin.name))
             http.send(plugin.desc)
-            http.send('<br/><br/>')
+            http.send('<br/><br/>\n\n')
         end
     end
+end
+
+function ui_mhelp()
+
+    http.send('<br/><h3>MIME-Types</h3>\n<table class="table">\n<tr><th>File Type</th><th>MIME-Type</th><th>UPnP Proto</th><th>DLNA.ORG Profile</th></tr>\n')
+
+    for i,j in pairs(mime) do
+        if j then
+            local ext=string.match(j[5],'^(DLNA.ORG_PN=[%w_]+);')
+
+            http.send(string.format('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n',i,j[3],j[4],ext or j[5]))
+        end
+    end
+
+    http.send('</table>\n\n<a class="btn btn-info" href="/ui/ehelp">DLNA Extras</a> <a class="btn btn-info" href="/ui/config">Back</a>')
+end
+
+function ui_ehelp()
+    http.send('<br/><h3>DLNA Extras</h3>\n<table class="table">\n<tr><th>Name</th><th>DLNA.ORG Extras</th></tr>\n')
+
+    for i,j in pairs(dlna_org_extras) do
+        http.send(string.format('<tr><td>%s</td><td>%s</td></tr>\n',i,j))
+    end
+
+    http.send('</table>\n\n<a class="btn btn-info" href="/ui/mhelp">Back</a>')
 end
 
 
@@ -301,7 +326,7 @@ function ui_status()
 
     http.send('</table>')
 
-    http.send('<br/><a class="btn btn-primary" href="/ui/status">Refresh</a> <a class="btn btn-info" href="/ui/restart">Restart</a> <a class="btn btn-info" href="/ui">Back</a>')
+    http.send('<br/><a class="btn btn-primary" href="/ui/status">Refresh</a> <a class="btn btn-info" href="/ui">Back</a>')
 end
 
 function ui_kill()
@@ -434,6 +459,8 @@ ui_actions=
     ['upload']          = { 'xupnpd - upload', ui_upload },
     ['apply']           = { 'xupnpd - apply', ui_apply },
     ['fhelp']           = { 'xupnpd - feeds help', ui_fhelp },
+    ['mhelp']           = { 'xupnpd - mimes help', ui_mhelp },
+    ['ehelp']           = { 'xupnpd - extras help', ui_ehelp },
     ['restart']         = { 'xupnpd - restart', ui_restart }
 }
 
@@ -491,9 +518,6 @@ plugins.ui.ui_config_vars=
     { "select", "proxy", "int" },
     { "input",  "user_agent" },
     { "input",  "http_timeout", "int" },
-    { "select", "dlna_extras", "bool" },
-    { "select", "xbox360", "bool" },
-    { "select", "wdtv", "bool" },
     { "select", "dlna_notify", "bool"},
     { "select", "group", "bool" },
     { "select", "sort_files", "bool" },
@@ -501,5 +525,6 @@ plugins.ui.ui_config_vars=
     { "input",  "uuid" },
     { "input",  "default_mime_type" },
     { "input",  "feeds_update_interval", "int" },
-    { "input",  "playlists_update_interval", "int" }
+    { "input",  "playlists_update_interval", "int" },
+    { "input",  "drive" }
 }

@@ -70,19 +70,24 @@
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Device UUID (empty for dynamic):</div><input class="span4" type=text name=uuid id=uuid>
+<div class="span4">* Device UUID (empty for dynamic): </div><input class="span4" type=text name=uuid id=uuid>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">SSDP announcement interface:</div><input class="span4" type=text name=ssdp_interface id=ssdp_interface>
+<div class="span4">Default mime type (<a href="/ui/mhelp">mpeg, mpeg_ts, ...</a>):</div>
+<input class="span4" type=text name=default_mime_type id=default_mime_type>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">SSDP announcement interval (sec):</div><input class="span4" type=text name=ssdp_notify_interval id=ssdp_notify_interval>
+<div class="span4">SSDP announcement interface (LAN):</div><input class="span4" type=text name=ssdp_interface id=ssdp_interface>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">SSDP max age (sec):</div><input type=text class="span4" name=ssdp_max_age id=ssdp_max_age>
+<div class="span4">* SSDP announcement interval (sec):</div><input class="span4" type=text name=ssdp_notify_interval id=ssdp_notify_interval>
+</div>
+
+<div class="controls controls-row">
+<div class="span4">* SSDP max age (sec):</div><input type=text class="span4" name=ssdp_max_age id=ssdp_max_age>
 </div>
 
 <div class="controls controls-row">
@@ -90,15 +95,15 @@
 </div>
 
 <div class="controls controls-row">
-<div class="span4">HTTP User-Agent:</div><input class="span4" type=text name=user_agent id=user_agent>
+<div class="span4">* HTTP User-Agent:</div><input class="span4" type=text name=user_agent id=user_agent>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">HTTP Timeout (sec):</div><input class="span4" type=text name=http_timeout id=http_timeout>
+<div class="span4">* HTTP Timeout (sec):</div><input class="span4" type=text name=http_timeout id=http_timeout>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">IPTV multicast interface:</div><input class="span4" type=text name=mcast_interface id=mcast_interface>
+<div class="span4">IPTV multicast interface (WAN):</div><input class="span4" type=text name=mcast_interface id=mcast_interface>
 </div>
 
 <div class="controls controls-row">
@@ -113,30 +118,6 @@
 <div class="controls controls-row">
 <div class="span4">DLNA Notify:</div>
 <select class="span4" name=dlna_notify id=dlna_notify>
-<option selected value="false">no</option>
-<option value="true">yes</option>
-</select>
-</div>
-
-<div class="controls controls-row">
-<div class="span4">DLNA Extras:</div>
-<select class="span4" name=dlna_extras id=dlna_extras>
-<option selected value="false">no</option>
-<option value="true">yes</option>
-</select>
-</div>
-
-<div class="controls controls-row">
-<div class="span4">XBox 360 support:</div>
-<select class="span4" name=xbox360 id=xbox360>
-<option selected value="false">no</option>
-<option value="true">yes</option>
-</select>
-</div>
-
-<div class="controls controls-row">
-<div class="span4">WDTV support:</div>
-<select class="span4" name=wdtv id=wdtv>
 <option selected value="false">no</option>
 <option value="true">yes</option>
 </select>
@@ -159,17 +140,19 @@
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Feeds reload interval (sec, 0 for manual):</div><input class="span4" type=text name=feeds_update_interval id=feeds_update_interval>
+<div class="span4">* Feeds reload interval (sec, 0 for manual):</div><input class="span4" type=text name=feeds_update_interval id=feeds_update_interval>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Playlists reload interval (sec, 0 for manual):</div><input class="span4" type=text name=playlists_update_interval id=playlists_update_interval>
+<div class="span4">* Playlists reload interval (sec, 0 for manual):</div><input class="span4" type=text name=playlists_update_interval id=playlists_update_interval>
 </div>
 
 <div class="controls controls-row">
-<div class="span4">Default mime type (mpeg, mpeg_ts, ...):</div><input class="span4" type=text name=default_mime_type id=default_mime_type>
+<div class="span4">* Drive device name (/dev/sda, /dev/sdb, ...):</div><input class="span4" type=text name=drive id=drive>
 </div>
 
+<br/>
+<i>* Optional</i>
 
 <br/><br/><br/>
 

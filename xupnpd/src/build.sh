@@ -1,7 +1,5 @@
 #!/bin/bash
 
-make clean; make x86
-
 make clean; make bcm947xx_ddwrt
 
 make clean; make bcm947xx

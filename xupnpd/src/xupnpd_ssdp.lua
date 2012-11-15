@@ -87,11 +87,7 @@ ssdp.init(cfg.ssdp_interface,1,cfg.ssdp_loop,cfg.debug)   -- interface, ttl, all
 
 www_location='http://'..ssdp.interface()..':'..cfg.http_port
 
-if cfg.xbox360==true then
-    ssdp_location=www_location..'/wmc.xml'
-else
-    ssdp_location=www_location..'/dev.xml'
-end
+ssdp_location=www_location..'/dev.xml'
 
 if not cfg.uuid or cfg.uuid=='' then ssdp_uuid=core.uuid() else ssdp_uuid=cfg.uuid end
 
