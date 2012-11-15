@@ -44,15 +44,6 @@ cfg.user_agent='Mozilla/5.0'
 -- I/O timeout
 cfg.http_timeout=15
 
--- 'cfg.dlna_extras' enables DLNA extras
-cfg.dlna_extras=true
-
--- XBox360 compatible mode
-cfg.xbox360=false
-
--- WDTV Live compatible mode
-cfg.wdtv=false
-
 -- enables UPnP/DLNA notify when reload playlist
 cfg.dlna_notify=true
 
@@ -119,5 +110,7 @@ cfg.config_path='./config/'
 cfg.playlists_path='./playlists/'
 --cfg.feeds_path='/tmp/xupnpd-feeds/'
 cfg.ui_path='./ui/'
+cfg.drive=''                    -- reload playlists only if drive state=active/idle, example: cfg.drive='/dev/sda'
+cfg.profiles='./profiles/'      -- device profiles feature
 
 dofile('xupnpd_main.lua')

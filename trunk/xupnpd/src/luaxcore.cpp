@@ -30,13 +30,16 @@
 #include <ctype.h>
 #include "compat.h"
 
+// TODO: profiles
 // TODO: check plugins
-// TODO: AVI with PS3
-// TODO: LG (device profiles?)
-// TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
+// TODO: check logo in Samsung
+
+// TODO: SQLite support
+// TODO: TS padding for WDTV?
 // TODO: XBox 360
 // TODO: YouTube max-count>50
 // TODO: length to m3u when feed update
+// TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 
 namespace core
 {

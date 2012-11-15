@@ -7,55 +7,72 @@ services.cds={}
 services.cms={}
 services.msr={}
 
+function playlist_item_type(pls)
+    local mtype=mime[pls.type]
+    local extras=nil
+
+    if cfg.dlna_extras==false then
+        extras='*'
+    else
+        if pls.dlna_extras then extras=dlna_org_extras[pls.dlna_extras] end
+        if not extras then extras=mtype[5] end
+        if pls.path and extras~='*' then extras=string.gsub(extras,'DLNA.ORG_OP=%d%d','DLNA.ORG_OP=11') end
+    end
+
+    return mtype,extras
+end
+
 function playlist_item_to_xml(id,parent_id,pls)
     local logo=''
-    local objid=util.urlencode(pls.objid)
+    local objid=pls.objid
 
---    if pls.logo then logo=string.format('<upnp:albumArtURI dlna:profileID=\"JPEG_TN\">%s</upnp:albumArtURI>',util.xmlencode(pls.logo)) end
-    if pls.logo then logo=string.format('<upnp:albumArtURI dlna:profileID=\"JPEG_TN\">%s</upnp:albumArtURI>',www_location..'/logo?s='..objid) end       -- for Samsung TV
+    if pls.logo then
+        local l
+
+        if cfg.upnp_albumart<2 then
+            l=pls.logo
+        else
+            l=string.format('%s/logo/%s.jpeg',www_location,objid)
+        end
+
+        if cfg.upnp_albumart==0 or cfg.upnp_albumart==2 then
+            logo=string.format('<upnp:albumArtURI dlna:profileID=\"JPEG_TN\">%s</upnp:albumArtURI>',l)
+        else
+            logo=string.format('<res protocolInfo="http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN">%s</res>',l)
+        end
+    end
 
     if pls.elements then
         return string.format(
             '<container id=\"%s\" childCount=\"%i\" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s</container>',
-            id,pls.size or 0,parent_id,util.xmlencode(pls.name),upnp_class.container,logo)
+            id,pls.size or 0,parent_id,util.xmlencode(pls.name),cfg.upnp_container,util.xmlencode(logo))
     else
+        local mtype,extras=playlist_item_type(pls)
+
         local artist=''
         local url=pls.url or ''
 
-        if pls.parent then
-            if pls.mime[1]==1 then
+        if cfg.upnp_artist==true and pls.parent then
+            if mtype[1]==1 then
                 artist=string.format('<upnp:actor>%s</upnp:actor>',util.xmlencode(pls.parent.name))
-            elseif pls.mime[1]==2 then
+            elseif mtype[1]==2 then
                 artist=string.format('<upnp:artist>%s</upnp:artist>',util.xmlencode(pls.parent.name))
             end
         end
+
         if pls.path then
-            local s='/stream?s='
-
-            if cfg.xbox360==true then s='/s/' end
-
-            url=www_location..s..objid
+            url=string.format('%s/stream/%s.%s',www_location,objid,pls.type)
         else
             if cfg.proxy>0 then
-                if cfg.proxy>1 or pls.mime[1]==2 then
-                    local s='/proxy?s='
-
-                    if cfg.xbox360==true then s='/p/' end
-
-                    url=www_location..s..objid
+                if cfg.proxy>1 or mtype[1]==2 then
+                    url=string.format('%s/proxy/%s.%s',www_location,objid,pls.type)
                 end
             end
         end
 
-        local dlna_extras=pls.dlna_extras
-
-        if pls.path and dlna_extras~='*' then
-            dlna_extras=string.gsub(dlna_extras,'DLNA.ORG_OP=%d%d','DLNA.ORG_OP=11')
-        end
-
         return string.format(
             '<item id=\"%s" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s%s<res size=\"%s\" protocolInfo=\"%s%s\">%s</res></item>',
-            id,parent_id,util.xmlencode(pls.name),pls.mime[2],artist,logo,pls.length or 0,pls.mime[4],dlna_extras,util.xmlencode(url))
+            id,parent_id,util.xmlencode(pls.name),mtype[2],artist,logo,pls.length or 0,mtype[4],extras,util.xmlencode(url))
 
     end
 end
@@ -65,9 +82,9 @@ function get_playlist_item_parent(s)
 
     local t={}
 
-    for i in string.gmatch(s,'(%w+)/') do table.insert(t,i) end
+    for i in string.gmatch(s,'(%w+)_') do table.insert(t,i) end
     
-    return table.concat(t,'/')    
+    return table.concat(t,'_')
 end
 
 
@@ -106,21 +123,12 @@ function services.cds.GetSearchCapabilities()
     return {{'SearchCaps','upnp:class'}}
 end
 
+-- wget -O - "http://127.0.0.1:4044/soap/cds?action=X_GetFeatureList"
 function services.cds.X_GetFeatureList()
-    local resp=
-    '<?xml version="1.0" encoding="utf-8"?>'..
-    '<Features xmlns="urn:schemas-upnp-org:av:avs" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '..
-    'xsi:schemaLocation="urn:schemas-upnp-org:av:avs http://www.upnp.org/schemas/av/avs.xsd">'..
-    '<Feature name="samsung.com_BASICVIEW" version="1">'..
-    '<container id="1" type="object.item.audioItem"/>'..
-    '<container id="2" type="object.item.videoItem"/>'..
-    '<container id="3" type="object.item.imageItem"/>'..
-    '</Feature>'..
-    '</Features>'
-
-    return {{'FeatureList',util.xmlencode(resp)}}
+    return {{'FeatureList',util.xmlencode(cfg.upnp_feature_list)}}
 end
 
+-- wget -O - "http://127.0.0.1:4044/soap/cds?action=Browse&ObjectID=0&StartingIndex=0&RequestedCount=100"
 function services.cds.Browse(args,ip)
     local items={}
     local count=0
@@ -129,8 +137,6 @@ function services.cds.Browse(args,ip)
     table.insert(items,'<DIDL-Lite xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0\">')
 
     local objid=args.ObjectID or args.ContainerID
-
-    if cfg.xbox360==true and not string.find(objid,'/') then objid='0' end
 
     local pls=find_playlist_object(objid)
 
@@ -150,7 +156,7 @@ function services.cds.Browse(args,ip)
                 for i,j in ipairs(pls.elements) do
                     if i>from and i<=to then
                         if not j.acl or acl_validate(j.acl,ip) then
-                            table.insert(items,playlist_item_to_xml(objid..'/'..i,objid,j))
+                            table.insert(items,playlist_item_to_xml(objid..'_'..i,objid,j))
                             count=count+1
                         end
                     end
@@ -167,7 +173,7 @@ function services.cds.Browse(args,ip)
 
 end
 
-
+-- wget -O a "http://127.0.0.1:4044/soap/cds?action=Search&ContainerID=0&StartingIndex=0&RequestedCount=100&SearchCriteria=*"
 function services.cds.Search(args,ip)
     local items={}
     local count=0
@@ -188,11 +194,11 @@ function services.cds.Search(args,ip)
             if p.elements then
                 if not p.virtual and (not p.acl or acl_validate(p.acl,ip)) then
                     for i,j in pairs(p.elements) do
-                        __search(id..'/'..i,id,j)
+                        __search(id..'_'..i,id,j)
                     end
                 end
             else
-                if what==0 or p.mime[1]==what then
+                if what==0 or mime[p.type][1]==what then
                     total=total+1
 
                     if total>from and total<=to then

@@ -12,8 +12,7 @@ upnp_type=
 upnp_class=
 {
     ['video']     = 'object.item.videoItem',
-    ['audio']     = 'object.item.audioItem.musicTrack',
-    ['container'] = 'object.container'
+    ['audio']     = 'object.item.audioItem.musicTrack'
 }                
 
 
@@ -95,7 +94,7 @@ mime=
     ['mp2t']   = { upnp_type.video, upnp_class.video, 'video/mp2t',      upnp_proto.mp2t,  dlna_org_extras.mpeg_ts_hd },
     ['mp2p']   = { upnp_type.video, upnp_class.video, 'video/mp2p',      upnp_proto.mp2p,  dlna_org_extras.mpeg_ps_pal },
     ['mov']    = { upnp_type.video, upnp_class.video, 'video/quicktime', upnp_proto.mov,   dlna_org_extras.none },
-    ['mkv']    = { upnp_type.video, upnp_class.video, 'video/x-matroska',upnp_proto.mkv,   dlna_org_extras.none },               -- video/x-mkv
+    ['mkv']    = { upnp_type.video, upnp_class.video, 'video/x-mkv',     upnp_proto.mkv,   dlna_org_extras.none },               -- video/x-matroska
     ['3gp']    = { upnp_type.video, upnp_class.video, 'video/3gpp',      upnp_proto['3gp'],dlna_org_extras.none },
     ['flv']    = { upnp_type.video, upnp_class.video, 'video/x-flv',     upnp_proto.flv,   dlna_org_extras.none },
     ['aac']    = { upnp_type.audio, upnp_class.audio, 'audio/x-aac',     upnp_proto.aac,   dlna_org_extras.none },
@@ -104,13 +103,3 @@ mime=
     ['ogg']    = { upnp_type.audio, upnp_class.audio, 'application/ogg', upnp_proto.ogg,   dlna_org_extras.none },
     ['wma']    = { upnp_type.audio, upnp_class.audio, 'audio/x-ms-wma',  upnp_proto.wma,   dlna_org_extras.wma_full }
 }
-
-
-if cfg.xbox360==true then
-    upnp_class.container='object.container.storageFolder'
-    cfg.dlna_extras=true
-end
-
-if cfg.dlna_extras~=true then
-    for i,j in pairs(mime) do j[5]=dlna_org_extras.none end
-end
