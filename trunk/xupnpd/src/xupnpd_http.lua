@@ -220,6 +220,12 @@ function http_get_action(url)
 
 end
 
+local http_ui_main=cfg.ui_path..'xupnpd_ui.lua'
+
+if not util.getflen(http_ui_main) then
+    http_ui_main=nil
+end
+
 function http_handler(what,from,port,msg)
 
     if not msg or not msg.reqline then return end
@@ -232,7 +238,9 @@ function http_handler(what,from,port,msg)
         if msg.reqline[2]=='/dev.xml' then msg.reqline[2]=cfg.dev_desc_xml end
     end
 
-    if msg.reqline[2]=='/' then msg.reqline[2]='/ui' end
+    if msg.reqline[2]=='/' then
+        if http_ui_main then msg.reqline[2]='/ui' else msg.reqline[2]='/index.html' end
+    end
 
     local head=false
 
@@ -243,17 +251,16 @@ function http_handler(what,from,port,msg)
         return
     end
 
-    if cfg.debug>0 then print(from..' '..msg.reqline[1]..' '..msg.reqline[2]..' \"'..(msg['user-agent'] or '')..'\" ['..(pr_name or 'generic')..']') end
+    if cfg.debug>0 then print(string.format('%s %s %s "%s" [%s]',from,msg.reqline[1],msg.reqline[2],msg['user-agent'] or '',pr_name or 'generic')) end
 
     local from_ip=string.match(from,'(.+):.+')
 
     if string.find(f.url,'^/ui/?') then
-        local ui_main=cfg.ui_path..'xupnpd_ui.lua'
-        if util.getflen(ui_main) then
-            dofile(ui_main)
-            ui_handler(f.args,msg.data or '',from_ip,f.url)
-        else
+        if not http_ui_main then
             http_send_headers(404)
+        else
+            dofile(http_ui_main)
+            ui_handler(f.args,msg.data or '',from_ip,f.url)
         end
         return
     end
