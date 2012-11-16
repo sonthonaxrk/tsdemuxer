@@ -30,13 +30,9 @@
 #include <ctype.h>
 #include "compat.h"
 
-// TODO: '..'..'..' -> string.format
-// TODO: /ui/ or /index.html (getflen on init)
-// TODO: profile_chage in /soap /proxy /stream /dev.xml (move /dev.xml -> cfg to get other files)
-// TODO: LG profile
-// TODO: profiles
-// TODO: check plugins
-// TODO: check logo in Samsung
+// TODO: LG - profile
+// TODO: Samsung - logo
+// TODO: Validate plugins
 
 // TODO: SQLite support
 // TODO: TS padding for WDTV?

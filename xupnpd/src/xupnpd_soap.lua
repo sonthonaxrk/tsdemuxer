@@ -92,9 +92,9 @@ function xml_serialize(r)
     local t={}
 
     for i,j in pairs(r) do
-        table.insert(t,'<'..j[1]..'>')
+        table.insert(t,'<') table.insert(t,j[1]) table.insert(t,'>')
         table.insert(t,j[2])
-        table.insert(t,'</'..j[1]..'>')
+        table.insert(t,'</') table.insert(t,j[1]) table.insert(t,'>')
     end
 
     return table.concat(t)
@@ -156,7 +156,7 @@ function services.cds.Browse(args,ip)
                 for i,j in ipairs(pls.elements) do
                     if i>from and i<=to then
                         if not j.acl or acl_validate(j.acl,ip) then
-                            table.insert(items,playlist_item_to_xml(objid..'_'..i,objid,j))
+                            table.insert(items,playlist_item_to_xml(string.format('%s_%s',objid,i),objid,j))
                             count=count+1
                         end
                     end
@@ -173,7 +173,7 @@ function services.cds.Browse(args,ip)
 
 end
 
--- wget -O a "http://127.0.0.1:4044/soap/cds?action=Search&ContainerID=0&StartingIndex=0&RequestedCount=100&SearchCriteria=*"
+-- wget -O - "http://127.0.0.1:4044/soap/cds?action=Search&ContainerID=0&StartingIndex=0&RequestedCount=100&SearchCriteria=*"
 function services.cds.Search(args,ip)
     local items={}
     local count=0
@@ -194,7 +194,7 @@ function services.cds.Search(args,ip)
             if p.elements then
                 if not p.virtual and (not p.acl or acl_validate(p.acl,ip)) then
                     for i,j in pairs(p.elements) do
-                        __search(id..'_'..i,id,j)
+                        __search(string.format('%s_%s',id,i),id,j)
                     end
                 end
             else
