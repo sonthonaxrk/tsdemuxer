@@ -51,6 +51,7 @@ cfg.upnp_feature_list=''                -- X_GetFeatureList response body
 cfg.upnp_albumart=0                     -- 0: <upnp:albumArtURI>direct url</upnp:albumArtURI>, 1: <res>direct url<res>, 2: <upnp:albumArtURI>local url</upnp:albumArtURI>, 3: <res>local url<res>
 cfg.dlna_headers=true                   -- send TransferMode.DLNA.ORG and ContentFeatures.DLNA.ORG in HTTP response
 cfg.dlna_extras=true                    -- DLNA extras in headers and SOAP
+cfg.content_disp=false                  -- send Content-Disposition when streaming
 cfg.soap_length=true                    -- send Content-Length in SOAP response
 cfg.wdtv=false                          -- WDTV Live compatible mode
 
@@ -285,7 +286,14 @@ function profile_change(user_agent)
             local mtypes=profile.mime_types
 
             if options then for i,j in pairs(options) do cfg[i]=j end end
-            if mtypes then for i,j in pairs(mtypes) do mime[i]=j end end
+
+            if mtypes then
+                if profile.replace_mime_types==true then
+                    mime=mtypes
+                else
+                    for i,j in pairs(mtypes) do mime[i]=j end
+                end
+            end
 
             return name
         end

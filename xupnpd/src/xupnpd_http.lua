@@ -380,6 +380,10 @@ function http_handler(what,from,port,msg)
 
         if cfg.dlna_headers==true then http.send('TransferMode.DLNA.ORG: Streaming\r\nContentFeatures.DLNA.ORG: '..extras..'\r\n') end
 
+        if cfg.content_disp==true then
+            http.send(string.format('Content-Disposition: attachment; filename=\"%s.%s\"\r\n',pls.objid,pls.type))      -- string.gsub(pls.name,"[\/#|@&*`']","_")
+        end
+
         if head==true then
             http.send('\r\n')
             http.flush()
@@ -475,6 +479,10 @@ function http_handler(what,from,port,msg)
         end
 
         if cfg.dlna_headers==true then http.send('TransferMode.DLNA.ORG: Streaming\r\nContentFeatures.DLNA.ORG: '..extras..'\r\n') end
+
+        if cfg.content_disp==true then
+            http.send(string.format('Content-Disposition: attachment; filename=\"%s.%s\"\r\n',pls.objid,pls.type))
+        end
 
         if msg.range and flen and flen>0 then
             http.send(string.format('Content-Range: bytes %s-%s/%s\r\n',ffrom,ffrom+flen-1,flen_total))
