@@ -28,6 +28,7 @@ upnp_proto=
     ['mp2p']  = 'http-get:*:video/mp2p:',
     ['mov']   = 'http-get:*:video/quicktime:',
     ['mkv']   = 'http-get:*:video/x-matroska:',
+    ['mka']   = 'http-get:*:audio/x-matroska:',
     ['3gp']   = 'http-get:*:video/3gpp:',
     ['flv']   = 'http-get:*:video/x-flv:',
     ['aac']   = 'http-get:*:audio/x-aac:',

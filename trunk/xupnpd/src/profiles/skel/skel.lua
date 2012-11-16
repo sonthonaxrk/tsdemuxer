@@ -35,6 +35,9 @@ profiles['Skeleton']=
 --      ...
     },
 
+    -- replace mime={} or join with mime_types={}
+    ['replace_mime_types']=true
+
     -- any exist in mime={} or new file type, expect xupnpd_mime.lua
     ['mime_types']=
     {
