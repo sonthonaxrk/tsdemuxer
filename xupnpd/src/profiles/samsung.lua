@@ -1,4 +1,4 @@
-profiles['samsumg_tv']=
+profiles['Samsung-AllShare']=
 {
     ['desc']='Samsung AllShare uPnP/DLNA',
 
@@ -21,5 +21,5 @@ profiles['samsumg_tv']=
         ['upnp_albumart']=3     -- <res protocolInfo="http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN">http://127.0.0.1:4044/logo?s=0%2F1%2F14%2F33</res>
     },
 
-    ['mime_types']= {}
+    ['mime_types']={}
 }

@@ -161,6 +161,92 @@ function ui_ehelp()
     http.send('</table>\n\n<a class="btn btn-info" href="/ui/mhelp">Back</a>')
 end
 
+function ui_plugins()
+
+    if ui_args.n and ui_args.s then
+        local p=plugins[ui_args.n]
+
+        if p then
+            if ui_args.s=='on' then p.disabled=false elseif ui_args.s=='off' then p.disabled=true end
+            core.sendevent('plugin',ui_args.n,ui_args.s)
+        end
+    end
+
+    http.send('<br/><h3>Plugins</h3>\n<table class="table">\n<tr><th>Name</th><th>Status</th></tr>\n')
+
+    for i,j in pairs(plugins) do
+        if j.name then
+            local status
+            
+            if j.disabled==true then
+                status=string.format('<a href="/ui/plugins?n=%s&s=on">on</a> | <b>off</b>',util.urlencode(i))
+            else
+                status=string.format('<b>on</b> | <a href="/ui/plugins?n=%s&s=off">off</a>',util.urlencode(i))
+            end
+
+            http.send(string.format('<tr><td>%s</td><td>%s</td></tr>\n',j.name,status))
+        end
+    end
+
+    http.send('</table>\n\n<a class="btn btn-primary" href="/ui/plapply">Save</a> <a class="btn btn-info" href="/ui/config">Back</a>')
+end
+
+function ui_plapply()
+    local f=io.open(cfg.config_path..'postinit/plugins.lua','w')
+    if f then
+        for i,j in pairs(plugins) do
+            if j.name then
+                f:write(string.format('plugins["%s"].disabled=%s\n',i,tostring(j.disabled or false)))
+            end
+        end
+        f:close()
+    end
+
+    http.send('<h3>OK</h3>')
+    http.send('<br/><a class="btn btn-info" href="/ui/plugins">Back</a>')
+end
+
+
+function ui_profiles()
+
+    if ui_args.n and ui_args.s then
+        local p=profiles[ui_args.n]
+
+        if p then
+            if ui_args.s=='on' then p.disabled=false elseif ui_args.s=='off' then p.disabled=true end
+            core.sendevent('profile',ui_args.n,ui_args.s)
+        end
+    end
+
+    http.send('<br/><h3>Profiles</h3>\n<table class="table">\n<tr><th>Name</th><th>Status</th></tr>\n')
+
+    for i,j in pairs(profiles) do
+        local status
+            
+        if j.disabled==true then
+            status=string.format('<a href="/ui/profiles?n=%s&s=on">on</a> | <b>off</b>',util.urlencode(i))
+        else
+            status=string.format('<b>on</b> | <a href="/ui/profiles?n=%s&s=off">off</a>',util.urlencode(i))
+        end
+
+        http.send(string.format('<tr><td>%s</td><td>%s</td></tr>\n',j.desc,status))
+    end
+
+    http.send('</table>\n\n<a class="btn btn-primary" href="/ui/prapply">Save</a> <a class="btn btn-info" href="/ui/config">Back</a>')
+end
+
+function ui_prapply()
+    local f=io.open(cfg.config_path..'postinit/profiles.lua','w')
+    if f then
+        for i,j in pairs(profiles) do
+            f:write(string.format('profiles["%s"].disabled=%s\n',i,tostring(j.disabled or false)))
+        end
+        f:close()
+    end
+
+    http.send('<h3>OK</h3>')
+    http.send('<br/><a class="btn btn-info" href="/ui/profiles">Back</a>')
+end
 
 function ui_show()
     if ui_args.fname then
@@ -298,9 +384,9 @@ function ui_apply()
                 for i,var in ipairs(plugin.ui_config_vars) do
                     local v=ui_args[ var[2] ]
                     if var[3]=="int" or var[3]=="bool" then
-                        f:write(string.format('cfg.%s=%s\n',var[2],v))
+                        f:write(string.format('cfg["%s"]=%s\n',var[2],v or ''))
                     else
-                        f:write(string.format('cfg.%s="%s"\n',var[2],v))
+                        f:write(string.format('cfg["%s"]="%s"\n',var[2],v or ''))
                     end
                 end
             end
@@ -458,6 +544,10 @@ ui_actions=
     ['kill']            = { 'xupnpd - kill', ui_kill },
     ['upload']          = { 'xupnpd - upload', ui_upload },
     ['apply']           = { 'xupnpd - apply', ui_apply },
+    ['plugins']         = { 'xupnpd - plugins', ui_plugins },
+    ['plapply']         = { 'xupnpd - plugins apply', ui_plapply },
+    ['profiles']        = { 'xupnpd - profiles', ui_profiles },
+    ['prapply']         = { 'xupnpd - profiles apply', ui_prapply },
     ['fhelp']           = { 'xupnpd - feeds help', ui_fhelp },
     ['mhelp']           = { 'xupnpd - mimes help', ui_mhelp },
     ['ehelp']           = { 'xupnpd - extras help', ui_ehelp },
