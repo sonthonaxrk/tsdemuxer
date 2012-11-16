@@ -1,4 +1,4 @@
-profiles['xbox360']=
+profiles['Xbox360']=
 {
     ['desc']='Microsoft Xbox 360',
 
@@ -13,5 +13,5 @@ profiles['xbox360']=
         ['upnp_artist']=true
     },
 
-    ['mime_types']= {}
+    ['mime_types']={}
 }

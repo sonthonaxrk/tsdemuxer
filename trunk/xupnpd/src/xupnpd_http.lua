@@ -380,11 +380,6 @@ function http_handler(what,from,port,msg)
 
         if cfg.dlna_headers==true then http.send('TransferMode.DLNA.ORG: Streaming\r\nContentFeatures.DLNA.ORG: '..extras..'\r\n') end
 
-        if cfg.wdtv==true then
-            http.send('Content-Size: 65535\r\n')
-            http.send('Content-Length: 65535\r\n')
-        end
-
         if head==true then
             http.send('\r\n')
             http.flush()
@@ -398,9 +393,18 @@ function http_handler(what,from,port,msg)
             if pls.plugin then
                 http.send('Accept-Ranges: bytes\r\n')
                 http.flush()
-                if plugins[pls.plugin] then plugins[pls.plugin].sendurl(pls.url,msg.range) end
+
+                local p=plugins[pls.plugin]
+
+                if p and p.disabled~=true then p.sendurl(pls.url,msg.range) end
             else
+                if cfg.wdtv==true then
+                    http.send('Content-Size: 65535\r\n')
+                    http.send('Content-Length: 65535\r\n')
+                end
+
                 http.send('Accept-Ranges: none\r\n\r\n')
+
                 if string.find(pls.url,'^udp://@') then
                     http.sendmcasturl(string.sub(pls.url,8),cfg.mcast_interface,2048)
                 else
