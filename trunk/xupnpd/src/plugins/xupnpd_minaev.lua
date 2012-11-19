@@ -48,31 +48,12 @@ function minaev_sendurl(minaev_url,range)
     local clip_page=http.download(minaev_url)
 
     if clip_page then
-        local u=string.match(clip_page,'src="(http://live.minaevlive.ru/embed/%d+?.-)"')
+--http://media.russia.ru/minaevlive/120/sd.mp4
+--http://media.russia.ru/minaevlive/120/hd720p.mp4
+        local u=string.match(clip_page,'.+<source src="(http://media.russia.ru/minaevlive/%w+/)%w+.mp4.+"')
 
         if u then
-            clip_page=http.download(u)
-
-            if clip_page then
-                u=string.match(clip_page,'TM_Player.params.translation_id%s*=%s*(%d+);')
-
-                if u then
-                    u=string.format('http://live.minaevlive.ru//tm/session_%s_ru_hd.json?language=ru&quality=hd&translation_id=%s',u,u)
-
-                    clip_page=http.download(u)
-
-                    if clip_page then
-                        u=json.decode(clip_page)
-
-                        if u then
-                            u=u['file']
-                            if u and string.find(u,'%.mp4$') then
-                                url=u
-                            end
-                        end
-                    end
-                end
-            end
+            url=u..'sd.mp4'
         end
     end
 
@@ -94,3 +75,4 @@ plugins.minaev.sendurl=minaev_sendurl
 plugins.minaev.updatefeed=minaev_updatefeed
 
 --minaev_updatefeed('archive')
+--minaev_sendurl('http://www.minaevlive.ru/archive/link5bd88f9b/','')

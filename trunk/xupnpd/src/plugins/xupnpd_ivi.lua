@@ -22,8 +22,10 @@ function ivi_updatefeed(feed,friendly_name)
 
     if table.maxn(tfeed)>1 then
         if tfeed[1]=='genre' then
-            feed_url='http://www.ivi.ru/videos/all/movies/'..tfeed[2]..'/by_alph/?'
+            feed_url='http://www.ivi.ru/videos/all/movies/'..tfeed[2]..'/by_year/?'
             scroll=true
+        else
+            feed_url=string.format('http://www.ivi.ru/watch/%s/%s',tfeed[1],tfeed[2])
         end
     else
         if tfeed[1]=='new' then
@@ -54,13 +56,13 @@ function ivi_updatefeed(feed,friendly_name)
 
                 if feed_data then
                     if not scroll then
-                        for logo,name,urn in string.gmatch(feed_data,'<li itemprop="episodes" itemscope itemtype="http://schema.org/TVEpisode">%s*<img src="(.-)"%s+alt="(.-)"%s*itemprop="image"%s*/>%s*<strong>%s*<a href="(.-)" itemprop="url">') do
-                            dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru',urn,'\n')
+                        for urn,logo,name in string.gmatch(feed_data,'<li>%s*<span class="image">%s*<a href="/watch/(.-)">%s*<img src="(.-)">%s*</a>%s*</span>%s*<strong>%s*<a href=".-">(.-)</a>%s*</strong>%s*</li>') do
+                            dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru/watch/',urn,'\n')
                         end
                     else
                         local n=0
 
-                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/(%w+)"%s*>%s*<img alt="" src="(.-)"%s*/>.-<h3>(.-)</h3>') do
+                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/(%w+)"%s*>%s*<img src="(.-)" alt="(.-)"%s*/>') do
                             dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru/watch/',id,'\n')
                             n=n+1
                         end
@@ -146,16 +148,19 @@ end
 
 plugins['ivi']={}
 plugins.ivi.name="ivi.ru"
-plugins.ivi.desc="new, <i>serial_name</i> or genre/<i>genre</i>"..
-"<br/><b>genres</b>: arthouse, boeviki, voennye, detective, detskiy, documentary, drama, comedy, korotkometrazhki, melodramy, zolotaya_klassika, adventures, sovetskoe_kino, thriller, horror, fantastika, erotika"
+plugins.ivi.desc="new, <i>serial_name</i> or <i>serial_name</i>/<i>season</i> or genre/<i>genre</i>"..
+"<br/><b>genres</b>: arthouse, boeviki, voennye, detective, detskiy, documentary, drama, comedy, korotkometrazhki, melodramy, zolotaya_klassika, adventures, sovetskoe_kino, thriller, horror, fantastika, performance, erotika"..
+"<br/><b>example</b>: new, luntik, luntik/season2, genre/horror"
 plugins.ivi.sendurl=ivi_sendurl
 plugins.ivi.updatefeed=ivi_updatefeed
 
 plugins.ivi.ui_config_vars=
 {
-    { "select", "ivi_fmt" }
+    { "select", "ivi_fmt" },
+    { "input", "ivi_max_pages", "int" }
 }
 
 --ivi_updatefeed('luntik','Лунтик')
+--ivi_updatefeed('luntik/season2','Лунтик')
 --ivi_updatefeed('genre/horror','Horrors')
 --ivi_updatefeed('new','new')
