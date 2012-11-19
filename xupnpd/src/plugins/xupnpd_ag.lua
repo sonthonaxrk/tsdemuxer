@@ -2,9 +2,12 @@
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
--- MP4-lo
--- MP4-hi (VIP)
-cfg.ag_fmt='MP4-lo'
+-- 720pd        - 720p 60fps
+-- 720p         - 720p
+-- 400pd        - 400p 60fps
+-- 400p         - 400p
+-- 200p         - 200p
+cfg.ag_fmt='720p'
 
 -- videos, videos/top100pop, videos/top100best, videos/selected_by_ag
 function ag_updatefeed(feed,friendly_name)
@@ -45,32 +48,36 @@ function ag_updatefeed(feed,friendly_name)
     return rc
 end
 
-function ag_strip_url(url)
-    local n=string.find(url,'#')
-    if not n then return url end
-    return string.sub(url,0,n-1)
-end
-
 function ag_sendurl(ag_url,range)
 
     local url=nil
 
     if plugin_sendurl_from_cache(ag_url,range) then return end
 
-    local clip_page=plugin_download(ag_strip_url(ag_url))
+    local clip_page=plugin_download(ag_url)
 
     if clip_page then
-        local playlist_id=string.match(clip_page,'http://video%.ag%.ru/playlist[%w_]*/(%w+)%.xml')
+        local playlist_id=string.match(clip_page,'/playlist/(%w+)%.json')
         clip_page=nil
 
         if playlist_id then
-            local ss=''
-            if cfg.ag_fmt=='MP4-hi' then ss='_vip' end
 
-            clip_page=plugin_download(string.format('http://video.ag.ru/playlist%s/%s.xml',ss,playlist_id))
+            clip_page=plugin_download(string.format('http://www.ag.ru/playlist/%s.json',playlist_id))
+
             if clip_page then
-                url=string.match(clip_page,'<mp4>(.-)</mp4>')
+                local o=json.decode(clip_page)
                 clip_page=nil
+
+                local url_200p=nil
+
+                if o and o['resolutionswitcherplugin.streams'] then
+                    for i,j in ipairs(o['resolutionswitcherplugin.streams']) do
+                        if j.id==cfg.ag_fmt then url=j.file break elseif j.id=='200p' then url_200p=j.file end
+                    end
+                end
+
+                if not url then url=url_200p end
+
             end
         end
     else
