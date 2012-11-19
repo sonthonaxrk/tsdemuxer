@@ -15,14 +15,24 @@
 --    { "vkontakte", "search_hd/searchstring", "VK - Search only HD videos" }
 --}
 
+-- Workaround for private videos and groups
+cfg.vk_private_workaround=true
+-- How many videos to pull from the feed (max 200)
+cfg.vk_video_count=100
+
 vk_app_id='2432090'
 vk_app_scope='groups,friends,video,offline,nohttps'
 vk_api_server='http://api.vk.com'
-vk_api_request_get_videos='/method/video.get?width=160&count=50'
-vk_api_request_search_videos='/method/video.search?count=50'
+vk_api_request_video_get='/method/video.get?width=160'
+vk_api_request_video_add='/method/video.add?'
+vk_api_request_video_delete='/method/video.delete?'
+vk_api_request_video_search='/method/video.search?'
 vk_api_request_get_user_info='/method/getProfiles?'
 vk_api_request_get_user_groups='/method/groups.get?'
 vk_api_request_get_user_friends='/method/friends.get?'
+
+max_video_title_length=120
+private_or_disabled_video_matcher='(position:absolute; top:50%%; text%-align:center;)'
 --FIXME return local files
 error_file_video_disabled='http://dl.dropbox.com/u/127793/access-denied.mp4'
 error_file_video_unsupported_format='http://dl.dropbox.com/u/127793/unsupported-flv.mp4'
@@ -47,27 +57,27 @@ function vk_updatefeed(feed,friendly_name)
     local logo_label="thumb"
     if tfeed[1]=='group' then
         if tfeed[3] then
-            feed_url=vk_api_format_url(vk_api_request_get_videos,{['gid']=tfeed[2],['aid']=tfeed[3]})
+            feed_url=vk_api_format_url(vk_api_request_video_get,{['count']=cfg.vk_video_count,['gid']=tfeed[2],['aid']=tfeed[3]})
         else
-            feed_url=vk_api_format_url(vk_api_request_get_videos,{['gid']=tfeed[2]})
+            feed_url=vk_api_format_url(vk_api_request_video_get,{['count']=cfg.vk_video_count,['gid']=tfeed[2]})
         end     
         logo_label="image"
     elseif tfeed[1]=='user' then
         if tfeed[3] then
-            feed_url=vk_api_format_url(vk_api_request_get_videos,{['uid']=tfeed[2],['aid']=tfeed[3]})
+            feed_url=vk_api_format_url(vk_api_request_video_get,{['count']=cfg.vk_video_count,['uid']=tfeed[2],['aid']=tfeed[3]})
         else
-            feed_url=vk_api_format_url(vk_api_request_get_videos,{['uid']=tfeed[2]})
+            feed_url=vk_api_format_url(vk_api_request_video_get,{['count']=cfg.vk_video_count,['uid']=tfeed[2]})
         end     
         logo_label="image"
     elseif tfeed[1]=='search' then
-        feed_url=vk_api_format_url(vk_api_request_search_videos,
-            { ['sort']=get_sort_order(tfeed[2]), ['q']=tfeed[3] })
+        feed_url=vk_api_format_url(vk_api_request_video_search,
+            {['count']=cfg.vk_video_count, ['sort']=get_sort_order(tfeed[2]), ['q']=tfeed[3] })
     elseif tfeed[1]=='search_hd' then
-        feed_url=vk_api_format_url(vk_api_request_search_videos,
-            { ['hd']='1', ['sort']=get_sort_order(tfeed[2]), ['q']='"'..tfeed[3]..'"' })
+        feed_url=vk_api_format_url(vk_api_request_video_search,
+            {['count']=cfg.vk_video_count, ['hd']='1', ['sort']=get_sort_order(tfeed[2]), ['q']='"'..tfeed[3]..'"' })
     else
         -- my
-        feed_url=vk_api_format_url(vk_api_request_get_videos,{['uid']=cfg.vk_api_user_id})
+        feed_url=vk_api_format_url(vk_api_request_video_get,{['count']=cfg.vk_video_count,['uid']=cfg.vk_api_user_id})
         logo_label="image"
     end
 
@@ -87,7 +97,7 @@ function vk_updatefeed(feed,friendly_name)
 
                 for i,j in pairs(x.response) do
                     if type(j) == 'table' then
-                        dfd:write('#EXTINF:0 logo=',string.gsub(j[logo_label],"vkontakte%.ru/","vk.com/"),',',unescape_html_string(j.title),'\n',string.gsub(j.player,"vkontakte%.ru/","vk.com/"),'\n')
+                        dfd:write('#EXTINF:0 logo=',string.gsub(j[logo_label],"vkontakte%.ru/","vk.com/"),',',string.sub(unescape_html_string(j.title),1,max_video_title_length),'\n',string.gsub(j.player,"vkontakte%.ru/","vk.com/"),'\n')
                     end
                 end
                 dfd:close()
@@ -114,24 +124,47 @@ function vk_sendurl(vk_page_url,range)
 
     local clip_page=http.download(vk_page_url)
 
-    if clip_page then
-        if string.match(clip_page, "(position:absolute; top:50%%; text%-align:center;)") then
-            url=error_file_video_disabled
-        else
-            local host=string.match(clip_page,"video_host%s*=%s*'(.-)'")
-            local uid=string.match(clip_page,"uid%s*=%s*'(%w-)'")
-            local vtag=string.match(clip_page,"vtag%s*=%s*'([%w%-_]-)'")
-            local no_flv=string.match(clip_page,"video_no_flv%s*=%s*(%d-)%D")
-            local max_hd=string.match(clip_page,"video_max_hd%s*=%s*'(%d-)'")
-            url=vk_get_video_url(host, uid, vtag, no_flv, max_hd)
-        end
-        clip_page=nil
+    if clip_page and string.match(clip_page, private_or_disabled_video_matcher) then
+		if cfg.debug>0 then 
+			print('VK external player page '..vk_page_url..' is protected by privacy settings or disabled')
+		end
+		if cfg.vk_private_workaround then
+            if cfg.debug>0 then 
+				print('Trying workaround for private videos...')
+			end
+			local private_player_page=nil
+	        local oid=string.match(vk_page_url,"oid=([%-%d]+)")
+	        local vid=string.match(vk_page_url,"%Aid=(%d+)")
+			local added_vid = vk_video_add(vid, oid)
+			if added_vid then private_player_page=vk_video_get_external_player_page(added_vid, cfg.vk_api_user_id)	end
+			if private_player_page then
+			    clip_page=http.download(private_player_page)
+			else
+            	if cfg.debug>0 then 
+					print('Workaround for private videos failed')
+				end
+	            url=error_file_video_disabled
+			end
+			if added_vid then vk_video_delete(added_vid, cfg.vk_api_user_id) end
+		else
+			url=error_file_video_disabled
+		end
+	end
+
+    if clip_page and (not url) then
+        local host=string.match(clip_page,"video_host%s*=%s*'(.-)'")
+        local uid=string.match(clip_page,"uid%s*=%s*'(%w-)'")
+        local vtag=string.match(clip_page,"vtag%s*=%s*'([%w%-_]-)'")
+        local no_flv=string.match(clip_page,"video_no_flv%s*=%s*(%d-)%D")
+        local max_hd=string.match(clip_page,"video_max_hd%s*=%s*'(%d-)'")
+        url=vk_video_get_direct_download_link(host, uid, vtag, no_flv, max_hd)
     else
-        if cfg.debug>0 then print('VK Clip page is not found') end
+        if cfg.debug>0 then print('VK external player page '..vk_page_url..' can not be downloaded or private') end
     end
+	clip_page=nil
 
     if url then
-        if cfg.debug>0 then print('VK Clip real URL: '..url) end
+        if cfg.debug>0 then print('VK Clip download URL: '..url) end
         plugin_sendurl(vk_page_url,url,range)
     else
         if cfg.debug>0 then print('VK Clip real URL is not found') end
@@ -292,22 +325,99 @@ function vk_get_friends()
     end
 end
 
-function vk_get_video_url(host, uid, vtag, no_flv, max_hd)
+function vk_video_add(vid, oid)
+    if vk_is_signed_in() then
+        local url=vk_api_format_url(vk_api_request_video_add, {['vid']=vid,['oid']=oid})
+        local data=http.download(url)
+        if data then
+            local response=json.decode(data)
+            data=nil
+            if vk_check_response_for_errors(response) then
+                return nil
+            elseif response and response.response then
+                local added_vid = response.response
+                if cfg.debug>0 then 
+                	print('VK API video.add: succesfully added video (vid='..vid..', oid='..oid..') to my page with new vid='..vid)
+                end
+                return added_vid
+            else
+                return nil
+            end
+        else
+            return nil
+        end
+    else
+        return nil
+    end
+end
+
+function vk_video_delete(vid, oid)
+    if vk_is_signed_in() then
+        local url=vk_api_format_url(vk_api_request_video_delete, {['vid']=vid,['oid']=oid})
+        local data=http.download(url)
+        if data then
+            local response=json.decode(data)
+            data=nil
+            if vk_check_response_for_errors(response) then
+                return nil
+            elseif response and response.response then
+                if cfg.debug>0 then 
+                	print('VK API video.delete: succesfully deleted video (vid='..vid..', oid='..oid..') from my page')
+                end
+                return response.response
+            else
+                return nil
+            end
+        else
+            return nil
+        end
+    else
+        return nil
+    end
+end
+
+function vk_video_get_external_player_page(vid, oid)
+    if vk_is_signed_in() then
+        local url=vk_api_format_url(vk_api_request_video_get, {['videos']=oid..'_'..vid})
+        local data=http.download(url)
+        if data then
+            local response=json.decode(data)
+            data=nil
+            if vk_check_response_for_errors(response) then
+                return nil
+            elseif response and response.response then                
+                local player_url = string.gsub(response.response[2].player,"vkontakte%.ru/","vk.com/")
+                if cfg.debug>0 then
+                	print('VK API video.get: external player page for video (vid='..vid..', oid='..oid..') is '..player_url)
+                end
+                return player_url
+            else
+                return nil
+            end
+        else
+            return nil
+        end
+    else
+        return nil
+    end
+end
+
+function vk_video_get_direct_download_link(host, uid, vtag, no_flv, max_hd)
     if (host and not string.match(host, '/$')) then
         host=host..'/'
     end
     if (host and uid and vtag and max_hd) then
         if tonumber(max_hd)>=3 then
-            return host..'u'..uid..'/video/'..vtag..'.'..'720.mp4'
+            return host..'u'..uid..'/videos/'..vtag..'.'..'720.mp4'
         end
         if tonumber(max_hd)>=2 then
-            return host..'u'..uid..'/video/'..vtag..'.'..'480.mp4'
+            return host..'u'..uid..'/videos/'..vtag..'.'..'480.mp4'
         end
         if tonumber(max_hd)>=1 then
-            return host..'u'..uid..'/video/'..vtag..'.'..'360.mp4'
+            return host..'u'..uid..'/videos/'..vtag..'.'..'360.mp4'
         end
         if (tonumber(max_hd)>=0 and tonumber(no_flv)==1) then
-            return host..'u'..uid..'/video/'..vtag..'.'..'240.mp4'
+            return host..'u'..uid..'/videos/'..vtag..'.'..'240.mp4'
         end
         return error_file_video_unsupported_format
     end
@@ -358,20 +468,20 @@ function ui_vk_status()
     if vk_name then
         http.send('You are signed as <b>'..vk_name..'</b> - <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>.')
         http.send('<h4>Groups</h4>')
-        http.send('<table class="table" width="400"><tr><th width="300">group name</th><th>groip id</th></tr>')
+        http.send('<table class="table"><tr><th>group name</th><th>feed data</th></tr>')
         local vk_groups=plugins.vkontakte.vk_get_groups()
         if vk_groups then
             for group_id,group_name in pairs(vk_groups) do
-                http.send(string.format('<tr><td><a href="http://vkontakte.ru/club%s">%s</a></td><td>%s</td></tr>',group_id,group_name,group_id))
+                http.send(string.format('<tr><td><a href="http://vk.com/club%s">%s</a></td><td>group&#47;%s</td></tr>',group_id,group_name,group_id))
             end
         end
         http.send('</table>')
         http.send('<h4>Firiends</h4>')
-        http.send('<table class="table" width="400"><tr><th width="300">friend name</th><th>user id</th></tr>')
+        http.send('<table class="table"><tr><th>friend name</th><th>feed data</th></tr>')
         local vk_friends=plugins.vkontakte.vk_get_friends()
         if vk_friends then
             for user_id,user_name in pairs(vk_friends) do
-                http.send(string.format('<tr><td><a href="http://vkontakte.ru/id%s">%s</a></td><td>%s</td></tr>',user_id,user_name,user_id))
+                http.send(string.format('<tr><td><a href="http://vk.com/id%s">%s</a></td><td>user&#47;%s</td></tr>',user_id,user_name,user_id))
             end
         end
         http.send('</table>')
@@ -411,12 +521,18 @@ plugins.vkontakte.ui_vars=
 
             local vk_name=plugins.vkontakte.vk_get_name()
             if vk_name then
-                s='You are signed as <b>'..vk_name..'</b>, <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a>,'
+                s='You are signed as <b>'..vk_name..'</b><br/> <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in as another user</a><br/>'
             else
-                s='You are not signed in - <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in</a>,'
+                s='You are not signed in - <a href="'..plugins.vkontakte.vk_api_request_auth(www_location)..'">sign-in</a><br/>'
             end
 
-            return s..' <a onclick="window.open(this.href,\'newwin\',\'width=450,scrollbars=yes,toolbar=no,menubar=no\'); return false;" href="/ui/vk_status">status and help</a>.'
+            return s..' <a onclick="window.open(this.href,\'newwin\',\'width=450,scrollbars=yes,toolbar=no,menubar=no\'); return false;" href="/ui/vk_status">status and help</a>'
         end
     }
+}
+
+plugins.vkontakte.ui_config_vars=
+{
+    { "select", "vk_private_workaround", "bool" },
+    { "input", "vk_video_count", "int" }
 }

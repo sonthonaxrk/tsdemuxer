@@ -1,12 +1,25 @@
 <h4>Plugins</h4>
 
+<form method=post action="/ui/apply">
+
 <div class="controls controls-row">
-<div class="span4">VKontakte:</div>
-<div class="span4">${vk_auth_link}</div>
+	<div class="span4">VK.com:</div>
+	<div class="span4">${vk_auth_link}</div>
+</div>
+
+<div class="controls controls-row">
+	<div class="span4">VK.com private videos and groups workaround:</div>
+	<select class="span4" name=vk_private_workaround id=vk_private_workaround>
+		<option value="false">no</option>
+		<option selected value="true">yes</option>
+	</select>
+</div>
+
+<div class="controls controls-row">
+	<div class="span4">VK.com how many videos to pull from the feed (max 200):</div>
+	<input class="span4" type=text name=vk_video_count id=vk_video_count>
 </div>
 <br/>
-
-<form method=get action="/ui/apply">
 
 <div class="controls controls-row">
 <div class="span4">YouTube quality:</div>

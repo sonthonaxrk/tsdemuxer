@@ -106,7 +106,7 @@ function ui_feeds()
     http.send('<div class="controls controls-row"><div class="span2">Plugin</div><select class="span4" name="plugin">')
 
     for plugin_name,plugin in pairs(plugins) do
-        if plugin.name then
+        if plugin.name and plugin.disabled~=true then
             http.send(string.format('<option value="%s">%s</option>',plugin_name,plugin.name))
         end
     end
@@ -128,7 +128,7 @@ function ui_fhelp()
     http.send('<br/>')
 
     for plugin_name,plugin in pairs(plugins) do
-        if plugin.name and plugin.desc then
+        if plugin.name and plugin.desc and plugin.disabled~=true then
             http.send(string.format('<b>%s</b>: ',plugin.name))
             http.send(plugin.desc)
             http.send('<br/><br/>\n\n')
@@ -376,17 +376,24 @@ function ui_config()
 end
 
 function ui_apply()
+
+    local args=util.parse_postdata(ui_data)
+
     local f=io.open(cfg.config_path..'common.lua','w')
     if f then
 
         for plugin_name,plugin in pairs(plugins) do
             if plugin.ui_config_vars then
                 for i,var in ipairs(plugin.ui_config_vars) do
-                    local v=ui_args[ var[2] ]
-                    if var[3]=="int" or var[3]=="bool" then
-                        f:write(string.format('cfg["%s"]=%s\n',var[2],v or ''))
+                    local v=args[ var[2] ]
+                    local t=var[3]
+
+                    if not v then if t=="int" then v=0 elseif t=="bool" then v=false else v="" end end
+
+                    if t=="int" or t=="bool" then
+                        f:write(string.format('cfg["%s"]=%s\n',var[2],tostring(v)))
                     else
-                        f:write(string.format('cfg["%s"]="%s"\n',var[2],v or ''))
+                        f:write(string.format('cfg["%s"]="%s"\n',var[2],v))
                     end
                 end
             end
