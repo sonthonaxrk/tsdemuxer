@@ -5,7 +5,7 @@
 -- MP4-lo
 -- MP4-hi
 cfg.ivi_fmt='MP4-hi'
-cfg.ivi_max_pages=10
+cfg.ivi_video_count=100
 
 -- genre:
 -- arthouse, boeviki, voennye, detective, detskiy, documentary, drama, comedy, korotkometrazhki, melodramy, zolotaya_klassika, adventures, sovetskoe_kino, thriller, horror, fantastika, erotika
@@ -30,7 +30,7 @@ function ivi_updatefeed(feed,friendly_name)
     else
         if tfeed[1]=='new' then
             local year=tonumber(os.date('%Y'))
-            feed_url='http://www.ivi.ru/videos/all/all/all/by_new/?year_from='..(year-1)..'&year_to='..year
+            feed_url='http://www.ivi.ru/videos/all/all/all/by_year/?year_from='..(year-1)..'&year_to='..year
             scroll=true
         else
             feed_url='http://www.ivi.ru/watch/'..tfeed[1]
@@ -43,12 +43,12 @@ function ivi_updatefeed(feed,friendly_name)
         if dfd then
             dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=ivi\n')
 
-            local page=1
+            local count=0
 
-            while(page<cfg.ivi_max_pages) do
+            while(count<cfg.ivi_video_count) do
                 local url=nil
 
-                if scroll then url=feed_url..'&spage='..page else url=feed_url end
+                if scroll and count~=0 then url=feed_url..'&offset='..count else url=feed_url end
 
                 if cfg.debug>0 then print('IVI try url '..url) end
 
@@ -56,26 +56,24 @@ function ivi_updatefeed(feed,friendly_name)
 
                 if feed_data then
                     if not scroll then
-                        for urn,logo,name in string.gmatch(feed_data,'<li>%s*<span class="image">%s*<a href="/watch/(.-)">%s*<img src="(.-)">%s*</a>%s*</span>%s*<strong>%s*<a href=".-">(.-)</a>%s*</strong>%s*</li>') do
+                        for urn,logo,name in string.gmatch(feed_data,'<li>%s*<span class="image">%s*<a href="/watch/([%w_%-/]+)">%s*<img src="(.-)">%s*</a>%s*</span>%s*<strong>%s*<a href=".-">(.-)</a>%s*</strong>%s*</li>') do
                             dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru/watch/',urn,'\n')
                         end
                     else
                         local n=0
 
-                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/(%w+)"%s*>%s*<img src="(.-)" alt="(.-)"%s*/>') do
+                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/([%w_%-/]+)"%s*>%s*<img src="(.-)" alt="(.-)"%s*/>') do
                             dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru/watch/',id,'\n')
                             n=n+1
                         end
 
-                        if n<1 then scroll=false end
+                        if n<1 then scroll=false else count=count+n end
                     end
 
                     feed_data=nil
                 end
 
                 if not scroll then break end
-
-                page=page+1
             end
 
             dfd:close()
@@ -157,7 +155,7 @@ plugins.ivi.updatefeed=ivi_updatefeed
 plugins.ivi.ui_config_vars=
 {
     { "select", "ivi_fmt" },
-    { "input", "ivi_max_pages", "int" }
+    { "input", "ivi_video_count", "int" }
 }
 
 --ivi_updatefeed('luntik','Лунтик')

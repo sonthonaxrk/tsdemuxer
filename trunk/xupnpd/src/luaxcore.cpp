@@ -30,14 +30,12 @@
 #include <ctype.h>
 #include "compat.h"
 
-// TODO: LG - profile
-// TODO: Samsung - logo
-// TODO: Validate plugins
+// TODO: gametrailers
 
+// TODO: profile by IP
+// TODO: sendurl - reopen after pause?
 // TODO: SQLite support
 // TODO: TS padding for WDTV?
-// TODO: XBox 360
-// TODO: YouTube max-count>50
 // TODO: length to m3u when feed update
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 

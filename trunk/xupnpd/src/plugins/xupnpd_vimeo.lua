@@ -24,17 +24,7 @@ function vimeo_updatefeed(feed,friendly_name)
                 dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=vimeo\n')
 
                 for i,j in ipairs(x) do
-                    if cfg.feeds_fetch_length==false then
-                        dfd:write('#EXTINF:0 logo=',j.thumbnail_medium,' ,',j.title,'\n',j.url,'\n')
-                    else
-                        dfd:write('#EXTINF:0 logo=',j.thumbnail_medium)
-                        local real_url=vimeo_get_video_url(j.url)
-                        if real_url~=nil then
-                            local len=plugin_get_length(real_url)
-                            if len>0 then dfd:write(' length=',len) end
-                        end
-                        dfd:write(' ,',j.title,'\n',j.url,'\n')
-                    end
+                    dfd:write('#EXTINF:0 logo=',j.thumbnail_medium,' ,',j.title,'\n',j.url,'\n')
                 end
                 dfd:close()
 

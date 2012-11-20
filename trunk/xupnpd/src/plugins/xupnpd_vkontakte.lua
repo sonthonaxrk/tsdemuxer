@@ -33,10 +33,9 @@ vk_api_request_get_user_friends='/method/friends.get?'
 
 max_video_title_length=120
 private_or_disabled_video_matcher='(position:absolute; top:50%%; text%-align:center;)'
---FIXME return local files
-error_file_video_disabled='http://dl.dropbox.com/u/127793/access-denied.mp4'
-error_file_video_unsupported_format='http://dl.dropbox.com/u/127793/unsupported-flv.mp4'
--- ffmpeg -loop_input -t 3 -i ./localmedia/access-denied.png -vcodec libx264 -crf 24 -x264opts bluray-compat=1:level=41:ref=4:b-pyramid=strict:keyint=10 -threads 0 ./localmedia/access-denied.mp4
+-- ffmpeg -loop_input -f image2 -i vk-flash-format-only.png -r 25 -vframes 25 -an -vcodec libx264 -crf 32 -threads 0 vk-flash-format-only.mp4
+error_file_private_video='www/vk-private-video.mp4'
+error_file_video_flash_format_only='www/vk-flash-format-only.mp4'
 
 
 function vk_updatefeed(feed,friendly_name)
@@ -139,33 +138,42 @@ function vk_sendurl(vk_page_url,range)
 			if added_vid then private_player_page=vk_video_get_external_player_page(added_vid, cfg.vk_api_user_id)	end
 			if private_player_page then
 			    clip_page=http.download(private_player_page)
+				if added_vid then vk_video_delete(added_vid, cfg.vk_api_user_id) end
 			else
+				if added_vid then vk_video_delete(added_vid, cfg.vk_api_user_id) end
             	if cfg.debug>0 then 
 					print('Workaround for private videos failed')
 				end
-	            url=error_file_video_disabled
+				clip_page=nil
+				plugin_sendfile(error_file_private_video)
+				return
 			end
-			if added_vid then vk_video_delete(added_vid, cfg.vk_api_user_id) end
 		else
-			url=error_file_video_disabled
+			clip_page=nil
+			plugin_sendfile(error_file_private_video)
+			return
 		end
 	end
 
-    if clip_page and (not url) then
+    if clip_page then
         local host=string.match(clip_page,"video_host%s*=%s*'(.-)'")
         local uid=string.match(clip_page,"uid%s*=%s*'(%w-)'")
         local vtag=string.match(clip_page,"vtag%s*=%s*'([%w%-_]-)'")
         local no_flv=string.match(clip_page,"video_no_flv%s*=%s*(%d-)%D")
-        local max_hd=string.match(clip_page,"video_max_hd%s*=%s*'(%d-)'")
+        local max_hd=string.match(clip_page,"video_max_hd%s*=%s*'(%d-)'")	
         url=vk_video_get_direct_download_link(host, uid, vtag, no_flv, max_hd)
     else
         if cfg.debug>0 then print('VK external player page '..vk_page_url..' can not be downloaded or private') end
     end
 	clip_page=nil
 
-    if url then
+    if url then		
         if cfg.debug>0 then print('VK Clip download URL: '..url) end
-        plugin_sendurl(vk_page_url,url,range)
+		if url == error_file_video_flash_format_only then
+			plugin_sendfile(error_file_video_flash_format_only)
+		else
+	        plugin_sendurl(vk_page_url,url,range)
+		end
     else
         if cfg.debug>0 then print('VK Clip real URL is not found') end
     end
@@ -419,9 +427,9 @@ function vk_video_get_direct_download_link(host, uid, vtag, no_flv, max_hd)
         if (tonumber(max_hd)>=0 and tonumber(no_flv)==1) then
             return host..'u'..uid..'/videos/'..vtag..'.'..'240.mp4'
         end
-        return error_file_video_unsupported_format
+        return error_file_video_flash_format_only
     end
-    return error_file_video_unsupported_format
+    return error_file_video_flash_format_only
 end
 
 function get_sort_order(label)
