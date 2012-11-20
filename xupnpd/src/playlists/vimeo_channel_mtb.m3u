@@ -1,4 +1,4 @@
-#EXTM3U name="Mountain Bike Channel" type=mp4 plugin=vimeo
+#EXTM3U name="Vimeo MTB Channel" type=mp4 plugin=vimeo
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/337/460/337460085_200.jpg ,Dark Summer
 http://vimeo.com/48921089
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/348/539/348539979_200.jpg ,Red Bull Four By Three Trailer

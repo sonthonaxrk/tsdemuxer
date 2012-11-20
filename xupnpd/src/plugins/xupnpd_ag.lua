@@ -7,7 +7,7 @@
 -- 400pd        - 400p 60fps
 -- 400p         - 400p
 -- 200p         - 200p
-cfg.ag_fmt='720p'
+cfg.ag_fmt='400p'
 
 -- videos, videos/top100pop, videos/top100best, videos/selected_by_ag
 function ag_updatefeed(feed,friendly_name)
@@ -25,7 +25,7 @@ function ag_updatefeed(feed,friendly_name)
         if dfd then
             dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=ag\n')
 
-            for game,id,name in string.gmatch(feed_data,'href=/games/([%w_-]+)/videos#([%w_-]+)>(.-)</a>') do
+            for game,id,name in string.gmatch(feed_data,'href=/games/([%w_%-]+)/videos#([%w_%-]+)>(.-)</a>') do
                 local url=string.format('http://www.ag.ru/games/%s/videos/%s/',game,id)
                 dfd:write('#EXTINF:0,',util.win1251toUTF8(name),'\n',url,'\n')
             end

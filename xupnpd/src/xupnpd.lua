@@ -42,7 +42,7 @@ cfg.proxy=2
 cfg.user_agent='Mozilla/5.0'
 
 -- I/O timeout
-cfg.http_timeout=15
+cfg.http_timeout=30
 
 -- enables UPnP/DLNA notify when reload playlist
 cfg.dlna_notify=true
@@ -72,9 +72,6 @@ cfg.default_mime_type='mpeg'
 cfg.feeds_update_interval=0
 cfg.playlists_update_interval=0
 
--- fetch file length when feed update (slow!!!)
-cfg.feeds_fetch_length=false
-
 -- playlist (m3u file path or path with alias
 playlist=
 {
@@ -87,16 +84,16 @@ playlist=
 feeds=
 {
     { 'vimeo',          'channel/hd',           'Vimeo HD Channel' },
-    { 'vimeo',          'channel/hdxs',         'HD Xtreme sports' },
-    { 'vimeo',          'channel/mtb',          'Mountain Bike Channel' },
+    { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
+    { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
     { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
+--    { 'ag',             'videos',               'AG - New' },
+--    { 'ivi',            'new',                  'IVI - New' },
+--    { 'giantbomb',      'all',                  'GiantBomb - All' },
 --    { 'dreambox',       'http://192.168.0.1:8001/','Dreambox1' },
 --    { 'gametrailers',   'ps3/review',           'GT - PS3 - Review' },
 --    { 'gametrailers',   'ps3/preview',          'GT - PS3 - Preview' },
 --    { 'gametrailers',   'ps3/gameplay',         'GT - PS3 - Gameplay' },
---    { 'giantbomb',      'all',                  'GiantBomb - All' },
---    { 'ag',             'videos',               'AG - New' },
---    { 'ivi',            'new',                  'IVI - New' },
 }
 
 -- log ident, pid file end www root

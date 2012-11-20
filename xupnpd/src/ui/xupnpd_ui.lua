@@ -297,7 +297,7 @@ end
 
 function ui_add_feed()
     if ui_args.plugin and ui_args.feed then
-        if not ui_args.name or string.len(ui_args.name)==0 then ui_args.name=string.gsub(ui_args.feed,'/',' ') end
+        if not ui_args.name or string.len(ui_args.name)==0 then ui_args.name=ui_args.plugin..' '..string.gsub(ui_args.feed,'/',' ') end
         core.sendevent('add_feed',ui_args.plugin,ui_args.feed,ui_args.name)
         http.send('<h3>OK</h3>')
     else
