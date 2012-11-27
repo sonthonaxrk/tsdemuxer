@@ -89,11 +89,9 @@ feeds=
     { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
 --    { 'ag',             'videos',               'AG - New' },
 --    { 'ivi',            'new',                  'IVI - New' },
+--    { 'gametrailers',   'ps3,                   'GT - PS3' },
 --    { 'giantbomb',      'all',                  'GiantBomb - All' },
 --    { 'dreambox',       'http://192.168.0.1:8001/','Dreambox1' },
---    { 'gametrailers',   'ps3/review',           'GT - PS3 - Review' },
---    { 'gametrailers',   'ps3/preview',          'GT - PS3 - Preview' },
---    { 'gametrailers',   'ps3/gameplay',         'GT - PS3 - Gameplay' },
 }
 
 -- log ident, pid file end www root
