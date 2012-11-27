@@ -1,4 +1,4 @@
-#EXTM3U name="YouTube Top Rated" type=mp4 plugin=youtube
+#EXTM3U name="" type=mp4 plugin=youtube
 #EXTINF:0 logo=http://i.ytimg.com/vi/dMH0bHeiRNg/1.jpg ,Evolution of Dance - By Judson Laipply
 http://www.youtube.com/watch?v=dMH0bHeiRNg&feature=youtube_gdata
 #EXTINF:0 logo=http://i.ytimg.com/vi/kXYiU_JCYtU/1.jpg ,Linkin Park - Numb
@@ -43,8 +43,6 @@ http://www.youtube.com/watch?v=qrO4YZeyl0I&feature=youtube_gdata
 http://www.youtube.com/watch?v=CHVhwcOg6y8&feature=youtube_gdata
 #EXTINF:0 logo=http://i.ytimg.com/vi/lgT1AidzRWM/1.jpg ,Eminem - Beautiful
 http://www.youtube.com/watch?v=lgT1AidzRWM&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/ErMWX--UJZ4/1.jpg ,I'm Yours(ukulele)
-http://www.youtube.com/watch?v=ErMWX--UJZ4&feature=youtube_gdata
 #EXTINF:0 logo=http://i.ytimg.com/vi/8SbUC-UaAxE/1.jpg ,Guns N' Roses - November Rain
 http://www.youtube.com/watch?v=8SbUC-UaAxE&feature=youtube_gdata
 #EXTINF:0 logo=http://i.ytimg.com/vi/Glny4jSciVI/1.jpg ,We Are The World 25 For Haiti - Official Video
@@ -201,101 +199,3 @@ http://www.youtube.com/watch?v=LXO-jKksQkM&feature=youtube_gdata
 http://www.youtube.com/watch?v=hLQl3WQQoQ0&feature=youtube_gdata
 #EXTINF:0 logo=http://i.ytimg.com/vi/jUe8uoKdHao/1.jpg ,David Guetta - Without You ft. Usher
 http://www.youtube.com/watch?v=jUe8uoKdHao&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/LUjn3RpkcKY/1.jpg ,Justin Bieber - Mistletoe
-http://www.youtube.com/watch?v=LUjn3RpkcKY&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/1G4isv_Fylg/1.jpg ,Coldplay - Paradise
-http://www.youtube.com/watch?v=1G4isv_Fylg&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/tg00YEETFzg/1.jpg ,Rihanna - We Found Love ft. Calvin Harris
-http://www.youtube.com/watch?v=tg00YEETFzg&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/3OnnDqH6Wj8/1.jpg ,Flo Rida - Good Feeling [Official Video]
-http://www.youtube.com/watch?v=3OnnDqH6Wj8&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/Ahha3Cqe_fk/1.jpg ,Katy Perry - The One That Got Away
-http://www.youtube.com/watch?v=Ahha3Cqe_fk&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/nvfejaHz-o0/1.jpg ,One Direction - Gotta Be You
-http://www.youtube.com/watch?v=nvfejaHz-o0&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/mghhLqu31cQ/1.jpg ,The GAG Quartet - le Internet Medley (OVER 40 MEMES IN ONE SONG)
-http://www.youtube.com/watch?v=mghhLqu31cQ&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/W-w3WfgpcGg/1.jpg ,Bruno Mars - It Will Rain [OFFICIAL VIDEO]
-http://www.youtube.com/watch?v=W-w3WfgpcGg&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/a7UFm6ErMPU/1.jpg ,Vazquez Sounds Adele - Rolling In The Deep (Cover)
-http://www.youtube.com/watch?v=a7UFm6ErMPU&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/CdXesX6mYUE/1.jpg ,Pitbull - International Love ft. Chris Brown
-http://www.youtube.com/watch?v=CdXesX6mYUE&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/JRfuAukYTKg/1.jpg ,David Guetta - Titanium ft. Sia
-http://www.youtube.com/watch?v=JRfuAukYTKg&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/UJtB55MaoD0/1.jpg ,Jessie J - Domino
-http://www.youtube.com/watch?v=UJtB55MaoD0&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/Sv6dMFF_yts/1.jpg ,Fun.: We Are Young ft. Janelle Monáe [OFFICIAL VIDEO]
-http://www.youtube.com/watch?v=Sv6dMFF_yts&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/d9NF2edxy-M/1.jpg ,Somebody That I Used to Know - Walk off the Earth (Gotye - Cover)
-http://www.youtube.com/watch?v=d9NF2edxy-M&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/1IAhDGYlpqY/1.jpg ,Why I Hate Religion, But Love Jesus || Spoken Word
-http://www.youtube.com/watch?v=1IAhDGYlpqY&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/Y1xs_xPb46M/1.jpg ,One Direction - One Thing
-http://www.youtube.com/watch?v=Y1xs_xPb46M&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/YVw7eJ0vGfM/1.jpg ,David Guetta - Turn Me On ft. Nicki Minaj
-http://www.youtube.com/watch?v=YVw7eJ0vGfM&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/OZLUa8JUR18/1.jpg ,LIL WAYNE - Mirror ft. Bruno Mars
-http://www.youtube.com/watch?v=OZLUa8JUR18&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/kl1ujzRidmU/1.jpg ,Facebook Parenting: For the troubled teen.
-http://www.youtube.com/watch?v=kl1ujzRidmU&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/bpOR_HuHRNs/1.jpg ,Flo Rida - Wild Ones ft. Sia [Official Video]
-http://www.youtube.com/watch?v=bpOR_HuHRNs&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/YJVmu6yttiw/1.jpg ,SKRILLEX - Bangarang feat. Sirah [Official Music Video]
-http://www.youtube.com/watch?v=YJVmu6yttiw&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/AsBsBU3vn6M/1.jpg ,"Call Me Maybe" by Carly Rae Jepsen - Feat. Justin Bieber, Selena, Ashley Tisdale & MORE!
-http://www.youtube.com/watch?v=AsBsBU3vn6M&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/SkTt9k4Y-a8/1.jpg ,LMFAO - Sorry For Party Rocking
-http://www.youtube.com/watch?v=SkTt9k4Y-a8&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/aHjpOzsQ9YI/1.jpg ,Dubstep Violin- Lindsey Stirling- Crystallize
-http://www.youtube.com/watch?v=aHjpOzsQ9YI&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/fWNaR-rxAic/1.jpg ,Carly Rae Jepsen - Call Me Maybe
-http://www.youtube.com/watch?v=fWNaR-rxAic&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/Y4MnpzG5Sqc/1.jpg ,KONY 2012
-http://www.youtube.com/watch?v=Y4MnpzG5Sqc&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/uuwfgXD8qV8/1.jpg ,Katy Perry - Part Of Me
-http://www.youtube.com/watch?v=uuwfgXD8qV8&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/1zfzka5VwRc/1.jpg ,Demi Lovato - Give Your Heart a Break (Official Video)
-http://www.youtube.com/watch?v=1zfzka5VwRc&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/x8iX8Lnogf4/1.jpg ,CUSTOM M14 JUGGERNAUT ROGUE!
-http://www.youtube.com/watch?v=x8iX8Lnogf4&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/I-sH53vXP2A/1.jpg ,"Fallen Kingdom" - A Minecraft Parody of Coldplay's Viva la Vida (Music Video)
-http://www.youtube.com/watch?v=I-sH53vXP2A&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/bjgFH01k0gU/1.jpg ,Jennifer Lopez - Dance Again ft. Pitbull
-http://www.youtube.com/watch?v=bjgFH01k0gU&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/5FlQSQuv_mg/1.jpg ,Maroon 5 - Payphone (Lyric Video) ft. Wiz Khalifa
-http://www.youtube.com/watch?v=5FlQSQuv_mg&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/SeIJmciN8mo/1.jpg ,Nicki Minaj - Starships (Explicit)
-http://www.youtube.com/watch?v=SeIJmciN8mo&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/HBxt_v0WF6Y/1.jpg ,Rihanna - Where Have You Been
-http://www.youtube.com/watch?v=HBxt_v0WF6Y&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/4GuqB1BQVr4/1.jpg ,Justin Bieber - Boyfriend
-http://www.youtube.com/watch?v=4GuqB1BQVr4&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/KRaWnd3LJfs/1.jpg ,Maroon 5 - Payphone (Explicit) ft. Wiz Khalifa
-http://www.youtube.com/watch?v=KRaWnd3LJfs&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/cSnkWzZ7ZAA/1.jpg ,Flo Rida - Whistle [Official Video]
-http://www.youtube.com/watch?v=cSnkWzZ7ZAA&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/fwK7ggA3-bU/1.jpg ,Maroon 5 - One More Night
-http://www.youtube.com/watch?v=fwK7ggA3-bU&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/k0BWlvnBmIE/1.jpg ,Katy Perry - Wide Awake
-http://www.youtube.com/watch?v=k0BWlvnBmIE&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/9bZkp7q19f0/1.jpg ,PSY - GANGNAM STYLE (강남스타일) M/V
-http://www.youtube.com/watch?v=9bZkp7q19f0&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/60MQ3AG1c8o/1.jpg ,[Live HD 720p] 120715 - PSY - Gangnam style (Comeback stage) - Inkigayo
-http://www.youtube.com/watch?v=60MQ3AG1c8o&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/H7HmzwI67ec/1.jpg ,Owl City & Carly Rae Jepsen - Good Time
-http://www.youtube.com/watch?v=H7HmzwI67ec&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/R4em3LKQCAQ/1.jpg ,Justin Bieber - As Long As You Love Me ft. Big Sean
-http://www.youtube.com/watch?v=R4em3LKQCAQ&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/wcLNteez3c4/1.jpg ,PSY (ft. HYUNA) 오빤 딱 내 스타일
-http://www.youtube.com/watch?v=wcLNteez3c4&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/kpZhZAr1cQU/1.jpg ,PSY싸이 - GANGNAM STYLE (강남스타일) Waveya 웨이브야 Korean dance team
-http://www.youtube.com/watch?v=kpZhZAr1cQU&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/WA4iX5D9Z64/1.jpg ,Taylor Swift - We Are Never Ever Getting Back Together
-http://www.youtube.com/watch?v=WA4iX5D9Z64&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/AbPED9bisSc/1.jpg ,One Direction - Live While We're Young
-http://www.youtube.com/watch?v=AbPED9bisSc&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/7HKoqNJtMTQ/1.jpg ,ADELE - Skyfall
-http://www.youtube.com/watch?v=7HKoqNJtMTQ&feature=youtube_gdata
-#EXTINF:0 logo=http://i.ytimg.com/vi/Ys7-6_t7OEQ/1.jpg ,Justin Bieber - Beauty And A Beat ft. Nicki Minaj
-http://www.youtube.com/watch?v=Ys7-6_t7OEQ&feature=youtube_gdata

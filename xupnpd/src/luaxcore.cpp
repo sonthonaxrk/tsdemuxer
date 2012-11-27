@@ -30,13 +30,10 @@
 #include <ctype.h>
 #include "compat.h"
 
-// TODO: gametrailers
-
 // TODO: profile by IP
 // TODO: sendurl - reopen after pause?
 // TODO: SQLite support
 // TODO: TS padding for WDTV?
-// TODO: length to m3u when feed update
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 
 namespace core

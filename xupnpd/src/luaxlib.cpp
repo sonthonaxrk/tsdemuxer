@@ -142,6 +142,7 @@ static void lua_push_soap_node(lua_State* L,soap::node* node)
     lua_rawset(L,-3);
 }
 
+
 static int lua_soap_parse(lua_State* L)
 {
     size_t l=0;
@@ -158,6 +159,56 @@ static int lua_soap_parse(lua_State* L)
     ctx.begin();
     if(!ctx.parse(s,l) && !ctx.end() && root.beg)
         lua_push_soap_node(L,root.beg);
+
+    root.clear();
+
+    return 1;
+}
+
+static void lua_push_xml_node(lua_State* L,soap::node* node)
+{
+    lua_pushstring(L,"name");
+    lua_pushstring(L,node->name?node->name:"");
+    lua_rawset(L,-3);
+
+    if(!node->beg)
+    {
+        lua_pushstring(L,"value");
+        lua_pushlstring(L,node->data,node->len);
+    }else
+    {
+        lua_pushstring(L,"elements");
+        lua_newtable(L);
+
+        int idx=0;
+        for(soap::node* p=node->beg;p;p=p->next)
+        {
+            lua_pushinteger(L,++idx);
+            lua_newtable(L);
+            lua_push_xml_node(L,p);
+            lua_rawset(L,-3);
+        }
+    }
+
+    lua_rawset(L,-3);
+}
+
+static int lua_xml_decode(lua_State* L)
+{
+    size_t l=0;
+
+    const char* s=lua_tolstring(L,1,&l);
+    if(!s)
+        s="";
+
+    lua_newtable(L);
+
+    soap::node root;
+    soap::ctx ctx(&root);
+
+    ctx.begin();
+    if(!ctx.parse(s,l) && !ctx.end() && root.beg)
+        lua_push_xml_node(L,root.beg);
 
     root.clear();
 
@@ -1340,6 +1391,12 @@ int luaopen_luaxlib(lua_State* L)
         {0,0}
     };
 
+    static const luaL_Reg lib_xml[]=
+    {
+        {"decode",lua_xml_decode},
+        {0,0}
+    };
+
     static const luaL_Reg lib_m3u[]=
     {
         {"parse",lua_m3u_parse},
@@ -1369,6 +1426,7 @@ int luaopen_luaxlib(lua_State* L)
     };
 
     luaL_register(L,"soap",lib_soap);
+    luaL_register(L,"xml",lib_xml);
     luaL_register(L,"m3u",lib_m3u);
     luaL_register(L,"util",lib_util);
 
