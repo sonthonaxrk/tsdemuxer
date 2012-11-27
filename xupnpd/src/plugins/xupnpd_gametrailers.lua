@@ -15,7 +15,7 @@ gametrailers_feeds=
     ['3ds']             = 'http://www.gametrailers.com/3ds/feed'
 }
 
-function rss_find_child(x,name)
+function gt_rss_find_child(x,name)
     if x.elements then
         for i,j in ipairs(x.elements) do
             if j.name==name then return j end
@@ -24,22 +24,31 @@ function rss_find_child(x,name)
     return nil
 end
 
-function rss_parse_feed(feed_data)
+function gt_rss_parse_feed(feed_data)
     local t={}
 
     local x=xml.decode(feed_data)
 
     if x and x.name=='rss' then
-        x=rss_find_child(x,'channel')
+        x=gt_rss_find_child(x,'channel')
 
         if x and x.elements then
             local idx=1
             for i,j in ipairs(x.elements) do
                 if j.name=='item' then
-                    local title=rss_find_child(j,'title') if title then title=title.value end
-                    local link=rss_find_child(j,'link') if link then link=link.value end
+                    local title=gt_rss_find_child(j,'title') if title then title=title.value end
+                    local link=gt_rss_find_child(j,'link') if link then link=link.value end
+                    local logo=nil
+
+                    for ii,jj in ipairs(j.elements) do
+                        if jj.name=='enclosure' and jj.attr then
+                            logo=string.match(jj.attr,'url="([%w:/._%-]+)?.-"')
+                            if logo then break end
+                        end
+                    end
+
                     if title and link then
-                        t[idx]={ ['title']=title, ['link']=link }
+                        t[idx]={ ['title']=title, ['link']=link, ['logo']=logo }
                         idx=idx+1
                     end
                 end
@@ -66,7 +75,7 @@ function gametrailers_updatefeed(feed,friendly_name)
     local feed_data=http.download(feed_url)
 
     if feed_data then
-        local x=rss_parse_feed(feed_data)
+        local x=gt_rss_parse_feed(feed_data)
 
         feed_data=nil
 
@@ -76,7 +85,11 @@ function gametrailers_updatefeed(feed,friendly_name)
                 dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=gametrailers\n')
 
                 for i,j in ipairs(x) do
-                    dfd:write('#EXTINF:0 ,',j.title,'\n',j.link,'\n')
+                    if j.logo then
+                        dfd:write('#EXTINF:0 logo=',j.logo,' ,',j.title,'\n',j.link,'\n')
+                    else
+                        dfd:write('#EXTINF:0 ,',j.title,'\n',j.link,'\n')
+                    end
                 end
                 dfd:close()
 

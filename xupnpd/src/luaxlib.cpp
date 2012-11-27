@@ -171,6 +171,13 @@ static void lua_push_xml_node(lua_State* L,soap::node* node)
     lua_pushstring(L,node->name?node->name:"");
     lua_rawset(L,-3);
 
+    if(node->attr)
+    {
+        lua_pushstring(L,"attr");
+        lua_pushlstring(L,node->attr,node->attr_len);
+        lua_rawset(L,-3);
+    }
+
     if(!node->beg)
     {
         lua_pushstring(L,"value");
@@ -205,6 +212,7 @@ static int lua_xml_decode(lua_State* L)
 
     soap::node root;
     soap::ctx ctx(&root);
+    ctx.attributes=1;
 
     ctx.begin();
     if(!ctx.parse(s,l) && !ctx.end() && root.beg)
