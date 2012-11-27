@@ -1,8 +1,6 @@
--- Copyright (C) 2011 I. Sokolov
--- happy.neko@gmail.com
--- Licensed under GNU GPL version 2 
--- https://www.gnu.org/licenses/gpl-2.0.html
-
+-- Copyright (C) 2012 Anton Burdinuk
+-- clark15b@gmail.com
+-- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
 gametrailers_feeds=
 {
@@ -16,9 +14,6 @@ gametrailers_feeds=
     ['vita']            = 'http://www.gametrailers.com/vita/feed',
     ['3ds']             = 'http://www.gametrailers.com/3ds/feed'
 }
-
-gametrailers_download_url='http://gametrailers.com/download'
-gametrailers_images_url='http://gametrailers.mtvnimages.com/images'
 
 function rss_find_child(x,name)
     if x.elements then
