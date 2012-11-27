@@ -79,10 +79,13 @@ namespace soap
         char* data;
         int   len;
 
-        node(void):parent(0),next(0),beg(0),end(0),name(0),data(0),len(0) {}
+        char* attr;
+        int   attr_len;
+
+        node(void):parent(0),next(0),beg(0),end(0),name(0),data(0),len(0),attr(0),attr_len(0) {}
         ~node(void) { clear(); }
 
-        void init(void) { parent=next=beg=end=0; name=data=0; len=0; }
+        void init(void) { parent=next=beg=end=0; name=data=attr=0; len=attr_len=0; }
 
         node* add_node(void);
 
@@ -137,11 +140,13 @@ namespace soap
         void tag_open(const char* s,int len);
         void tag_close(const char* s,int len);
         void data_push(void);
+        void attr_push(void);
 
     public:
         int line;
+        int attributes;
     public:
-        ctx(node* root):cur(root),st(0),err(0),line(0),tok_size(0),st_close_tag(0),st_quot(0),st_text(0) {}
+        ctx(node* root):cur(root),st(0),err(0),line(0),tok_size(0),st_close_tag(0),st_quot(0),st_text(0),attributes(0) {}
 
         void begin(void);
 
