@@ -112,13 +112,21 @@ function youtube_updatefeed(feed,friendly_name)
                 end
 
                 local logo=nil
-                for ii,jj in ipairs(j['media$group']['media$thumbnail']) do
-                    if tonumber(jj['width'])<480 then logo=jj.url break end
+
+                local thumb=j['media$group']['media$thumbnail']
+
+                if thumb then
+                    for ii,jj in ipairs(thumb) do
+                        if tonumber(jj['width'])<480 then logo=jj.url break end
+                    end
                 end
 
-                dfd:write('#EXTINF:0 logo=',logo,' ,',title,'\n',url,'\n')
+                if logo and title and url then
+                    dfd:write('#EXTINF:0 logo=',logo,' ,',title,'\n',url,'\n')
 
-                n=n+1
+                    n=n+1
+                end
+
             end
 
             if n<1 then break else count=count+n end

@@ -459,7 +459,7 @@ int soap::ctx::parse(const char* buf,int len)
             if(ch=='>') st=0; else if(ch!='?') st=50;
             break;
         case 60:
-            if(ch=='-') st=61; else err=1;
+            if(ch=='-') st=61; else if(ch=='[') st=100; else err=1;
             break;
         case 61:
             if(ch=='-') st=62; else err=1;
@@ -475,6 +475,22 @@ int soap::ctx::parse(const char* buf,int len)
                 st=0;
             else if(ch!='-')
                 st=62;
+            break;
+        case 100: if(ch=='C') st++; else err=1; break;
+        case 101: if(ch=='D') st++; else err=1; break;
+        case 102: if(ch=='A') st++; else err=1; break;
+        case 103: if(ch=='T') st++; else err=1; break;
+        case 104: if(ch=='A') st++; else err=1; break;
+        case 105: if(ch=='[') st++; else err=1; break;
+        case 106: if(ch==']') st=107; else ch_push(ch); break;
+        case 107: if(ch==']') st=108; else { ch_push(']'); ch_push(ch); st=106; } break;
+        case 108:
+            if(ch=='>')
+                { st=0; data_push(); }
+            else if(ch==']')
+                { ch_push(ch); }
+            else
+                { ch_push(']'); ch_push(']'); ch_push(ch); st=106; }
             break;
         }
     }
@@ -509,6 +525,7 @@ int main(void)
         "                       <staff/>\n"
         "                       <  staff2  />\n"
         "                       <staff3>Hello &lt;&gt;&aaa; World</staff3>\n"
+        "                       <staff4><![CDATA[Hello &lt;&gt;&aaa; World]]></staff4>\n"
         "               </u:Browse>\n"
         "       </s:Body>\n"
         "</s:Envelope>\n";
