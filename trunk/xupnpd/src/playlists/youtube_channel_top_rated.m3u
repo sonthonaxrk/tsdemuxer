@@ -1,4 +1,4 @@
-#EXTM3U name="" type=mp4 plugin=youtube
+#EXTM3U name="YouTube Top Rated" type=mp4 plugin=youtube
 #EXTINF:0 logo=http://i.ytimg.com/vi/dMH0bHeiRNg/1.jpg ,Evolution of Dance - By Judson Laipply
 http://www.youtube.com/watch?v=dMH0bHeiRNg&feature=youtube_gdata
 #EXTINF:0 logo=http://i.ytimg.com/vi/kXYiU_JCYtU/1.jpg ,Linkin Park - Numb
