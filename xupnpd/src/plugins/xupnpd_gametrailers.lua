@@ -2,6 +2,8 @@
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
+cfg.gametrailers_video_count=100
+
 gametrailers_feeds=
 {
     ['trailers']        = 'http://www.gametrailers.com/videos-trailers/feed',
@@ -15,47 +17,65 @@ gametrailers_feeds=
     ['3ds']             = 'http://www.gametrailers.com/3ds/feed'
 }
 
-function gt_rss_find_child(x,name)
-    if x.elements then
-        for i,j in ipairs(x.elements) do
-            if j.name==name then return j end
-        end
-    end
-    return nil
+function gametrailers_rss_merge(new,old,max_num)
+
+    local tt={}
+
+    for i,j in ipairs(old) do tt[j.title]=j end
+    for i,j in ipairs(new) do if tt[j.title] then j.link=nil end end
+
+    tt={} local idx=1
+
+    for i,j in ipairs(new) do if idx>max_num then break end if j.link then tt[idx]=j idx=idx+1 end end
+
+    for i,j in ipairs(old) do if idx>max_num then break end tt[idx]=j idx=idx+1 end
+
+    return tt
 end
 
-function gt_rss_parse_feed(feed_data)
+function gametrailers_rss_parse_m3u(path)
     local t={}
 
-    local x=xml.decode(feed_data)
+    local x=m3u.parse(path)
+    if x and x.elements then
+        local idx=1
+        for i,j in ipairs(x.elements) do
+            t[idx]={ ['title']=j.name, ['link']=j.url, ['logo']=j.logo }
+            idx=idx+1
+        end
+    end
 
-    if x and x.name=='rss' then
-        x=gt_rss_find_child(x,'channel')
+    return t
+end
 
-        if x and x.elements then
-            local idx=1
-            for i,j in ipairs(x.elements) do
-                if j.name=='item' then
-                    local title=gt_rss_find_child(j,'title') if title then title=title.value end
-                    local link=gt_rss_find_child(j,'link') if link then link=link.value end
-                    local logo=nil
+function gametrailers_rss_parse_feed(url)
+    local t={}
 
-                    for ii,jj in ipairs(j.elements) do
-                        if jj.name=='enclosure' and jj.attr then
-                            logo=string.match(jj.attr,'url="([%w:/._%-]+)?.-"')
-                            if logo then break end
-                        end
-                    end
+    local feed_data=http.download(url)
 
-                    if title and link then
-                        t[idx]={ ['title']=title, ['link']=link, ['logo']=logo }
-                        idx=idx+1
-                    end
+    if not feed_data then return t end
+
+    local x=xml.find('rss/channel',xml.decode(feed_data))
+
+    feed_data=nil
+
+    if x and x['@elements'] then
+        local idx=1
+        for i,j in ipairs(x['@elements']) do
+            if j['@name']=='item' then
+                local title=nil if j.title then title=j.title['@value'] end
+                local link =nil if j.link then link=j.link['@value'] end
+                local logo =nil if j.enclosure then logo=j.enclosure['@attr'] end
+
+                if logo then logo=string.match(logo,'url="([%w:/._%-]+)?.-"') end
+
+                if title and link then
+                    t[idx]={ ['title']=title, ['link']=link, ['logo']=logo }
+                    idx=idx+1
                 end
             end
         end
     end
-
     return t
 end
 
@@ -72,35 +92,31 @@ function gametrailers_updatefeed(feed,friendly_name)
 
     if cfg.debug>0 then print('Game Trailers try url '..feed_url) end
 
-    local feed_data=http.download(feed_url)
+    local x=gametrailers_rss_merge(gametrailers_rss_parse_feed(feed_url),gametrailers_rss_parse_m3u(feed_m3u_path),cfg.gametrailers_video_count)
 
-    if feed_data then
-        local x=gt_rss_parse_feed(feed_data)
+--    local x=gametrailers_rss_parse_feed(feed_url)
 
-        feed_data=nil
+    if x then
+        local dfd=io.open(tmp_m3u_path,'w+')
+        if dfd then
+            dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=gametrailers\n')
 
-        if x then
-            local dfd=io.open(tmp_m3u_path,'w+')
-            if dfd then
-                dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=gametrailers\n')
-
-                for i,j in ipairs(x) do
-                    if j.logo then
-                        dfd:write('#EXTINF:0 logo=',j.logo,' ,',j.title,'\n',j.link,'\n')
-                    else
-                        dfd:write('#EXTINF:0 ,',j.title,'\n',j.link,'\n')
-                    end
-                end
-                dfd:close()
-
-                if util.md5(tmp_m3u_path)~=util.md5(feed_m3u_path) then
-                    if os.execute(string.format('mv %s %s',tmp_m3u_path,feed_m3u_path))==0 then
-                        if cfg.debug>0 then print('GameTrailers feed \''..feed_name..'\' updated') end
-                        rc=true
-                    end
+            for i,j in ipairs(x) do
+                if j.logo then
+                    dfd:write('#EXTINF:0 logo=',j.logo,' ,',j.title,'\n',j.link,'\n')
                 else
-                    util.unlink(tmp_m3u_path)
+                    dfd:write('#EXTINF:0 ,',j.title,'\n',j.link,'\n')
                 end
+            end
+            dfd:close()
+
+            if util.md5(tmp_m3u_path)~=util.md5(feed_m3u_path) then
+                if os.execute(string.format('mv %s %s',tmp_m3u_path,feed_m3u_path))==0 then
+                    if cfg.debug>0 then print('GameTrailers feed \''..feed_name..'\' updated') end
+                    rc=true
+                end
+            else
+                util.unlink(tmp_m3u_path)
             end
         end
     end
@@ -156,5 +172,10 @@ plugins.gametrailers.desc="<i>feed</i>"..
 
 plugins.gametrailers.sendurl=gametrailers_sendurl
 plugins.gametrailers.updatefeed=gametrailers_updatefeed
+
+plugins.gametrailers.ui_config_vars=
+{
+    { "input",  "gametrailers_video_count", "int" }
+}
 
 --gametrailers_updatefeed('ps3')
