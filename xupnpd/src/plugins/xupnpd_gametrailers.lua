@@ -17,68 +17,6 @@ gametrailers_feeds=
     ['3ds']             = 'http://www.gametrailers.com/3ds/feed'
 }
 
-function gametrailers_rss_merge(new,old,max_num)
-
-    local tt={}
-
-    for i,j in ipairs(old) do tt[j.title]=j end
-    for i,j in ipairs(new) do if tt[j.title] then j.link=nil end end
-
-    tt={} local idx=1
-
-    for i,j in ipairs(new) do if idx>max_num then break end if j.link then tt[idx]=j idx=idx+1 end end
-
-    for i,j in ipairs(old) do if idx>max_num then break end tt[idx]=j idx=idx+1 end
-
-    return tt
-end
-
-function gametrailers_rss_parse_m3u(path)
-    local t={}
-
-    local x=m3u.parse(path)
-    if x and x.elements then
-        local idx=1
-        for i,j in ipairs(x.elements) do
-            t[idx]={ ['title']=j.name, ['link']=j.url, ['logo']=j.logo }
-            idx=idx+1
-        end
-    end
-
-    return t
-end
-
-function gametrailers_rss_parse_feed(url)
-    local t={}
-
-    local feed_data=http.download(url)
-
-    if not feed_data then return t end
-
-    local x=xml.find('rss/channel',xml.decode(feed_data))
-
-    feed_data=nil
-
-    if x and x['@elements'] then
-        local idx=1
-        for i,j in ipairs(x['@elements']) do
-            if j['@name']=='item' then
-                local title=nil if j.title then title=j.title['@value'] end
-                local link =nil if j.link then link=j.link['@value'] end
-                local logo =nil if j.enclosure then logo=j.enclosure['@attr'] end
-
-                if logo then logo=string.match(logo,'url="([%w:/._%-]+)?.-"') end
-
-                if title and link then
-                    t[idx]={ ['title']=title, ['link']=link, ['logo']=logo }
-                    idx=idx+1
-                end
-            end
-        end
-    end
-    return t
-end
-
 function gametrailers_updatefeed(feed,friendly_name)
     local rc=false
 
@@ -92,7 +30,7 @@ function gametrailers_updatefeed(feed,friendly_name)
 
     if cfg.debug>0 then print('Game Trailers try url '..feed_url) end
 
-    local x=gametrailers_rss_merge(gametrailers_rss_parse_feed(feed_url),gametrailers_rss_parse_m3u(feed_m3u_path),cfg.gametrailers_video_count)
+    local x=rss_merge(rss_parse_feed(feed_url,'url="([%w:/._%-]+)?.-"'),rss_parse_m3u(feed_m3u_path),cfg.gametrailers_video_count)
 
 --    local x=gametrailers_rss_parse_feed(feed_url)
 

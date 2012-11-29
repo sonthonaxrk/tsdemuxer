@@ -68,16 +68,22 @@ function ui_playlists()
     http.send('<h3>Playlists</h3>')
     http.send('<br/><table class="table">')
 
-    local d=util.dir(cfg.playlists_path)
-    if d then
-        table.sort(d)
-        for i,j in ipairs(d) do
-            if string.find(j,'.+%.m3u$') then
-                local fname=util.urlencode(j)
-                http.send(string.format('<tr><td><a href=\'/ui/show?fname=%s\'>%s</a> [<a href=\'/ui/remove?fname=%s\'>x</a>]</td></tr>\n',fname,j,fname))
+    function f(path,args)
+        local d=util.dir(path)
+        if d then
+            table.sort(d)
+            for i,j in ipairs(d) do
+                if string.find(j,'.+%.m3u$') then
+                    local fname=util.urlencode(j)
+                    http.send(string.format('<tr><td><a href=\'/ui/show?fname=%s&%s\'>%s</a> [<a href=\'/ui/remove?fname=%s&%s\'>x</a>]</td></tr>\n',fname,args,j,fname,args))
+                end
             end
         end
     end
+
+    f(cfg.playlists_path,'')
+
+    if cfg.feeds_path~=cfg.playlists_path then f(cfg.feeds_path,'feed=1') end
 
     http.send('</table>')
 
@@ -252,7 +258,11 @@ function ui_show()
     if ui_args.fname then
         local real_name=util.urldecode(ui_args.fname)
         if string.find(real_name,'^[^-/\\]+%.m3u$') then
-            local pls=m3u.parse(cfg.playlists_path..real_name)
+
+            local path=cfg.playlists_path
+            if ui_args.feed=='1' then path=cfg.feeds_path end
+
+            local pls=m3u.parse(path..real_name)
 
             if pls then
                 http.send('<h3>'..pls.name..'</h3>')
@@ -272,7 +282,11 @@ function ui_remove()
     if ui_args.fname then
         local real_name=util.urldecode(ui_args.fname)
         if string.find(real_name,'^[^-/\\]+%.m3u$') then
-            if os.remove(cfg.playlists_path..real_name) then
+
+            local path=cfg.playlists_path
+            if ui_args.feed=='1' then path=cfg.feeds_path end
+
+            if os.remove(path..real_name) then
                 core.sendevent('reload')
                 http.send('<h3>OK</h3>')
             else
