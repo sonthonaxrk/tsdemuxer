@@ -1,5 +1,5 @@
 Package: xupnpd
-Version: 1.0-rc14-ubuntu1
+Version: 1.01-ubuntu1
 Section: net
 Architecture: i386
 Depends: libuuid1
