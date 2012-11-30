@@ -31,6 +31,7 @@
 #include "compat.h"
 
 // TODO: profile by IP
+// TODO: RTSP, RTMP
 // TODO: sendurl - reopen after pause?
 // TODO: SQLite support
 // TODO: TS padding for WDTV?
