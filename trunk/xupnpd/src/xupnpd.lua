@@ -87,6 +87,8 @@ feeds=
     { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
     { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
     { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
+--    { 'youtube',        'Drift0r',              'Drift0r' },
+--    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
 --    { 'ag',             'videos',               'AG - New' },
 --    { 'ivi',            'new',                  'IVI - New' },
 --    { 'gametrailers',   'ps3,                   'GT - PS3' },

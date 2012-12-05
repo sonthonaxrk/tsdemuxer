@@ -1,4 +1,6 @@
 #EXTM3U name="Vimeo Xtreme sports" type=mp4 plugin=vimeo
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/374/881/374881166_200.jpg ,WHITE NOISE - FULL Movie
+http://vimeo.com/54230904
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/365/751/365751138_200.jpg ,WHITE NOISE teaser
 http://vimeo.com/52428312
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/366/278/366278651_200.jpg ,BrOADER TV ep.161: 45-Degrees on Stubai
