@@ -15,7 +15,6 @@ cfg.youtube_region='*'
 cfg.youtube_video_count=100
 
 youtube_api_url='http://gdata.youtube.com/feeds/mobile/'
-youtube_common='alt=json&start-index=1&max-results=50'  -- &racy=include&restriction=??
 
 function youtube_find_playlist(user,playlist)
     local start_index=1
@@ -115,10 +114,8 @@ function youtube_updatefeed(feed,friendly_name)
 
                 local thumb=j['media$group']['media$thumbnail']
 
-                if thumb then
-                    for ii,jj in ipairs(thumb) do
-                        if tonumber(jj['width'])<480 then logo=jj.url break end
-                    end
+                if thumb and thumb[1] then
+                    logo=thumb[1].url
                 end
 
                 if logo and title and url then
