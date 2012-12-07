@@ -274,13 +274,13 @@ function get_drive_state(drive)
 end
 
 
-function profile_change(user_agent)
+function profile_change(user_agent,req)
     if not user_agent or user_agent=='' then return end
 
     for name,profile in pairs(profiles) do
         local match=profile.match
 
-        if profile.disabled~=true and  match and match(user_agent) then
+        if profile.disabled~=true and  match and match(user_agent,req) then
 
             local options=profile.options
             local mtypes=profile.mime_types

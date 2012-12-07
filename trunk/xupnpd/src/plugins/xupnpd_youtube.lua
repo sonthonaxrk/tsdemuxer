@@ -32,7 +32,7 @@ function youtube_find_playlist(user,playlist)
 
         for i,j in ipairs(x.feed.entry) do
             if j.title['$t']==playlist then
-                return string.match(j.id['$t'],'.+/(%w+)$')
+                return string.match(j.id['$t'],'.+/([^/]+)$')
             end
         end
         start_index=start_index+max_results

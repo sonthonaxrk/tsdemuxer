@@ -233,7 +233,7 @@ function http_handler(what,from,port,msg)
     local pr_name=nil
 
     if cfg.profiles then
-        pr_name=profile_change(msg['user-agent'])
+        pr_name=profile_change(msg['user-agent'],msg)
 
         if msg.reqline[2]=='/dev.xml' then msg.reqline[2]=cfg.dev_desc_xml end
     end
