@@ -36,7 +36,6 @@
 // TODO: SQLite support
 // TODO: TS padding for WDTV?
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
-//
 
 namespace core
 {
