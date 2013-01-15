@@ -17,6 +17,10 @@ cfg.youtube_video_count=100
 youtube_api_url='http://gdata.youtube.com/feeds/mobile/'
 
 function youtube_find_playlist(user,playlist)
+    if string.sub(playlist,1,3)=='id:' then
+        return string.sub(playlist,4)
+    end
+
     local start_index=1
     local max_results=50
 

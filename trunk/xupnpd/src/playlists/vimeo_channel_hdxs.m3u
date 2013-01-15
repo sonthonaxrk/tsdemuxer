@@ -1,4 +1,12 @@
 #EXTM3U name="Vimeo Xtreme sports" type=mp4 plugin=vimeo
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/380/888/380888654_200.jpg ,Paul Guschlbauer - Preparing for Red Bull X-Alps 2013
+http://vimeo.com/55050732
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/391/595/391595527_200.jpg ,2012 recap part 1
+http://vimeo.com/56507323
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/387/063/387063593_200.jpg ,BrOADER TV ep.162: Andrej Marincic's Baywatch
+http://vimeo.com/55898263
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/383/612/383612338_200.jpg ,Tenerife task2 part2
+http://vimeo.com/55424575
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/374/881/374881166_200.jpg ,WHITE NOISE - FULL Movie
 http://vimeo.com/54230904
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/365/751/365751138_200.jpg ,WHITE NOISE teaser
