@@ -45,7 +45,7 @@ function youtube_find_playlist(user,playlist)
     return nil
 end
 
--- username, favorites/username, playlist/username/playlistname, channel/channelname, search/searchstring
+-- username, favorites/username, playlist/username/playlistname, playlist/username/id:playlistid, channel/channelname, search/searchstring
 -- channels: top_rated, top_favorites, most_viewed, most_recent, recently_featured
 function youtube_updatefeed(feed,friendly_name)
     local rc=false
@@ -208,7 +208,7 @@ end
 
 plugins['youtube']={}
 plugins.youtube.name="YouTube"
-plugins.youtube.desc="<i>username</i>, favorites/<i>username</i>, playlist/<i>username</i>/<i>playlistname</i>, channel/<i>channelname</i>, search/<i>search_string</i>"..
+plugins.youtube.desc="<i>username</i>, favorites/<i>username</i>, playlist/<i>username</i>/<i>playlistname</i>, playlist/<i>username</i>/id:<i>playlistid</i>, channel/<i>channelname</i>, search/<i>search_string</i>"..
 "<br/><b>YouTube channels</b>: top_rated, top_favorites, most_viewed, most_recent, recently_featured"
 plugins.youtube.sendurl=youtube_sendurl
 plugins.youtube.updatefeed=youtube_updatefeed
