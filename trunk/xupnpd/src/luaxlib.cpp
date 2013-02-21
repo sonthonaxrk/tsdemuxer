@@ -490,9 +490,11 @@ static int lua_m3u_parse(lua_State* L)
     {
         lua_newtable(L);
 
+/*
         lua_pushstring(L,"path");
         lua_pushstring(L,name);
         lua_rawset(L,-3);
+*/
 
         char playlist_name[256]="";
 
@@ -736,7 +738,7 @@ static int lua_m3u_scan(lua_State* L)
                         p=track_url;
 
                     char* p2=strrchr(p,'.');
-                    if(p2)
+                    if(p2 && strcasecmp(p2+1,"srt"))
                     {
                         int fd=open(track_url,O_RDONLY|O_LARGEFILE);
                         if(fd!=-1)

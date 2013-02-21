@@ -1,4 +1,8 @@
 #EXTM3U name="Vimeo Xtreme sports" type=mp4 plugin=vimeo
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/411/465/411465389_200.jpg ,Ep1 Mission Antarctic
+http://vimeo.com/58777201
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/394/626/394626022_200.jpg ,Anti trailer White Noise BONUS EDIT
+http://vimeo.com/53933281
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/380/888/380888654_200.jpg ,Paul Guschlbauer - Preparing for Red Bull X-Alps 2013
 http://vimeo.com/55050732
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/391/595/391595527_200.jpg ,2012 recap part 1
