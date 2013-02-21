@@ -20,7 +20,8 @@ profiles['Samsung-AllShare']=
             '</Feature>'..
             '</Features>',
 
-        ['upnp_albumart']=3     -- <res protocolInfo="http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN">http://127.0.0.1:4044/logo?s=0%2F1%2F14%2F33</res>
+        ['upnp_albumart']=3,     -- <res protocolInfo="http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN">http://127.0.0.1:4044/logo?s=0%2F1%2F14%2F33</res>
+        ['sec_extras']=true
     },
 
     ['mime_types']=

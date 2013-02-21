@@ -91,13 +91,13 @@ feeds=
 --    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
 --    { 'ag',             'videos',               'AG - New' },
 --    { 'ivi',            'new',                  'IVI - New' },
---    { 'gametrailers',   'ps3,                   'GT - PS3' },
+--    { 'gametrailers',   'ps3',                   'GT - PS3' },
 --    { 'giantbomb',      'all',                  'GiantBomb - All' },
 --    { 'dreambox',       'http://192.168.0.1:8001/','Dreambox1' },
 }
 
 -- log ident, pid file end www root
-cfg.version='1.02'
+cfg.version='1.03'
 cfg.log_ident=arg[1] or 'xupnpd'
 cfg.pid_file='/var/run/'..cfg.log_ident..'.pid'
 cfg.www_root='./www/'
