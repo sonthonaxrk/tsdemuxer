@@ -43,8 +43,14 @@ function playlist_item_to_xml(id,parent_id,pls)
         end
     end
 
-    if pls.path and cfg.sec_extras then
-        sec_extras=string.format('<sec:CaptionInfoEx sec:type="srt">%s/sub/%s.srt</sec:CaptionInfoEx><sec:dcmInfo>BM=%s</sec:dcmInfo>',www_location,objid,pls.bookmark or '0')
+    if cfg.sec_extras then
+        if pls.path then
+            sec_extras=string.format('<sec:CaptionInfoEx sec:type="srt">%s/sub/%s.srt</sec:CaptionInfoEx>',www_location,objid)
+        end
+
+        if pls.bookmark then
+            sec_extras=sec_extras..string.format('<sec:dcmInfo>BM=%s</sec:dcmInfo>',pls.bookmark)
+        end
     end
 
     if pls.elements then

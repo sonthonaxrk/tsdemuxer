@@ -316,7 +316,7 @@ events['remove_feed']=function(id) table.remove(feeds,tonumber(id)) end
 events['add_feed']=function(plugin,feed,name) table.insert(feeds,{[1]=plugin,[2]=feed,[3]=name}) end
 events['plugin']=function(name,status) if status=='on' then plugins[name].disabled=false else plugins[name].disabled=true end end
 events['profile']=function(name,status) if status=='on' then profiles[name].disabled=false else profiles[name].disabled=true end end
-events['bookmark']=function(objid,pos) local pls=find_playlist_object(objid) if pls and pls.path then pls.bookmark=pos end end
+events['bookmark']=function(objid,pos) local pls=find_playlist_object(objid) if pls then pls.bookmark=pos end end
 
 events['update_playlists']=
 function(what,sec)
