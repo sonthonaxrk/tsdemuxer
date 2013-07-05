@@ -1,13 +1,14 @@
-profiles['KDL-22EX553']=
+profiles['BRAVIA']=
 {
-    ['desc']='Sony BRAVIA KDL-22EX553',
+    ['desc']='Sony BRAVIA',
 
 --X-AV-Physical-Unit-Info: pa="BRAVIA KDL-22EX553";
 --X-AV-Client-Info: av=5.0; cn="Sony Corporation"; mn="BRAVIA KDL-22EX553"; mv="1.7";
 --User-Agent: UPnP/1.0 DLNADOC/1.50
 
-    ['match']=function(user_agent)
-        if string.find(user_agent,'UPnP/1.0 DLNADOC/1.50',1,true) then 
+    ['match']=function(user_agent,req)
+        local s = req['x-av-client-info'] 
+        if s and string.find(s,'BRAVIA ',1,true) then 
             return true 
         else 
             return false 
@@ -23,10 +24,10 @@ profiles['KDL-22EX553']=
 
     ['mime_types']=
     {
-    -- video streams
-        ['xvid']   =  { upnp_type.video, upnp_class.video,  'video/avi',     upnp_proto.avi,        dlna_org_extras.none},
-        ['divx']   =  { upnp_type.video, upnp_class.video,  'video/avi',     upnp_proto.avi,        dlna_org_extras.none},
-        ['avi']    =  { upnp_type.video, upnp_class.video,  'video/avi',     upnp_proto.avi,        dlna_org_extras.none},
+        -- video streams
+        ['xvid']   =  { upnp_type.video, upnp_class.video,  'video/avi',        upnp_proto.avi,         dlna_org_extras.none},
+        ['divx']   =  { upnp_type.video, upnp_class.video,  'video/avi',        upnp_proto.avi,         dlna_org_extras.none},
+        ['avi']    =  { upnp_type.video, upnp_class.video,  'video/avi',        upnp_proto.avi,         dlna_org_extras.none},
         ['mpeg']   =  { upnp_type.video, upnp_class.video,  'video/mpeg',       upnp_proto.mpeg,        dlna_org_extras.none},
         ['mpg']    =  { upnp_type.video, upnp_class.video,  'video/mpeg',       upnp_proto.mpeg,        dlna_org_extras.none}
     }
