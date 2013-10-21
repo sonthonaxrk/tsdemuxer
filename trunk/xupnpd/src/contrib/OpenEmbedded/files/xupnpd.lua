@@ -4,7 +4,7 @@ cfg={}
 cfg.ssdp_interface='eth0'
 
 -- 'cfg.ssdp_loop' enables multicast loop (if player and server in one host)
-cfg.ssdp_loop=0
+cfg.ssdp_loop=1
 
 -- SSDP announcement interval
 cfg.ssdp_notify_interval=15
@@ -22,11 +22,11 @@ cfg.log_facility='local0'
 cfg.daemon=true
 
 -- silent mode - no logs, no pid file
-cfg.embedded=true
+cfg.embedded=false
 
 -- 'cfg.debug' enables SSDP debug output to stdout (if cfg.daemon=false)
 -- 0-off, 1-basic, 2-messages
-cfg.debug=0
+cfg.debug=1
 
 -- external 'udpxy' url for multicast playlists (udp://@...)
 --cfg.udpxy_url='http://192.168.1.1:4022'
@@ -42,16 +42,7 @@ cfg.proxy=2
 cfg.user_agent='Mozilla/5.0'
 
 -- I/O timeout
-cfg.http_timeout=15
-
--- 'cfg.dlna_extras' enables DLNA extras
-cfg.dlna_extras=true
-
--- XBox360 compatible mode
-cfg.xbox360=false
-
--- WDTV Live compatible mode
-cfg.wdtv=false
+cfg.http_timeout=30
 
 -- enables UPnP/DLNA notify when reload playlist
 cfg.dlna_notify=true
@@ -65,6 +56,7 @@ cfg.sort_files=false
 -- Device name
 -- cfg.name='UPnP-IPTV'
 cfg.name=io.popen("uname -n"):read("*l")..'-xupnpd'
+
 -- static device UUID, '60bd2fb3-dabe-cb14-c766-0e319b54c29a' for example or nil
 cfg.uuid='60bd2fb3-dabe-cb14-c766-0e319b54c29a'
 
@@ -74,50 +66,49 @@ cfg.cache_size=8
 -- url cache item ttl (sec)
 cfg.cache_ttl=900
 
--- default mime type (mpeg, mpeg1, mpeg2, ts)
+-- default mime type (mpeg, mpeg_ts, mpeg1, mpeg2, ts, ...)
 cfg.default_mime_type='mpeg'
 
 -- feeds update interval (seconds, 0 - disabled)
 cfg.feeds_update_interval=3600
 cfg.playlists_update_interval=3600
 
--- fetch file length when feed update (slow!!!)
-cfg.feeds_fetch_length=false
-
 -- playlist (m3u file path or path with alias
 playlist=
 {
---    { './playlists/mozhay.m3u',             'Mozhay.tv' },
---    { './localmedia', 'Local Media Files', '127.0.0.1;192.168.1.1' }
+--    { './playlists/mozhay.m3u', 'Mozhay.tv' },
+--    { './localmedia', 'Local Media Files' }
+--    { './private', 'Private Media Files', '127.0.0.1;192.168.1.1' }  -- only for 127.0.0.1 and 192.168.1.1
 }
 
 -- feeds list (plugin, feed name, feed type)
 feeds=
 {
 --    { 'vimeo',          'channel/hd',           'Vimeo HD Channel' },
---    { 'vimeo',          'channel/hdxs',         'HD Xtreme sports' },
---    { 'vimeo',          'channel/mtb',          'Mountain Bike Channel' },
+--    { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
+--    { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
 --    { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
-    { 'dreambox',       'http://192.168.0.11:8001/','Dreambox1' },
---    { 'gametrailers',   'ps3/review',           'GT - PS3 - Review' },
---    { 'gametrailers',   'ps3/preview',          'GT - PS3 - Preview' },
---    { 'gametrailers',   'ps3/gameplay',         'GT - PS3 - Gameplay' },
---    { 'giantbomb',      'all',                  'GiantBomb - All' },
+--    { 'youtube',        'Drift0r',              'Drift0r' },
+--    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
 --    { 'ag',             'videos',               'AG - New' },
 --    { 'ivi',            'new',                  'IVI - New' },
+--    { 'gametrailers',   'ps3',                   'GT - PS3' },
+--    { 'giantbomb',      'all',                  'GiantBomb - All' },
+    { 'dreambox',       '192.168.0.111','Dreambox1' },
 }
 
 -- log ident, pid file end www root
-cfg.version='1.0-rc12'
+cfg.version='1.031'
 cfg.log_ident=arg[1] or 'xupnpd'
 cfg.pid_file='/var/run/'..cfg.log_ident..'.pid'
 cfg.www_root='./www/'
 cfg.tmp_path='/tmp/'
 cfg.plugin_path='./plugins/'
 cfg.config_path='./config/'
--- cfg.playlists_path='./playlists/'
-cfg.playlists_path='/tmp/xupnpd-feeds/'
--- cfg.feeds_path='/tmp/xupnpd-feeds/'
+cfg.playlists_path='./playlists/'
+cfg.feeds_path='/tmp/xupnpd-feeds/'
 cfg.ui_path='./ui/'
+cfg.drive=''                    -- reload playlists only if drive state=active/idle, example: cfg.drive='/dev/sda'
+cfg.profiles='./profiles/'      -- device profiles feature
 
 dofile('xupnpd_main.lua')
