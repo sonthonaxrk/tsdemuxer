@@ -620,6 +620,7 @@ plugins.ui.ui_config_vars=
     { "input",  "user_agent" },
     { "input",  "http_timeout", "int" },
     { "select", "dlna_notify", "bool"},
+    { "input",  "dlna_subscribe_ttl", "int"},
     { "select", "group", "bool" },
     { "select", "sort_files", "bool" },
     { "input",  "name" },

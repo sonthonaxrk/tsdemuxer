@@ -96,7 +96,7 @@ function youporn_sendurl(youporn_url,range)
 
     if plugin_sendurl_from_cache(youporn_url,range) then return end
 
-    local clip_page=http.download(youporn_url)
+    local clip_page=plugin_download(youporn_url)
     if clip_page then
         url=string.match(clip_page,'.+<a href="(http://.-)">MP4 %- For Windows 7, Mac and iPad</a>.+')
         clip_page=nil
