@@ -348,11 +348,15 @@ function http_handler(what,from,port,msg)
     elseif url=='event' then
 
         if msg.reqline[1]=='SUBSCRIBE' then
-            local ttl=1800
-            local sid=core.uuid()
+            local ttl=cfg.dlna_subscribe_ttl
+            local sid=nil
+            local callback=nil
 
-            if object~='' and msg.callback then
-                core.sendevent('subscribe',object,sid,string.match(msg.callback,'<(.+)>'),ttl)
+            if msg.sid then sid=string.match(msg.sid,'uuid:(.+)') else sid=core.uuid() end
+            if msg.callback then callback=string.match(msg.callback,'<(.+)>') end
+
+            if object~='' then
+                core.sendevent('subscribe',object,sid,callback,ttl)
             end
 
             http.send(
