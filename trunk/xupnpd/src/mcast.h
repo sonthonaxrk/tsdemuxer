@@ -34,6 +34,7 @@ namespace mcast
         char if_name[IF_NAME_LEN];
         char if_addr[IF_ADDR_LEN];
         sockaddr_in if_sin;
+        int if_index;
         u_int32_t if_flags;
     };
 
@@ -56,6 +57,7 @@ namespace mcast
     protected:
         sockaddr_in mcast_sin;
         sockaddr_in mcast_if_sin;
+        int mcast_if_index;
         int mcast_ttl;
         int mcast_loop;
     public:
