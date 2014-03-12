@@ -1,4 +1,14 @@
 #EXTM3U name="Vimeo Xtreme sports" type=mp4 plugin=vimeo
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/466/114/466114234_200.jpg ,WinterTrash Webisode 1: Switzerland
+http://vimeo.com/87867686
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/460/165/460165009_200.jpg ,MISSION STEEPS - trailer
+http://vimeo.com/83378522
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/380/362/380362964_200.jpg ,Mission Antarctic: Live dispatch #2 GoPro black
+http://vimeo.com/54983238
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/458/518/458518502_200.jpg ,MISSION ANTARCTIC - trailer
+http://vimeo.com/79498425
+#EXTINF:0 logo=http://b.vimeocdn.com/ts/457/745/457745518_200.jpg ,Elias Elhardt in Distorted Reality by Pirate Movie Production
+http://vimeo.com/81581524
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/448/784/448784460_200.jpg ,The Higher You Get, The Higher You Get - shot on GoPro
 http://vimeo.com/74426637
 #EXTINF:0 logo=http://b.vimeocdn.com/ts/383/447/383447263_200.jpg ,Sierra Safari
