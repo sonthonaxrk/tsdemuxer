@@ -79,7 +79,7 @@ cfg.playlists_update_interval=0
 playlist=
 {
 --    { './playlists/mozhay.m3u', 'Mozhay.tv' },
---    { './localmedia', 'Local Media Files' }
+    { './localmedia', 'Local Media Files' }
 --    { './private', 'Private Media Files', '127.0.0.1;192.168.1.1' }  -- only for 127.0.0.1 and 192.168.1.1
 }
 
@@ -100,7 +100,7 @@ feeds=
 }
 
 -- log ident, pid file end www root
-cfg.version='1.032'
+cfg.version='1.033'
 cfg.log_ident=arg[1] or 'xupnpd'
 cfg.pid_file='/var/run/'..cfg.log_ident..'.pid'
 cfg.www_root='./www/'
